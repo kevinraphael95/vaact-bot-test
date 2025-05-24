@@ -64,11 +64,64 @@ async def ping(ctx):
     await ctx.send("🏓 Pong !")
 ping.category = "Général"
 
-@bot.command(name="carte")
-async def carte(ctx, *, nom: str):
-    """Renvoie une carte Yu-Gi-Oh en fonction de son nom (mock)."""
-    await ctx.send(f"🔍 Recherche de la carte **{nom}**... (fonction à venir)")
-carte.category = "Cartes"
+@commands.command(name="deck")
+async def deck(ctx):
+    """Choisis une saison puis un duelliste pour voir son deck."""
+    
+    class SaisonSelect(Select):
+        def __init__(self):
+            options = [
+                SelectOption(label=saison, value=saison)
+                for saison in DECK_DATA.keys()
+            ]
+            super().__init__(
+                placeholder="📅 Choisis une saison",
+                options=options,
+                min_values=1,
+                max_values=1
+            )
+
+        async def callback(self, interaction: discord.Interaction):
+            saison = self.values[0]
+            duellistes = DECK_DATA[saison]
+
+            class DuellisteSelect(Select):
+                def __init__(self):
+                    options = [
+                        SelectOption(label=nom, value=nom)
+                        for nom in duellistes.keys()
+                    ]
+                    super().__init__(
+                        placeholder=f"🎭 Duellistes de {saison}",
+                        options=options,
+                        min_values=1,
+                        max_values=1
+                    )
+
+                async def callback(self2, interaction2: discord.Interaction):
+                    nom = self2.values[0]
+                    description = duellistes[nom]
+                    embed = Embed(
+                        title=f"🃏 Deck de {nom}",
+                        description=description,
+                        color=discord.Color.blue()
+                    )
+                    embed.set_footer(text=f"Saison sélectionnée : {saison}")
+                    await interaction2.response.send_message(embed=embed, ephemeral=True)
+
+            await interaction.response.send_message(
+                content=f"🎴 Sélectionne un duelliste pour la saison **{saison}** :",
+                view=View(DuellisteSelect()),
+                ephemeral=True
+            )
+
+    await ctx.send(
+        "📚 Sélectionne une saison Yu-Gi-Oh pour voir les decks disponibles :",
+        view=View(SaisonSelect())
+    )
+deck.category = "VAACT"
+
+
 
 # ▶️ Lancer le bot
 if __name__ == "__main__":
