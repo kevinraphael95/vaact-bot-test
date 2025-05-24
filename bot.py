@@ -9,15 +9,25 @@ from discord.ext.commands import DefaultHelpCommand
 from discord.ui import View, Select
 from discord import SelectOption, Embed
 from dotenv import load_dotenv
+from supabase import create_client, Client
+from datetime import datetime
+import pytz
 
 # Charger les variables d’environnement
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 PREFIX = os.getenv("COMMAND_PREFIX", "!")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Charger les citations Yu-Gi-Oh!
 with open("quotes.json", encoding="utf-8") as f:
     YUGIOH_QUOTES = json.load(f)
+
+# Charger les données JSON pour les decks
+with open("deck_data.json", encoding="utf-8") as f:
+    DECK_DATA = json.load(f)
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -38,10 +48,6 @@ bot = commands.Bot(
     )
 )
 
-# Charger les données JSON pour les decks
-with open("deck_data.json", encoding="utf-8") as f:
-    DECK_DATA = json.load(f)
-
 # 🔔 Quand le bot est prêt
 @bot.event
 async def on_ready():
@@ -54,7 +60,7 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    if bot.user in message.mentions and len(message.mentions) == 1 and message.content.strip().startswith(f"<@"):
+    if bot.user in message.mentions and len(message.mentions) == 1 and message.content.strip().startswith(f"<@"):        
         embed = discord.Embed(
             title="Yu-Gi-Oh Bot",
             description="👁️ Tu as activé ma carte piège !\n"
@@ -77,7 +83,7 @@ async def on_message(message):
 @bot.command(name="ping")
 async def ping(ctx):
     """Affiche la latence du bot."""
-    latency = round(bot.latency * 1000)  # En millisecondes
+    latency = round(bot.latency * 1000)
     embed = discord.Embed(
         title="🏓 Pong !",
         description=f"Latence du bot : **{latency}ms**",
@@ -106,13 +112,12 @@ async def quote(ctx):
 quote.category = "Fun"
 
 # ─────────────────────────────────────────────
-# 🃏 Commandes VAACT
+# VAACT : Decks
 # ─────────────────────────────────────────────
 
 @bot.command(name="deck")
 async def deck(ctx):
     """Choisis une saison puis un duelliste pour voir son deck."""
-
     class SaisonSelect(Select):
         def __init__(self):
             options = [SelectOption(label=saison, value=saison) for saison in DECK_DATA.keys()]
@@ -161,6 +166,44 @@ async def deck(ctx):
     await ctx.send("📚 Sélectionne une saison du tournoi Yu-Gi-Oh VAACT :", view=view)
 
 deck.category = "VAACT"
+
+# ─────────────────────────────────────────────
+# 🏆 Commande tournoi
+# ─────────────────────────────────────────────
+
+@bot.command(name="tournoi")
+async def tournoi(ctx):
+    """Affiche les infos du prochain tournoi."""
+    try:
+        data = supabase.table("tournoi").select("*").limit(1).execute()
+        if not data.data:
+            await ctx.send("❌ Aucun tournoi n’est actuellement planifié.")
+            return
+
+        tournoi = data.data[0]
+        date_obj = datetime.fromisoformat(tournoi["date"]).astimezone(pytz.timezone("Europe/Paris"))
+        decks_pris = tournoi.get("decks_pris", [])
+        decks_disponibles = tournoi.get("decks_disponibles", [])
+        max_places = tournoi.get("max_places", 0)
+        places_restantes = max_places - len(decks_pris)
+
+        embed = discord.Embed(
+            title="📅 Prochain Tournoi Yu-Gi-Oh!",
+            color=discord.Color.red()
+        )
+        embed.add_field(name="🗓️ Date", value=date_obj.strftime("%d %B %Y à %Hh%M"), inline=False)
+        embed.add_field(name="🎟️ Places restantes", value=f"{places_restantes} / {max_places}", inline=False)
+        embed.add_field(name="🃏 Decks pris", value=", ".join(decks_pris) if decks_pris else "Aucun", inline=False)
+        embed.add_field(name="📦 Decks restants", value=", ".join(decks_disponibles) if decks_disponibles else "Aucun", inline=False)
+        embed.set_footer(text="Inscris-toi vite avant que les decks ne disparaissent !")
+
+        await ctx.send(embed=embed)
+
+    except Exception as e:
+        print(f"Erreur tournoi: {e}")
+        await ctx.send("❌ Une erreur est survenue en accédant aux infos du tournoi.")
+
+tournoi.category = "VAACT"
 
 # ▶️ Lancer le bot
 if __name__ == "__main__":
