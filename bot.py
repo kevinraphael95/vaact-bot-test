@@ -1,5 +1,3 @@
-# bot.py
-
 from keep_alive import keep_alive
 
 import os
@@ -16,17 +14,21 @@ PREFIX = os.getenv("COMMAND_PREFIX", "!")
 intents = discord.Intents.default()
 intents.message_content = True
 
-# 💬 Help personnalisé avec catégories
+# 💬 Help personnalisé avec fix du bug (self.context.prefix au lieu de clean_prefix)
 class YuGiOhHelpCommand(DefaultHelpCommand):
     def get_ending_note(self):
-        return f"Utilise `{self.clean_prefix}help <commande>` pour plus de détails sur une commande."
+        return f"Utilise `{self.context.prefix}help <commande>` pour plus de détails sur une commande."
 
-bot = commands.Bot(command_prefix=PREFIX, intents=intents, help_command=YuGiOhHelpCommand(
-    command_attrs={
-        "name": "help",
-        "help": "Affiche les commandes disponibles, classées par catégories.",
-    }
-))
+bot = commands.Bot(
+    command_prefix=PREFIX,
+    intents=intents,
+    help_command=YuGiOhHelpCommand(
+        command_attrs={
+            "name": "help",
+            "help": "Affiche les commandes disponibles, classées par catégories.",
+        }
+    )
+)
 
 # 🔔 Quand le bot est prêt
 @bot.event
