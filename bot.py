@@ -109,11 +109,14 @@ async def deck(ctx):
 
             await interaction.response.send_message(
                 content=f"🎴 Sélectionne un duelliste pour la saison **{saison}** :",
-                view=View(DuellisteSelect()),
+                duel_view = View() duel_view.add_item(DuellisteSelect()) await interaction.response.send_message(     content=f"🎴 Sélectionne un duelliste pour la saison **{saison}** :",     view=duel_view,     ephemeral=True ),
                 ephemeral=True
             )
 
-    await ctx.send("📚 Sélectionne une saison Yu-Gi-Oh :", view=View(SaisonSelect()))
+    view = View()
+view.add_item(SaisonSelect())
+await ctx.send("📚 Sélectionne une saison Yu-Gi-Oh :", view=view)
+
 
 deck.category = "VAACT"
 
