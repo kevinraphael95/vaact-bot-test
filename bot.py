@@ -2,6 +2,7 @@ from keep_alive import keep_alive
 
 import os
 import json
+import random
 import discord
 from discord.ext import commands
 from discord.ext.commands import DefaultHelpCommand
@@ -13,6 +14,10 @@ from dotenv import load_dotenv
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 PREFIX = os.getenv("COMMAND_PREFIX", "!")
+
+# Charger les citations Yu-Gi-Oh!
+with open("quotes.json", encoding="utf-8") as f:
+    YUGIOH_QUOTES = json.load(f)
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -85,6 +90,31 @@ async def ping(ctx):
     await ctx.send(embed=embed)
 
 ping.category = "Général"
+
+
+
+# ─────────────────────────────────────────────
+# Fun
+# ─────────────────────────────────────────────
+
+
+# quote
+# ─────────────────────────────────────────────
+
+@bot.command(name="quote")
+async def quote(ctx):
+    """Affiche une citation aléatoire de Yu-Gi-Oh!."""
+    citation = random.choice(YUGIOH_QUOTES)
+    embed = discord.Embed(
+        title="🎙️ Citation Yu-Gi-Oh!",
+        description=f"\"{citation}\"",
+        color=discord.Color.gold()
+    )
+    embed.set_footer(text="Crois au cœur des cartes !")
+    await ctx.send(embed=embed)
+
+quote.category = "Fun"
+
 
 
 # ─────────────────────────────────────────────
