@@ -1,9 +1,12 @@
 from keep_alive import keep_alive
 
 import os
+import json
 import discord
 from discord.ext import commands
 from discord.ext.commands import DefaultHelpCommand
+from discord.ui import View, Select
+from discord import SelectOption, Embed
 from dotenv import load_dotenv
 
 # Charger les variables d’environnement
@@ -14,7 +17,7 @@ PREFIX = os.getenv("COMMAND_PREFIX", "!")
 intents = discord.Intents.default()
 intents.message_content = True
 
-# 💬 Help personnalisé avec fix du bug (self.context.prefix au lieu de clean_prefix)
+# 💬 Help personnalisé
 class YuGiOhHelpCommand(DefaultHelpCommand):
     def get_ending_note(self):
         return f"Utilise `{self.context.prefix}help <commande>` pour plus de détails sur une commande."
@@ -29,6 +32,10 @@ bot = commands.Bot(
         }
     )
 )
+
+# Charger les données JSON pour les decks
+with open("deck_data.json", encoding="utf-8") as f:
+    DECK_DATA = json.load(f)
 
 # 🔔 Quand le bot est prêt
 @bot.event
@@ -58,38 +65,16 @@ async def on_message(message):
     await bot.process_commands(message)
 
 # ─────────────────────────────────────────────
-# Commandes simples
-# ─────────────────────────────────────────────
-
-
-#ping
-# ─────────────────────────────────────────────
-
-@bot.command(name="ping")
-async def ping(ctx):
-    """Test de latence."""
-    await ctx.send("🏓 Pong !")
-ping.category = "Général"
-
-
-
-# ─────────────────────────────────────────────
-# commandes VAACT
-# ─────────────────────────────────────────────
-
-# deck
+# 🃏 Commande !deck (VAACT)
 # ─────────────────────────────────────────────
 
 @bot.command(name="deck")
 async def deck(ctx):
     """Choisis une saison puis un duelliste pour voir son deck."""
-    
+
     class SaisonSelect(Select):
         def __init__(self):
-            options = [
-                SelectOption(label=saison, value=saison)
-                for saison in DECK_DATA.keys()
-            ]
+            options = [SelectOption(label=saison, value=saison) for saison in DECK_DATA.keys()]
             super().__init__(
                 placeholder="📅 Choisis une saison",
                 options=options,
@@ -103,10 +88,7 @@ async def deck(ctx):
 
             class DuellisteSelect(Select):
                 def __init__(self):
-                    options = [
-                        SelectOption(label=nom, value=nom)
-                        for nom in duellistes.keys()
-                    ]
+                    options = [SelectOption(label=nom, value=nom) for nom in duellistes.keys()]
                     super().__init__(
                         placeholder=f"🎭 Duellistes de {saison}",
                         options=options,
@@ -131,13 +113,9 @@ async def deck(ctx):
                 ephemeral=True
             )
 
-    await ctx.send(
-        "📚 Sélectionne une saison Yu-Gi-Oh pour voir les decks disponibles :",
-        view=View(SaisonSelect())
-    )
+    await ctx.send("📚 Sélectionne une saison Yu-Gi-Oh :", view=View(SaisonSelect()))
+
 deck.category = "VAACT"
-
-
 
 # ▶️ Lancer le bot
 if __name__ == "__main__":
