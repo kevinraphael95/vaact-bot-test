@@ -107,18 +107,22 @@ async def deck(ctx):
                     embed.set_footer(text=f"Saison sélectionnée : {saison}")
                     await interaction2.response.send_message(embed=embed, ephemeral=True)
 
+            duel_view = View()
+            duel_view.add_item(DuellisteSelect())
             await interaction.response.send_message(
                 content=f"🎴 Sélectionne un duelliste pour la saison **{saison}** :",
-                duel_view = View() duel_view.add_item(DuellisteSelect()) await interaction.response.send_message(     content=f"🎴 Sélectionne un duelliste pour la saison **{saison}** :",     view=duel_view,     ephemeral=True ),
+                view=duel_view,
                 ephemeral=True
             )
 
     view = View()
-view.add_item(SaisonSelect())
-await ctx.send("📚 Sélectionne une saison Yu-Gi-Oh :", view=view)
-
+    view.add_item(SaisonSelect())
+    await ctx.send("📚 Sélectionne une saison Yu-Gi-Oh :", view=view)
 
 deck.category = "VAACT"
+
+
+# ─────────────────────────────────────────────
 
 # ▶️ Lancer le bot
 if __name__ == "__main__":
