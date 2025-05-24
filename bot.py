@@ -143,7 +143,7 @@ async def deck(ctx):
 
     view = View()
     view.add_item(SaisonSelect())
-    await ctx.send("📚 Sélectionne une saison Yu-Gi-Oh :", view=view)
+    await ctx.send("📚 Sélectionne une saison du tournoi Yu-Gi-Oh VAACT :", view=view)
 
 deck.category = "VAACT"
 
