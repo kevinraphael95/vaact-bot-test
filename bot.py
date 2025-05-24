@@ -1,3 +1,6 @@
+from keep_alive import keep_alive
+
+
 # bot.py
 
 import os
@@ -30,4 +33,5 @@ async def carte(ctx, *, nom: str):
     await ctx.send(f"🔍 Recherche de la carte **{nom}**... (fonction à venir)")
 
 if __name__ == "__main__":
+    keep_alive()
     bot.run(TOKEN)
