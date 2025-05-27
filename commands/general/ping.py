@@ -1,43 +1,20 @@
-import os
 import discord
 from discord.ext import commands
-from dotenv import load_dotenv
-from keep_alive import keep_alive
 
-load_dotenv()
-TOKEN = os.getenv("DISCORD_TOKEN")
-COMMAND_PREFIX = os.getenv("COMMAND_PREFIX", "!")
+class Ping(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
 
-intents = discord.Intents.default()
-intents.message_content = True
-intents.guilds = True
-
-bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents, description=f"Je suis un bot Yu-Gi-Oh! Tapez {COMMAND_PREFIX}help pour voir les commandes.")
-
-@bot.event
-async def on_ready():
-    print(f"✅ Connecté en tant que {bot.user} ({bot.user.id})")
-
-@bot.event
-async def on_message(message):
-    if bot.user.mentioned_in(message) and not message.mention_everyone:
+    @commands.command()
+    async def ping(self, ctx):
+        """Retourne la latence du bot."""
+        latency = round(self.bot.latency * 1000)
         embed = discord.Embed(
-            title="👋 Salut !",
-            description=f"Je suis un bot Yu-Gi-Oh! Tapez `{COMMAND_PREFIX}help` pour voir les commandes disponibles.",
-            color=discord.Color.gold()
+            title="🏓 Pong !",
+            description=f"Latence : **{latency}ms**",
+            color=discord.Color.green() if latency < 150 else discord.Color.red()
         )
-        await message.channel.send(embed=embed)
-    await bot.process_commands(message)
+        await ctx.send(embed=embed)
 
-async def load_extensions():
-    await bot.load_extension("commands.general.ping")
-
-if __name__ == "__main__":
-    keep_alive()
-
-    import asyncio
-    async def main():
-        await load_extensions()
-        await bot.start(TOKEN)
-
-    asyncio.run(main())
+async def setup(bot):
+    await bot.add_cog(Ping(bot))
