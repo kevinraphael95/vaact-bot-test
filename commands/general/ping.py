@@ -7,7 +7,6 @@ class Ping(commands.Cog):
 
     @commands.command(name="ping")
     async def ping(self, ctx):
-        """Affiche la latence du bot."""
         latency = round(self.bot.latency * 1000)
         embed = discord.Embed(
             title="🏓 Pong !",
@@ -16,6 +15,5 @@ class Ping(commands.Cog):
         )
         await ctx.send(embed=embed)
 
-# ✅ async + await obligatoire avec discord.py v2+
 async def setup(bot):
     await bot.add_cog(Ping(bot))
