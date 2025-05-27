@@ -13,7 +13,7 @@ class Banlist(commands.Cog):
         Utilisation : !banlist ban / limité / semi-limité ou b / l / sl
         """
 
-        # Mapping des options françaises vers les statuts TCG de l’API
+        # Mapping des options françaises vers les statuts de l’API
         mapping = {
             "ban": "forbidden",
             "b": "forbidden",
@@ -23,7 +23,6 @@ class Banlist(commands.Cog):
             "sl": "semi-limited"
         }
 
-        # Normalisation
         statut = statut.lower()
         if statut not in mapping:
             await ctx.send("❌ Statut invalide. Utilisez `ban`, `limité`, `semi-limité`, ou leurs raccourcis (`b`, `l`, `sl`).")
@@ -31,9 +30,7 @@ class Banlist(commands.Cog):
 
         api_status = mapping[statut]
 
-        await ctx.send(f"🔄 Récupération des cartes **{statut}**...")
-
-        url = "https://db.ygoprodeck.com/api/v7/cardinfo.php"
+        url = "https://dawnbrandbots.github.io/yaml-yugi-limit-regulation/tcg/current.vector.json"
 
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
@@ -43,10 +40,7 @@ class Banlist(commands.Cog):
                 data = await resp.json()
 
         # Filtrage des cartes selon le statut demandé
-        cartes = [
-            carte["name"] for carte in data["data"]
-            if "banlist_info" in carte and carte["banlist_info"].get("ban_tcg", "") == api_status
-        ]
+        cartes = [entry["name"] for entry in data if entry["status"] == api_status]
 
         if not cartes:
             await ctx.send("❌ Aucune carte trouvée avec ce statut.")
@@ -65,6 +59,5 @@ class Banlist(commands.Cog):
             )
             await ctx.send(embed=embed)
 
-# Ajout à ton bot
 async def setup(bot):
     await bot.add_cog(Banlist(bot))
