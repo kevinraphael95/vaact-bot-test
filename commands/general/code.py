@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 
 # Cette commande affiche le lien vers le dépôt GitHub du bot
-class CodeCommand(commands.Cog):
+class Code(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -17,4 +17,4 @@ class CodeCommand(commands.Cog):
 
 # Chargement automatique par le bot
 async def setup(bot):
-    await bot.add_cog(CodeCommand(bot))
+    await bot.add_cog(Code(bot))
