@@ -9,18 +9,18 @@ class Banlist(commands.Cog):
     @commands.command(name="banlist", aliases=["bl"])
     async def banlist(self, ctx, statut: str = "ban"):
         """
-        Affiche les cartes bannies, limitées ou semi-limitées en TCG.
+        Affiche les cartes bannies, limitées ou semi-limitées selon le statut.
         Utilisation : !banlist ban / limité / semi-limité ou b / l / sl
         """
 
-        # ✅ Mapping des statuts possibles
+        # Mapping user input ➜ API value
         mapping = {
-            "ban": "forbidden",
-            "b": "forbidden",
-            "limité": "limited",
-            "l": "limited",
-            "semi-limité": "semi-limited",
-            "sl": "semi-limited"
+            "ban": "Banned",
+            "b": "Banned",
+            "limité": "Limited",
+            "l": "Limited",
+            "semi-limité": "Semi-Limited",
+            "sl": "Semi-Limited"
         }
 
         statut = statut.lower()
@@ -29,33 +29,33 @@ class Banlist(commands.Cog):
             return
 
         api_status = mapping[statut]
-        url = "https://dawnbrandbots.github.io/yaml-yugi-limit-regulation/tcg/current.vector.json"
+        url = "https://db.ygoprodeck.com/api/v7/banlist"
 
         await ctx.send(f"🔄 Récupération des cartes **{statut}**...")
 
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
                 if resp.status != 200:
-                    await ctx.send("❌ Impossible de récupérer les données depuis la banlist.")
+                    await ctx.send("❌ Impossible de récupérer les données depuis la banlist officielle.")
                     return
                 data = await resp.json()
 
-        # ✅ Filtrage selon le champ correct : 'regulation'
-        cartes = [entry["name"] for entry in data if entry.get("regulation") == api_status]
+        # Filtrage des cartes selon leur statut
+        cartes = [card["card_name"] for card in data["data"] if card["ban_tcg"] == api_status]
 
         if not cartes:
             await ctx.send("❌ Aucune carte trouvée avec ce statut.")
             return
 
-        # 📋 Envoi des cartes par blocs (max 30 par embed)
+        # Envoi en blocs (30 cartes max par embed)
         chunk_size = 30
         for i in range(0, len(cartes), chunk_size):
             chunk = cartes[i:i+chunk_size]
             embed = discord.Embed(
-                title=f"📋 Cartes {statut.capitalize()} (TCG)",
+                title=f"📋 Cartes {api_status} (TCG)",
                 description="\n".join(chunk),
-                color=discord.Color.red() if api_status == "forbidden" else (
-                    discord.Color.orange() if api_status == "limited" else discord.Color.gold()
+                color=discord.Color.red() if api_status == "Banned" else (
+                    discord.Color.orange() if api_status == "Limited" else discord.Color.gold()
                 )
             )
             await ctx.send(embed=embed)
