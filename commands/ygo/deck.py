@@ -5,22 +5,15 @@ from discord.ui import View, Select
 from discord import SelectOption, Embed
 from pathlib import Path
 
-# ──────────────────────────────────────────────────────────────
-# 📚 Charger les données de decks depuis le fichier JSON
-# ──────────────────────────────────────────────────────────────
 with open(Path("data/deck_data.json"), encoding="utf-8") as f:
     DECK_DATA = json.load(f)
 
-# ──────────────────────────────────────────────────────────────
-# 🧠 Extension du bot : commande !deck
-# ──────────────────────────────────────────────────────────────
 class Deck(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command(name="deck", help="Choisis une saison puis un duelliste pour voir son deck.")
     async def deck(self, ctx):
-        # ⬇️ Menu déroulant pour choisir la saison
         class SaisonSelect(Select):
             def __init__(self):
                 options = [SelectOption(label=saison, value=saison) for saison in DECK_DATA]
@@ -30,7 +23,6 @@ class Deck(commands.Cog):
                 saison = self.values[0]
                 duellistes = DECK_DATA[saison]
 
-                # ⬇️ Menu déroulant pour choisir le duelliste
                 class DuellisteSelect(Select):
                     def __init__(self):
                         options = [SelectOption(label=nom, value=nom) for nom in duellistes]
@@ -55,13 +47,9 @@ class Deck(commands.Cog):
                     ephemeral=True
                 )
 
-        # Afficher le premier menu (choix saison)
         view = View()
         view.add_item(SaisonSelect())
         await ctx.send("📚 Sélectionne une saison du tournoi Yu-Gi-Oh VAACT :", view=view)
 
-# ──────────────────────────────────────────────────────────────
-# ⚙️ Fonction de setup appelée par bot.load_extension()
-# ──────────────────────────────────────────────────────────────
-async def setup(bot):  # ✅ async ici
-    await bot.add_cog(Deck(bot))  # ✅ await ici
+async def setup(bot):
+    await bot.add_cog(Deck(bot))
