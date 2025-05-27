@@ -13,15 +13,13 @@ class Banlist(commands.Cog):
         Affiche les cartes bannies, limitées ou semi-limitées en TCG.
         Utilisation : !banlist ban / limité / semi-limité ou b / l / sl
         """
-
-        # Mapping des statuts possibles
         mapping = {
-            "ban": "Interdites",
-            "b": "Interdites",
-            "limité": "Limitées",
-            "l": "Limitées",
-            "semi-limité": "Semi-Limitées",
-            "sl": "Semi-Limitées"
+            "ban": "Interdite",
+            "b": "Interdite",
+            "limité": "Limitée",
+            "l": "Limitée",
+            "semi-limité": "Semi-Limitée",
+            "sl": "Semi-Limitée"
         }
 
         statut = statut.lower()
@@ -32,7 +30,7 @@ class Banlist(commands.Cog):
         statut_fr = mapping[statut]
         url = "https://www.db.yugioh-card.com/yugiohdb/forbidden_limited.action"
 
-        await ctx.send(f"🔄 Récupération des cartes **{statut_fr}** depuis le site officiel...")
+        await ctx.send(f"🔄 Récupération des cartes **{statut_fr}s** depuis le site officiel...")
 
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
@@ -42,34 +40,36 @@ class Banlist(commands.Cog):
                 html = await resp.text()
 
         soup = BeautifulSoup(html, 'html.parser')
-
-        # Extraction des cartes selon le statut
-        sections = soup.find_all("section", class_="forbidden")
         cartes = []
 
-        for section in sections:
-            header = section.find("h3")
-            if header and statut_fr.lower() in header.text.lower():
-                card_elements = section.find_all("span", class_="card_name")
-                cartes = [card.text.strip() for card in card_elements]
-                break
+        # Parcours des listes d'interdiction
+        for item in soup.select("div.fl-card-list > div.t_row"):
+            label = item.select_one("div.label_box")
+            name = item.select_one("dt.card_name")
+
+            if label and name and statut_fr in label.text:
+                cartes.append(name.text.strip())
 
         if not cartes:
             await ctx.send(f"❌ Aucune carte trouvée avec le statut **{statut_fr}**.")
             return
 
-        # Envoi des cartes par blocs (max 30 par embed)
         chunk_size = 30
         for i in range(0, len(cartes), chunk_size):
             chunk = cartes[i:i+chunk_size]
             embed = discord.Embed(
-                title=f"📋 Cartes {statut_fr} (TCG)",
+                title=f"📋 Cartes {statut_fr}s (TCG)",
                 description="\n".join(chunk),
-                color=discord.Color.red() if statut_fr == "Interdites" else (
-                    discord.Color.orange() if statut_fr == "Limitées" else discord.Color.gold()
+                color=discord.Color.red() if statut_fr == "Interdite" else (
+                    discord.Color.orange() if statut_fr == "Limitée" else discord.Color.gold()
                 )
             )
             await ctx.send(embed=embed)
+
+    # Commande de test pour vérifier que le cog est bien chargé
+    @commands.command(name="pingban")
+    async def pingban(self, ctx):
+        await ctx.send("✅ Banlist cog chargé correctement.")
 
 async def setup(bot):
     await bot.add_cog(Banlist(bot))
