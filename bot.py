@@ -78,7 +78,7 @@ async def load_commands():
                         print(f"❌ Failed to load {path}: {e}")
 
 # ──────────────────────────────────────────────────────────────
-# 🔔 On Ready : présence + verrouillage de l’instance
+# 🔔 On Ready : présence + verrouillage forcé de l’instance
 # ──────────────────────────────────────────────────────────────
 @bot.event
 async def on_ready():
@@ -86,31 +86,20 @@ async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="YuGiOh!!!!"))
 
     try:
-        # Récupérer le verrou existant
-        res = supabase.table("bot_lock").select("*").eq("id", "bot_lock").execute()
+        # Forcer le verrou avec la nouvelle instance à chaque redémarrage
+        now = datetime.now(timezone.utc).isoformat()
+        supabase.table("bot_lock").upsert({
+            "id": "bot_lock",
+            "instance_id": INSTANCE_ID,
+            "updated_at": now
+        }).execute()
 
-        if res.data and isinstance(res.data, list) and len(res.data) > 0:
-            current_instance = res.data[0].get("instance_id")
-            if current_instance != INSTANCE_ID:
-                print(f"🚫 Le verrou est déjà pris par : {current_instance}")
-                print("❌ Ce bot ne sera **pas** l’instance principale.")
-                bot.is_main_instance = False
-                return
-        else:
-            # Aucun verrou existant, on le crée
-            now = datetime.now(timezone.utc).isoformat()
-            supabase.table("bot_lock").upsert({
-                "id": "bot_lock",
-                "instance_id": INSTANCE_ID,
-                "updated_at": now
-            }).execute()
-            print(f"🔐 Verrou créé pour cette instance : {INSTANCE_ID}")
-            bot.is_main_instance = True
+        print(f"🔐 Verrou mis à jour pour cette instance : {INSTANCE_ID}")
+        bot.is_main_instance = True
 
     except Exception as e:
-        print(f"❌ Erreur lors de la prise de verrou : {e}")
+        print(f"❌ Erreur lors de la mise à jour du verrou : {e}")
         bot.is_main_instance = False
-
 
 # ──────────────────────────────────────────────────────────────
 # 📩 Message reçu : réagir aux mots-clés et lancer les commandes
