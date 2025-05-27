@@ -131,7 +131,7 @@ async def on_message(message):
     if bot.user in message.mentions and len(message.mentions) == 1:
         prefix = get_prefix(bot, message)
         await message.channel.send(
-            f"Yo, je suis le bot YuGiOh 👋\nUtilise `{prefix}commandes` pour voir ce que je peux faire."
+            f"Yo, je suis le bot YuGiOh 👋\nUtilise `{prefix}help` pour voir ce que je peux faire."
         )
         return
 
