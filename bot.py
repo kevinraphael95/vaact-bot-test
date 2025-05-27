@@ -129,7 +129,7 @@ async def on_message(message):
             description=f"Utilise `{prefix}help` pour voir ce que je peux faire.",
             color=discord.Color.red()
         )
-        embed.set_footer(text="Amuse-toi bien avec les cartes 🎴")
+        embed.set_footer(text="Tu dois croire en l'âme des cartes 🎴")
 
         if bot.user.avatar:
             embed.set_thumbnail(url=bot.user.avatar.url)
