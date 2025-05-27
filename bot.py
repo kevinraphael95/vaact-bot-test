@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 import os
-import importlib.util
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -16,21 +15,21 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 async def on_ready():
     print(f"✅ Connecté en tant que {bot.user.name}")
 
-# Fonction pour charger tous les fichiers .py dans un dossier de commandes
-def load_commands_from_folder(folder: Path):
+# Charger les commandes depuis les sous-dossiers
+def load_commands_from_folder(folder: Path, base_module: str):
     for file in folder.glob("*.py"):
         if file.name == "__init__.py":
             continue
-        module_path = f"commands.{folder.name}.{file.stem}"
+        module_path = f"{base_module}.{file.stem}"
         try:
             bot.load_extension(module_path)
             print(f"✅ Commande chargée : {module_path}")
         except Exception as e:
             print(f"❌ Erreur lors du chargement de {module_path} : {e}")
 
-# Charger les commandes des sous-dossiers 'ygo' et 'general'
-for subfolder in ["general", "ygo"]:
-    load_commands_from_folder(Path("commands") / subfolder)
+# Chargement des commandes
+load_commands_from_folder(Path("commands/ygo"), "commands.ygo")
+load_commands_from_folder(Path("commands/general"), "commands.general")
 
 # Lancer le bot
 if __name__ == "__main__":
