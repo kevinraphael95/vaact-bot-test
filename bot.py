@@ -24,8 +24,8 @@ async def on_message(message):
     if bot.user in message.mentions:
         embed = discord.Embed(
             title="👋 Salut !",
-            description="Je suis un bot Yu-Gi-Oh!
-Tapez `!help` pour voir les commandes disponibles.",
+            description="""Je suis un bot Yu-Gi-Oh!
+Tapez `!help` pour voir les commandes disponibles.""",
             color=discord.Color.gold()
         )
         await message.channel.send(embed=embed)
