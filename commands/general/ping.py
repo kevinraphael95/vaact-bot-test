@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-class PingCommand(commands.Cog):
+class Ping(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -21,4 +21,4 @@ class PingCommand(commands.Cog):
 
 # Chargement automatique du module
 async def setup(bot):
-    await bot.add_cog(PingCommand(bot))
+    await bot.add_cog(Ping(bot))
