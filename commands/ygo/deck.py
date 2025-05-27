@@ -63,5 +63,5 @@ class Deck(commands.Cog):
 # ──────────────────────────────────────────────────────────────
 # ⚙️ Fonction de setup appelée par bot.load_extension()
 # ──────────────────────────────────────────────────────────────
-def setup(bot):
-    bot.add_cog(Deck(bot))
+async def setup(bot):  # ✅ async ici
+    await bot.add_cog(Deck(bot))  # ✅ await ici
