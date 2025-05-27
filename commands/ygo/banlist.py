@@ -9,30 +9,31 @@ class Banlist(commands.Cog, name="Banlist"):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="banlist", aliases=["bl"], help="Affiche la banlist TCG. Ex: !banlist ban / limité / semi-limité")
+    @commands.command(
+        name="banlist",
+        aliases=["bl"],
+        help="Affiche la banlist TCG",
+        description="Utilisation : !banlist ban / limité / semi-limité ou b / l / sl"
+    )
     async def banlist(self, ctx, statut: str = "ban"):
-        """
-        Affiche les cartes bannies, limitées ou semi-limitées en TCG.
-        Utilisation : !banlist ban / limité / semi-limité ou b / l / sl
-        """
-        mapping = {
-            "ban": "Interdite",
-            "b": "Interdite",
-            "limité": "Limitée",
-            "l": "Limitée",
-            "semi-limité": "Semi-Limitée",
-            "sl": "Semi-Limitée"
+        statut_map = {
+            "ban": ("Interdite", "Interdites", discord.Color.red()),
+            "b": ("Interdite", "Interdites", discord.Color.red()),
+            "limité": ("Limitée", "Limitées", discord.Color.orange()),
+            "l": ("Limitée", "Limitées", discord.Color.orange()),
+            "semi-limité": ("Semi-Limitée", "Semi-Limitées", discord.Color.gold()),
+            "sl": ("Semi-Limitée", "Semi-Limitées", discord.Color.gold()),
         }
 
         statut = statut.lower()
-        if statut not in mapping:
-            await ctx.send("❌ Statut invalide. Utilisez `ban`, `limité`, `semi-limité`, ou leurs raccourcis (`b`, `l`, `sl`).")
+        if statut not in statut_map:
+            await ctx.send("❌ Statut invalide. Utilisez `ban`, `limité`, `semi-limité` ou `b`, `l`, `sl`.")
             return
 
-        statut_fr = mapping[statut]
-        url = "https://www.db.yugioh-card.com/yugiohdb/forbidden_limited.action"
+        statut_singulier, statut_pluriel, couleur = statut_map[statut]
 
-        await ctx.send(f"🔄 Récupération des cartes **{statut_fr}s** depuis le site officiel...")
+        url = "https://www.db.yugioh-card.com/yugiohdb/forbidden_limited.action"
+        await ctx.send(f"🔄 Récupération des cartes **{statut_pluriel}** depuis le site officiel...")
 
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
@@ -41,29 +42,28 @@ class Banlist(commands.Cog, name="Banlist"):
                     return
                 html = await resp.text()
 
-        soup = BeautifulSoup(html, 'html.parser')
-        cartes = []
+        soup = BeautifulSoup(html, "html.parser")
+        cartes = set()  # éviter les doublons
 
-        for item in soup.select("div.fl-card-list > div.t_row"):
-            label = item.select_one("div.label_box")
-            name = item.select_one("dt.card_name")
-
-            if label and name and statut_fr in label.text:
-                cartes.append(name.text.strip())
+        for row in soup.select("div.fl-card-list > div.t_row"):
+            label = row.select_one("div.label_box")
+            name = row.select_one("dt.card_name")
+            if label and name and statut_singulier in label.text:
+                cartes.add(name.text.strip())
 
         if not cartes:
-            await ctx.send(f"❌ Aucune carte trouvée avec le statut **{statut_fr}**.")
+            await ctx.send(f"❌ Aucune carte trouvée avec le statut **{statut_pluriel}**.")
             return
 
+        # Envoi par morceaux
         chunk_size = 30
+        cartes = sorted(cartes)
         for i in range(0, len(cartes), chunk_size):
             chunk = cartes[i:i+chunk_size]
             embed = discord.Embed(
-                title=f"📋 Cartes {statut_fr}s (TCG)",
+                title=f"📋 Cartes {statut_pluriel} (TCG)",
                 description="\n".join(chunk),
-                color=discord.Color.red() if statut_fr == "Interdite" else (
-                    discord.Color.orange() if statut_fr == "Limitée" else discord.Color.gold()
-                )
+                color=couleur
             )
             await ctx.send(embed=embed)
 
