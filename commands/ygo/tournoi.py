@@ -6,9 +6,11 @@ import io
 from supabase import create_client, Client
 import os
 
-# Connexion à Supabase (⚠️ remplace par tes clés ou utilise des variables d’environnement)
+# Connexion à Supabase avec variables d’environnement Render
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
+
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 class Tournoi(commands.Cog):
@@ -18,12 +20,15 @@ class Tournoi(commands.Cog):
     @commands.command(name="tournoi")
     async def tournoi(self, ctx):
         try:
-            # 🔗 Télécharge le CSV depuis Google Sheets
-            sheet_csv_url = "https://docs.google.com/spreadsheets/d/1ifAWeG16Q-wULckgOVOBpsjgYJ25k-9gtQYtivYBCtI/export?format=csv&gid=0"
+            # 🔗 Récupération du CSV via URL définie dans les variables d’environnement
+            if not SHEET_CSV_URL:
+                await ctx.send("🚨 L'URL du fichier CSV n'est pas configurée.")
+                return
+
             async with aiohttp.ClientSession() as session:
-                async with session.get(sheet_csv_url) as resp:
+                async with session.get(SHEET_CSV_URL) as resp:
                     if resp.status != 200:
-                        await ctx.send("❌ Impossible de récupérer le fichier Google Sheet.")
+                        await ctx.send("❌ Impossible de récupérer le fichier de données.")
                         return
                     data = await resp.read()
 
@@ -74,7 +79,7 @@ class Tournoi(commands.Cog):
                 value=texte if lignes else "Aucun deck disponible.",
                 inline=False
             )
-            embed.set_footer(text="Données récupérées depuis le Google Sheet officiel du tournoi.")
+            embed.set_footer(text="Données fournies par l'organisation du tournoi.")
 
             await ctx.send(embed=embed)
 
