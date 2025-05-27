@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import random
 import aiohttp
+import asyncio
 from supabase_client import supabase
 
 REACTIONS = ["🇦", "🇧", "🇨", "🇩"]
@@ -12,14 +13,15 @@ class Question(commands.Cog):
 
     @commands.command(name="question")
     async def question(self, ctx):
+        print("Commande !question appelée")  # Debug
+
         async with aiohttp.ClientSession() as session:
-            # Obtenir 4 cartes aléatoires
-            async with session.get("https://db.ygoprodeck.com/api/v7/randomcard.php") as r:
+            async with session.get("https://db.ygoprodeck.com/api/v7/randomcard.php?language=fr") as r:
                 true_card = await r.json()
 
             choices = [true_card["name"]]
             while len(choices) < 4:
-                async with session.get("https://db.ygoprodeck.com/api/v7/randomcard.php") as r:
+                async with session.get("https://db.ygoprodeck.com/api/v7/randomcard.php?language=fr") as r:
                     c = await r.json()
                     if c["name"] not in choices:
                         choices.append(c["name"])
@@ -27,7 +29,6 @@ class Question(commands.Cog):
             random.shuffle(choices)
             correct_index = choices.index(true_card["name"])
 
-            # Embed sans le nom de la carte
             embed = discord.Embed(title="🔎 Devine la carte !", color=discord.Color.blue())
             embed.add_field(name="Type", value=true_card.get("type", "Inconnu"), inline=True)
             embed.add_field(name="ATK", value=str(true_card.get("atk", "—")), inline=True)
@@ -60,20 +61,20 @@ class Question(commands.Cog):
 
             if selected == correct_index:
                 await self.update_streak(ctx.author.id, True)
-                streak = self.get_streak(ctx.author.id)
+                streak = await self.get_streak(ctx.author.id)
                 await ctx.send(f"✅ Bonne réponse ! Série actuelle : `{streak}` 🔥")
             else:
                 await self.update_streak(ctx.author.id, False)
                 await ctx.send(f"❌ Mauvaise réponse ! La bonne réponse était **{true_card['name']}**.")
 
-    def get_streak(self, user_id):
+    async def get_streak(self, user_id):
         result = supabase.table("ygo_streaks").select("current_streak").eq("user_id", str(user_id)).execute()
         if result.data and isinstance(result.data, list) and result.data[0].get("current_streak") is not None:
             return result.data[0]["current_streak"]
         return 0
 
-    def update_streak(self, user_id, success):
-        current = self.get_streak(user_id)
+    async def update_streak(self, user_id, success):
+        current = await self.get_streak(user_id)
         new_streak = current + 1 if success else 0
         supabase.table("ygo_streaks").upsert({
             "user_id": str(user_id),
