@@ -74,7 +74,7 @@ class DuellisteSelect(Select):
 # ────────────────────────────────
 # 📦 Cog pour enregistrer la commande
 # ────────────────────────────────
-class DeckCommand(commands.Cog):
+class Deck(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -92,4 +92,4 @@ class DeckCommand(commands.Cog):
 # Setup du Cog
 # ─────────────
 async def setup(bot):
-    await bot.add_cog(DeckCommand(bot))
+    await bot.add_cog(Deck(bot))
