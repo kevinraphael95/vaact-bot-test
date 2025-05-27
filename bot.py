@@ -120,15 +120,27 @@ async def on_message(message):
 
     contenu = message.content.lower()
 
-    # Réponse simple si le bot est mentionné seul
+    # Réponse en embed si le bot est mentionné seul
     if bot.user in message.mentions and len(message.mentions) == 1:
         prefix = get_prefix(bot, message)
-        await message.channel.send(
-            f"Yo, je suis le bot YuGiOh 👋\nUtilise `{prefix}help` pour voir ce que je peux faire."
+
+        embed = discord.Embed(
+            title="👋 Yo, je suis le bot YuGiOh !",
+            description=f"Utilise `{prefix}help` pour voir ce que je peux faire.",
+            color=discord.Color.red()
         )
+        embed.set_footer(text="Amuse-toi bien avec les cartes 🎴")
+
+        if bot.user.avatar:
+            embed.set_thumbnail(url=bot.user.avatar.url)
+        else:
+            embed.set_thumbnail(url=bot.user.default_avatar.url)
+
+        await message.channel.send(embed=embed)
         return
 
     await bot.process_commands(message)
+
 
 # ──────────────────────────────────────────────────────────────
 # ❗ Gestion des erreurs de commandes
