@@ -85,20 +85,32 @@ async def on_ready():
     print(f"✅ Connecté en tant que {bot.user.name}")
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="YuGiOh!!!!"))
 
-    now = datetime.now(timezone.utc).isoformat()
+    try:
+        # Récupérer le verrou existant
+        res = supabase.table("bot_lock").select("*").eq("id", "bot_lock").execute()
 
-    print("💣 Suppression de tout verrou précédent...")
-    supabase.table("bot_lock").delete().eq("id", "bot_lock").execute()
+        if res.data and isinstance(res.data, list) and len(res.data) > 0:
+            current_instance = res.data[0].get("instance_id")
+            if current_instance != INSTANCE_ID:
+                print(f"🚫 Le verrou est déjà pris par : {current_instance}")
+                print("❌ Ce bot ne sera **pas** l’instance principale.")
+                bot.is_main_instance = False
+                return
+        else:
+            # Aucun verrou existant, on le crée
+            now = datetime.now(timezone.utc).isoformat()
+            supabase.table("bot_lock").upsert({
+                "id": "bot_lock",
+                "instance_id": INSTANCE_ID,
+                "updated_at": now
+            }).execute()
+            print(f"🔐 Verrou créé pour cette instance : {INSTANCE_ID}")
+            bot.is_main_instance = True
 
-    print(f"🔐 Prise de verrou par cette instance : {INSTANCE_ID}")
-    supabase.table("bot_lock").insert({
-        "id": "bot_lock",
-        "instance_id": INSTANCE_ID,
-        "updated_at": now
-    }).execute()
+    except Exception as e:
+        print(f"❌ Erreur lors de la prise de verrou : {e}")
+        bot.is_main_instance = False
 
-    bot.is_main_instance = True
-    print(f"✅ Instance principale active : {INSTANCE_ID}")
 
 # ──────────────────────────────────────────────────────────────
 # 📩 Message reçu : réagir aux mots-clés et lancer les commandes
