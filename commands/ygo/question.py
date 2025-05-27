@@ -10,7 +10,7 @@ class Question(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="question")
+    @commands.command(name="question", help="Devine le nom de la carte YuGiOh à partir de sa description.")
     async def question(self, ctx):
         print("✅ Commande !question appelée")
 
@@ -105,3 +105,7 @@ class Question(commands.Cog):
                     else:
                         print("❗ Carte invalide (pas de 'name'), on réessaie...")
         return None
+
+# 👇 Cette fonction est obligatoire pour que le fichier soit reconnu comme une extension (cog)
+async def setup(bot):
+    await bot.add_cog(Question(bot))
