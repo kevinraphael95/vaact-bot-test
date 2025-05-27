@@ -61,7 +61,6 @@ intents.reactions = True
 bot = commands.Bot(command_prefix=get_prefix, intents=intents, help_command=None)
 bot.is_main_instance = False
 
-
 # ──────────────────────────────────────────────────────────────
 # 🔌 Chargement dynamique des commandes depuis /commands/*
 # ──────────────────────────────────────────────────────────────
@@ -89,11 +88,11 @@ async def on_ready():
     now = datetime.now(timezone.utc).isoformat()
 
     print("💣 Suppression de tout verrou précédent...")
-    supabase.table("bot_lock").delete().eq("id", "reiatsu_lock").execute()
+    supabase.table("bot_lock").delete().eq("id", "bot_lock").execute()
 
     print(f"🔐 Prise de verrou par cette instance : {INSTANCE_ID}")
     supabase.table("bot_lock").insert({
-        "id": "reiatsu_lock",
+        "id": "bot_lock",
         "instance_id": INSTANCE_ID,
         "updated_at": now
     }).execute()
@@ -101,16 +100,13 @@ async def on_ready():
     bot.is_main_instance = True
     print(f"✅ Instance principale active : {INSTANCE_ID}")
 
-    await bot.load_extension("commands.reiatsu.spawner")
-    print("✅ Spawner Reiatsu chargé.")
-
 # ──────────────────────────────────────────────────────────────
 # 📩 Message reçu : réagir aux mots-clés et lancer les commandes
 # ──────────────────────────────────────────────────────────────
 @bot.event
 async def on_message(message):
     try:
-        lock = supabase.table("bot_lock").select("instance_id").eq("id", "reiatsu_lock").execute()
+        lock = supabase.table("bot_lock").select("instance_id").eq("id", "bot_lock").execute()
         if lock.data and isinstance(lock.data, list):
             if lock.data and lock.data[0].get("instance_id") != INSTANCE_ID:
                 return
@@ -122,10 +118,6 @@ async def on_message(message):
         return
 
     contenu = message.content.lower()
-
-# ──────────────────────────────────────────────────────────────
-# ❗ Mention
-# ──────────────────────────────────────────────────────────────
 
     # Réponse simple si le bot est mentionné seul
     if bot.user in message.mentions and len(message.mentions) == 1:
