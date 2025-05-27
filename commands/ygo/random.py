@@ -3,7 +3,7 @@ from discord.ext import commands
 import aiohttp
 import random
 
-class RandomCard(commands.Cog):
+class Random(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -47,4 +47,4 @@ class RandomCard(commands.Cog):
         await ctx.send(embed=embed)
 
 async def setup(bot):
-    await bot.add_cog(RandomCard(bot))
+    await bot.add_cog(Random(bot))
