@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-class HelpCommand(commands.Cog):
+class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -25,4 +25,4 @@ class HelpCommand(commands.Cog):
         await ctx.send(embed=embed)
 
 async def setup(bot):
-    await bot.add_cog(HelpCommand(bot))
+    await bot.add_cog(Help(bot))
