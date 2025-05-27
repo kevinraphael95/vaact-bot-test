@@ -3,11 +3,13 @@ from discord.ext import commands
 import aiohttp
 from bs4 import BeautifulSoup
 
-class Banlist(commands.Cog):
+class Banlist(commands.Cog, name="Banlist"):
+    """Affiche les cartes bannies, limitées ou semi-limitées en TCG depuis le site officiel."""
+
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="banlist", aliases=["bl"])
+    @commands.command(name="banlist", aliases=["bl"], help="Affiche la banlist TCG. Ex: !banlist ban / limité / semi-limité")
     async def banlist(self, ctx, statut: str = "ban"):
         """
         Affiche les cartes bannies, limitées ou semi-limitées en TCG.
@@ -42,7 +44,6 @@ class Banlist(commands.Cog):
         soup = BeautifulSoup(html, 'html.parser')
         cartes = []
 
-        # Parcours des listes d'interdiction
         for item in soup.select("div.fl-card-list > div.t_row"):
             label = item.select_one("div.label_box")
             name = item.select_one("dt.card_name")
@@ -66,8 +67,7 @@ class Banlist(commands.Cog):
             )
             await ctx.send(embed=embed)
 
-    # Commande de test pour vérifier que le cog est bien chargé
-    @commands.command(name="pingban")
+    @commands.command(name="pingban", help="Commande de test pour vérifier le chargement du cog banlist.")
     async def pingban(self, ctx):
         await ctx.send("✅ Banlist cog chargé correctement.")
 
