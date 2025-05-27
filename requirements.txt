@@ -3,3 +3,5 @@ python-dotenv>=1.0.1
 flask>=2.3.3
 supabase
 pytz
+aiohttp
+pandas
