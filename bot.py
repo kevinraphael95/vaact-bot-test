@@ -1,10 +1,8 @@
 import discord
 from discord.ext import commands
-import os
 from pathlib import Path
+import os
 from dotenv import load_dotenv
-import asyncio
-
 from keep_alive import keep_alive
 
 load_dotenv()
@@ -17,26 +15,31 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f"✅ Connecté en tant que {bot.user.name}")
+    print(f"✅ Connecté en tant que {bot.user}")
 
-# Fonction pour charger les extensions
-async def load_commands():
-    for folder in ["commands.ygo", "commands.general"]:
-        path = Path("commands") / folder.split(".")[-1]
-        for file in path.glob("*.py"):
-            if file.name == "__init__.py":
-                continue
-            try:
-                await bot.load_extension(f"{folder}.{file.stem}")
-                print(f"✅ Commande chargée : {folder}.{file.stem}")
-            except Exception as e:
-                print(f"❌ Erreur lors du chargement de {folder}.{file.stem} : {e}")
+@bot.event
+async def on_message(message):
+    if bot.user.mentioned_in(message) and message.author != bot.user:
+        embed = discord.Embed(
+            title="👋 Salut !",
+            description="Je suis un bot Yu-Gi-Oh!
+Tapez `!help` pour voir les commandes disponibles.",
+            color=discord.Color.purple()
+        )
+        await message.channel.send(embed=embed)
+    await bot.process_commands(message)
+
+async def load_commands_from_folder(folder_path, module_base):
+    for file in folder_path.glob("*.py"):
+        if file.name != "__init__.py":
+            await bot.load_extension(f"{module_base}.{file.stem}")
+
+async def start():
+    await load_commands_from_folder(Path("commands/general"), "commands.general")
+    await load_commands_from_folder(Path("commands/ygo"), "commands.ygo")
+    await bot.start(TOKEN)
 
 if __name__ == "__main__":
     keep_alive()
-
-    async def start():
-        await load_commands()
-        await bot.start(TOKEN)
-
+    import asyncio
     asyncio.run(start())
