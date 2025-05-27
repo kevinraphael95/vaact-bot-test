@@ -6,14 +6,14 @@ class Banlist(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="banlist", aliases = ["bl"])
+    @commands.command(name="banlist", aliases=["bl"])
     async def banlist(self, ctx, statut: str = "ban"):
         """
         Affiche les cartes bannies, limitées ou semi-limitées en TCG.
         Utilisation : !banlist ban / limité / semi-limité ou b / l / sl
         """
 
-        # Mapping des options françaises vers les statuts de l’API
+        # ✅ Mapping des statuts possibles
         mapping = {
             "ban": "forbidden",
             "b": "forbidden",
@@ -29,24 +29,25 @@ class Banlist(commands.Cog):
             return
 
         api_status = mapping[statut]
-
         url = "https://dawnbrandbots.github.io/yaml-yugi-limit-regulation/tcg/current.vector.json"
+
+        await ctx.send(f"🔄 Récupération des cartes **{statut}**...")
 
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
                 if resp.status != 200:
-                    await ctx.send("❌ Impossible de récupérer les données.")
+                    await ctx.send("❌ Impossible de récupérer les données depuis la banlist.")
                     return
                 data = await resp.json()
 
-        # Filtrage des cartes selon le statut demandé
-        cartes = [entry["name"] for entry in data if entry["status"] == api_status]
+        # ✅ Filtrage selon le champ correct : 'regulation'
+        cartes = [entry["name"] for entry in data if entry.get("regulation") == api_status]
 
         if not cartes:
             await ctx.send("❌ Aucune carte trouvée avec ce statut.")
             return
 
-        # Envoi des cartes en plusieurs embeds si nécessaire
+        # 📋 Envoi des cartes par blocs (max 30 par embed)
         chunk_size = 30
         for i in range(0, len(cartes), chunk_size):
             chunk = cartes[i:i+chunk_size]
