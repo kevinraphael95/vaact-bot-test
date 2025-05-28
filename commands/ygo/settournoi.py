@@ -22,5 +22,17 @@ class TournoiAdmin(commands.Cog):
             print(f"[ERREUR SETTOURNOI] {e}")
             await ctx.send("🚨 Une erreur est survenue pendant la mise à jour.")
 
+# ────────────────────────────────────────────────────────────────
+# 🔧 Chargement du Cog
+# On définit dynamiquement la catégorie pour les systèmes de help personnalisés.
+# ────────────────────────────────────────────────────────────────
+
 async def setup(bot):
-    await bot.add_cog(TournoiAdmin(bot))
+    cog = settournoi(bot)
+
+    # 🏷️ Attribution de la catégorie
+    for command in cog.get_commands():
+        if not hasattr(command, "category"):
+            command.category = "VAACT"
+
+    await bot.add_cog(cog)
