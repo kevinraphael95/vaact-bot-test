@@ -111,6 +111,6 @@ async def setup(bot: commands.Bot):
 
     # 🗂️ Ajout manuel de la catégorie pour chaque commande du cog
     for command in cog.get_commands():
-        command.category = "YGO"
+        command.category = "🃏 Yu-Gi-Oh!"
 
     await bot.add_cog(cog)
