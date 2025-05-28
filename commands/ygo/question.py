@@ -23,7 +23,7 @@ class Question(commands.Cog):
 
         return random.choice(data["data"])
 
-    @commands.command(name="question", help="Devine la carte Yu-Gi-Oh à partir de sa description.")
+    @commands.command(name="question", aliases=["q"], help="Devine la carte Yu-Gi-Oh à partir de sa description.")
     async def question(self, ctx):
         try:
             # Obtenir la carte correcte
@@ -71,7 +71,7 @@ class Question(commands.Cog):
                 return user == ctx.author and reaction.message.id == msg.id and str(reaction.emoji) in REACTIONS
 
             try:
-                reaction, _ = await self.bot.wait_for("reaction_add", timeout=30.0, check=check)
+                reaction, _ = await self.bot.wait_for("reaction_add", timeout=600.0, check=check)
             except asyncio.TimeoutError:
                 await ctx.send("⏰ Temps écoulé !")
                 return
