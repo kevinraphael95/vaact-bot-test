@@ -84,3 +84,7 @@ class Question(commands.Cog):
             print("Erreur :", e)
             await ctx.send("🚨 Une erreur est survenue.")
 
+async def setup(bot):
+    await bot.add_cog(Question(bot))
+
+
