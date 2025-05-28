@@ -161,7 +161,7 @@ class TestQuestion(commands.Cog):
                 return user == ctx.author and reaction.message.id == msg.id and str(reaction.emoji) in REACTIONS
 
             try:
-                reaction, _ = await self.bot.wait_for("reaction_add", timeout=60.0, check=check)
+                reaction, _ = await self.bot.wait_for("reaction_add", timeout=600.0, check=check)
             except asyncio.TimeoutError:
                 await ctx.send("⏰ Temps écoulé !")
                 return
