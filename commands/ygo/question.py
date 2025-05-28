@@ -2,7 +2,6 @@
 # ❓ question.py — Commande !question
 # Permet aux utilisateurs de deviner une carte Yu-Gi-Oh à partir de sa description.
 # Inclut un système de "streak" enregistré via Supabase.
-# Catégorie : "VAACT"
 # ───────────────────────────────────────────────────────────────────────────────
 
 import discord
@@ -148,6 +147,6 @@ async def setup(bot):
 
     for command in cog.get_commands():
         if not hasattr(command, "category"):
-            command.category = "VAACT"
+            command.category = "YGO"
 
     await bot.add_cog(cog)
