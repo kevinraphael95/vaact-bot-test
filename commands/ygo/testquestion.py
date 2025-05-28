@@ -173,4 +173,3 @@ async def setup(bot):
         if not hasattr(command, "category"):
             command.category = "YGO"
     await bot.add_cog(cog)
-test
