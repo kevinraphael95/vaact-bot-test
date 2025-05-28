@@ -22,7 +22,7 @@ class Random(commands.Cog):
     # =======================
     # 🎲 COMMANDE random
     # =======================
-    @commands.command(name="random", aliases=["aléatoire"])
+    @commands.command(name="random", aliases=["aléatoire", "ran"])
     async def random_card(self, ctx: commands.Context):
         """
         Commande !random
