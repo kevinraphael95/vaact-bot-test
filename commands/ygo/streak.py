@@ -62,6 +62,6 @@ async def setup(bot):
 
     for command in cog.get_commands():
         if not hasattr(command, "category"):
-            command.category = "VAACT"
+            command.category = "YGO"
 
     await bot.add_cog(cog)
