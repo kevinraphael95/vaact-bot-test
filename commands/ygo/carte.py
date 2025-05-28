@@ -100,3 +100,20 @@ async def setup(bot: commands.Bot):
     Fonction appelée pour enregistrer ce cog dans le bot principal.
     """
     await bot.add_cog(Carte(bot))
+
+# =======================
+# ⚙️ SETUP DU COG
+# =======================
+async def setup(bot: commands.Bot):
+    """
+    Fonction appelée pour enregistrer ce cog dans le bot principal.
+    Elle ajoute aussi manuellement une catégorie à chaque commande.
+    """
+    cog = Carte(bot)
+
+    # Ajout de la catégorie "YGO" à toutes les commandes de ce cog
+    for command in cog.get_commands():
+        command.category = "YGO"
+
+    await bot.add_cog(cog)
+
