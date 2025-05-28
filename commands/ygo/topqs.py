@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from supabase_client import supabase  # Assure-toi que ce client est bien configuré
 
 class Question(commands.Cog):
     def __init__(self, bot):
@@ -9,15 +10,17 @@ class Question(commands.Cog):
     # 🏆 Commande !topqs / !topquestionstreak
     # Affiche le classement des meilleures séries de bonnes réponses
     # ──────────────────────────────────────────────────────────────
-    @commands.command(name="topqs", aliases=["topquestionstreak"], help="Affiche le classement des meilleures séries de bonnes réponses.")
+    @commands.command(
+        name="topqs",
+        aliases=["topquestionstreak"],
+        help="Affiche le classement des meilleures séries de bonnes réponses."
+    )
     async def topqs(self, ctx):
-        from supabase_client import supabase  # Import local pour éviter conflit si le module est optionnel
-
         try:
-            # 🔄 Requête Supabase : récupérer les 10 plus grands streaks
+            # 🔄 Requête Supabase : récupérer les 10 meilleurs streaks (best_streak)
             response = supabase.table("ygo_streaks") \
-                .select("user_id, current_streak") \
-                .order("current_streak", desc=True) \
+                .select("user_id, best_streak") \
+                .order("best_streak", desc=True) \
                 .limit(10) \
                 .execute()
 
@@ -25,34 +28,36 @@ class Question(commands.Cog):
                 await ctx.send("📉 Aucun streak enregistré pour le moment.")
                 return
 
-            # 🧾 Construction du leaderboard
             leaderboard = []
-            for index, entry in enumerate(response.data, start=1):
+
+            # 🧾 Construction du classement
+            for index, row in enumerate(response.data, start=1):
+                user_id = row["user_id"]
+                best_streak = row.get("best_streak", 0)
+
                 try:
-                    user = await self.bot.fetch_user(int(entry["user_id"]))
-                    username = user.name if user else f"Utilisateur inconnu ({entry['user_id']})"
-                except:
-                    username = f"Utilisateur inconnu ({entry['user_id']})"
+                    user = await self.bot.fetch_user(int(user_id))
+                    username = user.name if user else f"Utilisateur inconnu ({user_id})"
+                except Exception:
+                    username = f"Utilisateur inconnu ({user_id})"
 
-                streak = entry["current_streak"]
+                # 🥇 Ajout des emojis pour le podium
+                place = {1: "🥇", 2: "🥈", 3: "🥉"}.get(index, f"`#{index}`")
+                leaderboard.append(f"{place} **{username}** : 🔥 {best_streak}")
 
-                # 🌟 Emojis pour le top 3
-                medal = {1: "🥇", 2: "🥈", 3: "🥉"}.get(index, f"`#{index}`")
-                leaderboard.append(f"{medal} **{username}** : 🔥 {streak}")
-
-            # 📊 Embed final
+            # 📊 Création de l'embed
             embed = discord.Embed(
-                title="🏆 Top 10 – Séries de bonnes réponses",
+                title="🏆 Top 10 – Meilleurs Streaks de Réponses Correctes",
                 description="\n".join(leaderboard),
                 color=discord.Color.gold()
             )
-            embed.set_footer(text="Classement basé sur les streaks actuels.")
+            embed.set_footer(text="Classement basé sur la meilleure série atteinte.")
             await ctx.send(embed=embed)
 
         except Exception as e:
             print("❌ Erreur dans la commande topqs :", e)
             await ctx.send("🚨 Une erreur est survenue lors de la récupération du classement.")
 
-# N'oublie pas d’ajouter ce cog dans ton setup
+# 🔧 Chargement du cog
 async def setup(bot):
     await bot.add_cog(Question(bot))
