@@ -9,7 +9,7 @@ class Streak(commands.Cog):
     # ──────────────────────────────────────────────────────────────
     # 🔥 Commande !streak — Affiche la série de bonnes réponses
     # ──────────────────────────────────────────────────────────────
-    @commands.command(name="streak", help="Affiche ta série de bonnes réponses.")
+    @commands.command(name="streak", aliases=["qs"], help="Affiche ta série de bonnes réponses.")
     async def streak(self, ctx):
         user_id = str(ctx.author.id)
 
