@@ -26,16 +26,19 @@ class TestQuestion(commands.Cog):
         self.bot = bot
 
     # ────────────────────────────────────────────────────────────────────────────────
-    # 📦 Récupération d’un échantillon de cartes (limité pour ne pas surcharger)
+    # 📦 Récupération d’un échantillon de cartes (corrigée, fiable, sans ?num)
     # ────────────────────────────────────────────────────────────────────────────────
     async def fetch_card_sample(self, limit=150):
-        url = f"https://db.ygoprodeck.com/api/v7/cardinfo.php?language=fr&num={limit}"
+        url = "https://db.ygoprodeck.com/api/v7/cardinfo.php?language=fr"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
+                print(f"[DEBUG] Status code: {resp.status}")
                 if resp.status != 200:
                     return []
                 data = await resp.json()
-                return data.get("data", [])
+                all_cards = data.get("data", [])
+                print(f"[DEBUG] Nombre total de cartes reçues : {len(all_cards)}")
+                return random.sample(all_cards, min(limit, len(all_cards)))
 
     # ────────────────────────────────────────────────────────────────────────────────
     # 🛡️ Masque le nom de la carte dans sa description
