@@ -1,3 +1,10 @@
+# ───────────────────────────────────────────────────────────────────────────────
+# 🎴 tournoi.py — Commande !tournoi
+# Cette commande affiche la date du prochain tournoi ainsi que les decks disponibles.
+# Elle utilise un fichier CSV et une table Supabase pour afficher dynamiquement l'état.
+# Catégorie : "VAACT"
+# ───────────────────────────────────────────────────────────────────────────────
+
 import discord
 from discord.ext import commands
 import pandas as pd
@@ -6,25 +13,35 @@ import io
 from supabase import create_client, Client
 import os
 
-# Connexion à Supabase avec variables d’environnement Render
+# ───────────────────────────────────────────────────────────────────────────────
+# 🔐 Connexion à Supabase via variables d'environnement (Render / .env)
+# ───────────────────────────────────────────────────────────────────────────────
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# ───────────────────────────────────────────────────────────────────────────────
+# 📦 Cog principal — Commande !tournoi
+# ───────────────────────────────────────────────────────────────────────────────
+
 class Tournoi(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="tournoi")
+    @commands.command(
+        name="tournoi",
+        help="Affiche les infos du prochain tournoi et les decks disponibles."
+    )
     async def tournoi(self, ctx):
         try:
-            # 🔗 Récupération du CSV via URL définie dans les variables d’environnement
+            # 📥 Vérifie l’URL du CSV
             if not SHEET_CSV_URL:
                 await ctx.send("🚨 L'URL du fichier CSV n'est pas configurée.")
                 return
 
+            # 🔗 Téléchargement du CSV via HTTP
             async with aiohttp.ClientSession() as session:
                 async with session.get(SHEET_CSV_URL) as resp:
                     if resp.status != 200:
@@ -32,17 +49,17 @@ class Tournoi(commands.Cog):
                         return
                     data = await resp.read()
 
-            # 📊 Lecture du fichier CSV
+            # 📊 Lecture et parsing du CSV avec Pandas
             df = pd.read_csv(io.BytesIO(data))
 
-            # 🔧 Nettoyage et normalisation
+            # 🧼 Nettoyage des colonnes
             df["PRIS ?"] = df["PRIS ?"].fillna("").str.strip()
             df["PERSONNAGE"] = df["PERSONNAGE"].fillna("Inconnu")
             df["ARCHETYPE(S)"] = df.get("ARCHETYPE(S)", "—").fillna("—")
             df["MECANIQUES"] = df.get("MECANIQUES", "—").fillna("—")
             df["DIFFICULTE"] = df.get("DIFFICULTE", "—").fillna("—")
 
-            # 🎯 Séparation des decks pris/libres
+            # 🎯 Filtrage des decks pris et libres
             pris = df[df["PRIS ?"] == "✅"]
             libres = df[df["PRIS ?"] != "✅"]
 
@@ -53,17 +70,17 @@ class Tournoi(commands.Cog):
             else:
                 date_tournoi = "🗓️ à venir !"
 
-            # 📦 Embed Discord
+            # 🛠️ Construction de l'embed
             embed = discord.Embed(
                 title="🎴 Tournoi Yu-Gi-Oh VAACT",
-                description=f"Le prochain tournoi **Yu-Gi-Oh VAACT** aura lieu : **{date_tournoi}**",
+                description=f"Le prochain tournoi aura lieu : **{date_tournoi}**",
                 color=discord.Color.purple()
             )
             embed.add_field(name="🎮 Decks disponibles", value=str(len(libres)), inline=True)
             embed.add_field(name="🔒 Decks pris", value=str(len(pris)), inline=True)
             embed.add_field(name="📋 Total", value=str(len(df)), inline=True)
 
-            # 📝 Liste des decks libres
+            # 📃 Liste des decks disponibles
             lignes = []
             for _, row in libres.iterrows():
                 ligne = f"• **{row['PERSONNAGE']}** — *{row['ARCHETYPE(S)']}*\n"
@@ -79,24 +96,22 @@ class Tournoi(commands.Cog):
                 value=texte if lignes else "Aucun deck disponible.",
                 inline=False
             )
-            embed.set_footer(text="Données fournies par l'organisation du tournoi.")
 
+            embed.set_footer(text="Données fournies par l'organisation du tournoi.")
             await ctx.send(embed=embed)
 
         except Exception as e:
             print(f"[ERREUR TOURNOI] {e}")
             await ctx.send("🚨 Une erreur est survenue lors de la récupération des données du tournoi.")
 
-
-# ────────────────────────────────────────────────────────────────
-# 🔧 Chargement du Cog
-# On définit dynamiquement la catégorie pour les systèmes de help personnalisés.
-# ────────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────────────────────
+# 🔌 Chargement du Cog
+# Attribution de la catégorie "VAACT" pour les systèmes de help personnalisés
+# ───────────────────────────────────────────────────────────────────────────────
 
 async def setup(bot):
-    cog = tournoi(bot)
+    cog = Tournoi(bot)
 
-    # 🏷️ Attribution de la catégorie
     for command in cog.get_commands():
         if not hasattr(command, "category"):
             command.category = "VAACT"
