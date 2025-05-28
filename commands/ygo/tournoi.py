@@ -87,6 +87,18 @@ class Tournoi(commands.Cog):
             print(f"[ERREUR TOURNOI] {e}")
             await ctx.send("🚨 Une erreur est survenue lors de la récupération des données du tournoi.")
 
-# Enregistrement du Cog
+
+# ────────────────────────────────────────────────────────────────
+# 🔧 Chargement du Cog
+# On définit dynamiquement la catégorie pour les systèmes de help personnalisés.
+# ────────────────────────────────────────────────────────────────
+
 async def setup(bot):
-    await bot.add_cog(Tournoi(bot))
+    cog = Code(bot)
+
+    # 🏷️ Attribution de la catégorie
+    for command in cog.get_commands():
+        if not hasattr(command, "category"):
+            command.category = "VAACT"
+
+    await bot.add_cog(cog)
