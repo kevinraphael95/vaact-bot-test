@@ -23,7 +23,7 @@ class Question(commands.Cog):
 
         return random.choice(data["data"])
 
-    @commands.command(name="question", help="Devine la carte Yu-Gi-Oh à partir de sa description.")
+    @commands.command(name="question", aliases = ['q"], help="Devine la carte Yu-Gi-Oh à partir de sa description.")
     async def question(self, ctx):
         try:
             # Obtenir la carte correcte
