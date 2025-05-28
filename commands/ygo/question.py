@@ -147,6 +147,6 @@ async def setup(bot):
 
     for command in cog.get_commands():
         if not hasattr(command, "category"):
-            command.category = "YGO"
+            command.category = "🃏 Yu-Gi-Oh!"
 
     await bot.add_cog(cog)
