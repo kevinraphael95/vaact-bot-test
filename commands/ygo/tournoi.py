@@ -94,7 +94,7 @@ class Tournoi(commands.Cog):
 # ────────────────────────────────────────────────────────────────
 
 async def setup(bot):
-    cog = Code(bot)
+    cog = tournoi(bot)
 
     # 🏷️ Attribution de la catégorie
     for command in cog.get_commands():
