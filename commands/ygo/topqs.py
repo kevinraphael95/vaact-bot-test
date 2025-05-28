@@ -1,8 +1,15 @@
-# commands/ygo/topqs.py
+# ───────────────────────────────────────────────────────────────────────────────
+# 🏆 topqs.py — Commande !topqs
+# Affiche le top 10 des meilleures séries de bonnes réponses.
+# ───────────────────────────────────────────────────────────────────────────────
 
 import discord
 from discord.ext import commands
-from supabase_client import supabase  # Ton client Supabase préconfiguré
+from supabase_client import supabase  # Client Supabase déjà connecté
+
+# ───────────────────────────────────────────────────────────────────────────────
+# 📦 Cog principal — Commande !topqs
+# ───────────────────────────────────────────────────────────────────────────────
 
 class TopQS(commands.Cog):
     def __init__(self, bot):
@@ -15,6 +22,7 @@ class TopQS(commands.Cog):
     )
     async def topqs(self, ctx):
         try:
+            # 📥 Récupération des données Supabase
             response = supabase.table("ygo_streaks") \
                 .select("user_id, best_streak") \
                 .order("best_streak", desc=True) \
@@ -39,6 +47,7 @@ class TopQS(commands.Cog):
                 place = {1: "🥇", 2: "🥈", 3: "🥉"}.get(index, f"`#{index}`")
                 leaderboard.append(f"{place} **{username}** : 🔥 {best_streak}")
 
+            # 📊 Embed du classement
             embed = discord.Embed(
                 title="🏆 Top 10 – Meilleures Séries",
                 description="\n".join(leaderboard),
@@ -48,10 +57,19 @@ class TopQS(commands.Cog):
             await ctx.send(embed=embed)
 
         except Exception as e:
-            print("❌ Erreur dans topqs :", e)
+            print("[ERREUR TOPQS]", e)
             await ctx.send("🚨 Une erreur est survenue lors du classement.")
 
-# 🔧 Setup du cog
+# ───────────────────────────────────────────────────────────────────────────────
+# 🔌 Chargement du Cog
+# Attribution de la catégorie pour les systèmes de help personnalisés
+# ───────────────────────────────────────────────────────────────────────────────
+
 async def setup(bot):
-    await bot.add_cog(TopQS(bot))
-    print("✅ Cog TopQS chargé.")
+    cog = TopQS(bot)
+
+    for command in cog.get_commands():
+        if not hasattr(command, "category"):
+            command.category = "YGO"
+
+    await bot.add_cog(cog)
