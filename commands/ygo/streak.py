@@ -6,7 +6,7 @@ class YuGiOh(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="streak", help="📊 Affiche ta série de bonnes réponses consécutives.")
+    @commands.command(name="streak", aliases = ["qs"], help="📊 Affiche ta série de bonnes réponses consécutives.")
     async def streak(self, ctx):
         user_id = str(ctx.author.id)
 
