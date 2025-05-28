@@ -3,6 +3,7 @@ from discord.ext import commands
 import aiohttp
 import random
 import asyncio
+import re
 
 REACTIONS = ["🇦", "🇧", "🇨", "🇩"]
 
@@ -22,6 +23,12 @@ class Question(commands.Cog):
             return None
 
         return random.choice(data["data"])
+
+    def censor_card_name(self, description: str, card_name: str) -> str:
+        """Censure le nom de la carte dans sa description, insensible à la casse."""
+        escaped_name = re.escape(card_name)
+        pattern = re.compile(escaped_name, re.IGNORECASE)
+        return pattern.sub("█" * len(card_name), description)
 
     @commands.command(name="question", aliases=["q"], help="Devine la carte Yu-Gi-Oh à partir de sa description.")
     async def question(self, ctx):
@@ -44,10 +51,13 @@ class Question(commands.Cog):
             random.shuffle(all_choices)
             correct_index = all_choices.index(true_card["name"])
 
+            # Censurer le nom dans la description
+            censored_desc = self.censor_card_name(true_card["desc"], true_card["name"])
+
             # Construire l'embed
             embed = discord.Embed(
                 title="🔍 Devine la carte !",
-                description=true_card["desc"][:300] + ("..." if len(true_card["desc"]) > 300 else ""),
+                description=censored_desc[:300] + ("..." if len(censored_desc) > 300 else ""),
                 color=discord.Color.purple()
             )
             embed.add_field(name="Type", value=true_card.get("type", "—"), inline=True)
