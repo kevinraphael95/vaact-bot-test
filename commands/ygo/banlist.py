@@ -1,116 +1,101 @@
 # =======================
 # 📦 IMPORTS
 # =======================
-import discord  # Pour créer les embeds
-from discord.ext import commands  # Pour les commandes Discord
-import aiohttp  # Pour les requêtes HTTP asynchrones
-from bs4 import BeautifulSoup  # Pour parser le HTML de la banlist
+
+import discord
+from discord.ext import commands
+import aiohttp
 
 # =======================
-# 🧠 CLASSE Banlist
+# 🧠 CLASSE BANLIST
 # =======================
+
 class Banlist(commands.Cog):
-    """Cog contenant les commandes liées à la banlist officielle TCG."""
+    """Commandes liées à la banlist officielle TCG de Yu-Gi-Oh!"""
 
     def __init__(self, bot: commands.Bot):
-        """
-        Constructeur du cog.
-        :param bot: instance du bot Discord
-        """
         self.bot = bot
 
-    # =======================
-    # 🚫 COMMANDE banlist
-    # =======================
+    # 🚫 COMMANDE BANLIST
     @commands.command(
         name="banlist",
         aliases=["bl"],
-        help="Affiche la banlist TCG.",
+        help="Affiche la banlist TCG depuis l'API officielle.",
         description="Utilisation : !banlist ban | limité | semi-limité ou b | l | sl"
     )
     async def banlist(self, ctx: commands.Context, statut: str = "ban"):
         """
         Commande !banlist [statut]
-        Permet d'afficher les cartes bannies / limitées / semi-limitées
-        depuis le site officiel de Yu-Gi-Oh! (TCG).
+        Affiche les cartes Interdites / Limitées / Semi-Limitées du format TCG.
         """
 
-        # 🗺️ Correspondance entre les termes d'entrée et les statuts officiels
+        # 🔁 Table de correspondance entre l'input utilisateur et les statuts d'API
         statut_map = {
-            "ban": ("Interdite", "Interdites", discord.Color.red()),
-            "b": ("Interdite", "Interdites", discord.Color.red()),
-            "limité": ("Limitée", "Limitées", discord.Color.orange()),
-            "l": ("Limitée", "Limitées", discord.Color.orange()),
-            "semi-limité": ("Semi-Limitée", "Semi-Limitées", discord.Color.gold()),
-            "sl": ("Semi-Limitée", "Semi-Limitées", discord.Color.gold()),
+            "ban": ("Banned", "Interdites", discord.Color.red()),
+            "b": ("Banned", "Interdites", discord.Color.red()),
+            "limité": ("Limited", "Limitées", discord.Color.orange()),
+            "l": ("Limited", "Limitées", discord.Color.orange()),
+            "semi-limité": ("Semi-Limited", "Semi-Limitées", discord.Color.gold()),
+            "sl": ("Semi-Limited", "Semi-Limitées", discord.Color.gold())
         }
 
-        # 🔎 Nettoyage de l'entrée utilisateur
+        # 🔎 Nettoyage de l'argument utilisateur
         statut = statut.lower()
         if statut not in statut_map:
             await ctx.send("❌ Statut invalide. Utilisez `ban`, `limité`, `semi-limité` ou `b`, `l`, `sl`.")
             return
 
-        statut_singulier, statut_pluriel, couleur = statut_map[statut]
+        api_statut, label_statut, couleur = statut_map[statut]
+        await ctx.send(f"🔄 Récupération des cartes **{label_statut}** depuis l’API officielle...")
 
-        # 🌐 URL de la banlist TCG officielle
-        url = "https://www.db.yugioh-card.com/yugiohdb/forbidden_limited.action"
-        await ctx.send(f"🔄 Récupération des cartes **{statut_pluriel}** depuis le site officiel...")
+        # 🌐 Requête vers l'API YGOPRODeck
+        api_url = "https://db.ygoprodeck.com/api/v7/cardinfo.php?banlist=tcg"
+        cartes_filtrées = []
 
-        # 🔍 Récupération et parsing HTML
         async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
+            async with session.get(api_url) as resp:
                 if resp.status != 200:
-                    await ctx.send("❌ Impossible de récupérer les données depuis le site officiel.")
+                    await ctx.send("❌ Erreur lors de la récupération des données depuis l'API.")
                     return
-                html = await resp.text()
+                data = await resp.json()
 
-        soup = BeautifulSoup(html, "html.parser")
-        cartes = set()  # 📛 On utilise un set pour éviter les doublons
+        # 🧹 Filtrage des cartes selon le statut demandé
+        for card in data.get("data", []):
+            ban_info = card.get("banlist_info", {})
+            if ban_info.get("ban_tcg") == api_statut:
+                cartes_filtrées.append(card["name"])
 
-        # 🧹 Recherche dans les blocs de cartes
-        for row in soup.select("div.fl-card-list > div.t_row"):
-            label = row.select_one("div.label_box")
-            name = row.select_one("dt.card_name")
-            if label and name and statut_singulier in label.text:
-                cartes.add(name.text.strip())
-
-        # 🛑 Si aucune carte trouvée
-        if not cartes:
-            await ctx.send(f"❌ Aucune carte trouvée avec le statut **{statut_pluriel}**.")
+        # 🛑 Aucun résultat trouvé
+        if not cartes_filtrées:
+            await ctx.send(f"❌ Aucune carte trouvée avec le statut **{label_statut}**.")
             return
 
-        # ✂️ Envoi des résultats par blocs de 30 cartes max
+        # ✂️ Envoi des cartes par blocs de 30
         chunk_size = 30
-        cartes = sorted(cartes)
-        for i in range(0, len(cartes), chunk_size):
-            chunk = cartes[i:i+chunk_size]
+        cartes_filtrées = sorted(set(cartes_filtrées))
+        for i in range(0, len(cartes_filtrées), chunk_size):
+            chunk = cartes_filtrées[i:i+chunk_size]
             embed = discord.Embed(
-                title=f"📋 Cartes {statut_pluriel} (TCG)",
+                title=f"📋 Cartes {label_statut} (TCG)",
                 description="\n".join(chunk),
                 color=couleur
             )
             await ctx.send(embed=embed)
 
     # =======================
-    # 🧪 COMMANDE pingban
+    # ✅ COMMANDE DE TEST
     # =======================
-    @commands.command(name="pingban", help="Commande de test pour vérifier le chargement du cog banlist.")
+    
+    @commands.command(name="pingban", help="Commande de test pour le cog banlist.")
     async def pingban(self, ctx: commands.Context):
-        await ctx.send("✅ Banlist cog chargé correctement.")
-
+        await ctx.send("✅ Le cog banlist est bien chargé et fonctionnel.")
 # =======================
 # ⚙️ SETUP DU COG
 # =======================
-async def setup(bot: commands.Bot):
-    """
-    Fonction appelée pour enregistrer ce cog dans le bot principal.
-    Ajoute aussi la catégorie "YGO" pour l'affichage dans !help.
-    """
-    cog = Banlist(bot)
 
-    # 🗂️ Ajout manuel de la catégorie pour chaque commande du cog
+async def setup(bot: commands.Bot):
+    """Ajout du cog au bot et catégorisation des commandes."""
+    cog = Banlist(bot)
     for command in cog.get_commands():
         command.category = "🃏 Yu-Gi-Oh!"
-
     await bot.add_cog(cog)
