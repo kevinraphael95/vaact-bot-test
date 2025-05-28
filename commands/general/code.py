@@ -25,7 +25,7 @@ class Code(commands.Cog):
             description="[Clique ici pour voir le dépôt GitHub](https://github.com/kevinraphael95/ygotest)",
             color=discord.Color.blurple()
         )
-        embed.set_footer(text="Merci de consulter le code, et n'hésite pas à contribuer !")
+        embed.set_footer(text="Yu Gi Oooooh !")
         await ctx.send(embed=embed)
 
     def cog_load(self):
