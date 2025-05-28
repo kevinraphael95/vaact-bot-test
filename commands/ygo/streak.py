@@ -1,35 +1,45 @@
-from discord.ext import commands
 import discord
+from discord.ext import commands
 from supabase_client import supabase
 
-class YuGiOh(commands.Cog):
+class Streak(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="streak", aliases = ["qs"], help="📊 Affiche ta série de bonnes réponses consécutives.")
+    # ──────────────────────────────────────────────────────────────
+    # 🔥 Commande !streak — Affiche la série de bonnes réponses
+    # ──────────────────────────────────────────────────────────────
+    @commands.command(name="streak", help="Affiche ta série de bonnes réponses.")
     async def streak(self, ctx):
         user_id = str(ctx.author.id)
 
         try:
-            result = supabase.table("ygo_streaks").select("current_streak").eq("user_id", user_id).execute()
+            # Récupère la série de l'utilisateur depuis Supabase
+            response = supabase.table("ygo_streaks") \
+                .select("current_streak", "best_streak") \
+                .eq("user_id", user_id) \
+                .execute()
 
-            streak = 0
-            if result.data and isinstance(result.data, list) and len(result.data) > 0:
-                streak = result.data[0].get("current_streak", 0)
+            if response.data:
+                # Données trouvées pour l'utilisateur
+                streak = response.data[0]
+                current = streak.get("current_streak", 0)
+                best = streak.get("best_streak", 0)
 
-            embed = discord.Embed(
-                title="🔥 Ton Yu-Gi-Oh! Streak",
-                description=f"Tu as actuellement une série de **{streak}** bonnes réponses consécutives !",
-                color=discord.Color.gold()
-            )
-            embed.set_footer(text="Réponds correctement pour faire grimper ta série 🧠")
-
-            await ctx.send(embed=embed)
+                await ctx.send(
+                    f"🔥 **{ctx.author.display_name}**, ta série actuelle est de **{current}** 🔁\n"
+                    f"🏆 Ton record absolu est de **{best}** bonnes réponses consécutives !"
+                )
+            else:
+                # Aucun historique de série trouvé
+                await ctx.send("📉 Tu n'as pas encore commencé de série. Lance une question avec `!question` pour commencer !")
 
         except Exception as e:
-            await ctx.send("❌ Une erreur est survenue en récupérant ton streak.")
-            print(f"[Erreur Supabase - streak] {e}")
+            print(f"❌ Erreur dans la commande streak : {e}")
+            await ctx.send("🚨 Une erreur est survenue en récupérant ta série.")
 
+# ──────────────────────────────────────────────────────────────
+# 🔌 Fonction d'enregistrement du Cog
+# ──────────────────────────────────────────────────────────────
 async def setup(bot):
-    await bot.add_cog(YuGiOh(bot))
-
+    await bot.add_cog(Streak(bot))
