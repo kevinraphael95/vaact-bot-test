@@ -9,35 +9,39 @@ REACTIONS = ["🇦", "🇧", "🇨", "🇩"]
 class Question(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.cards_cache = []  # on garde les cartes ici
+
+    async def fetch_all_cards(self):
+        if self.cards_cache:
+            return self.cards_cache
+
+        url = "https://db.ygoprodeck.com/api/v7/cardinfo.php?language=fr"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                if resp.status != 200:
+                    return []
+                data = await resp.json()
+
+        self.cards_cache = [
+            c for c in data["data"]
+            if all(k in c for k in ("name", "desc", "type")) and "token" not in c.get("type", "").lower()
+        ]
+        return self.cards_cache
 
     @commands.command(name="question", help="Devine le nom de la carte YuGiOh à partir de sa description.")
     async def question(self, ctx):
         print("✅ Commande !question appelée")
 
         try:
-            async with aiohttp.ClientSession() as session:
-                # ➤ Étape 1 : récupérer une carte avec un 'name'
-                print("🔁 Récupération de la carte correcte...")
-                true_card = await self.get_valid_card(session)
-                if not true_card:
-                    await ctx.send("🚨 Impossible de récupérer une carte valide.")
-                    return
+            all_cards = await self.fetch_all_cards()
 
-                print(f"🃏 Carte sélectionnée : {true_card.get('name', 'inconnue')}")
+            if not all_cards:
+                await ctx.send("🚨 Impossible de récupérer les cartes.")
+                return
 
-                # ➤ Étape 2 : récupérer d'autres cartes avec nom unique
-                choices = [true_card["name"]]
-                print("📦 Génération des autres choix...")
-
-                while len(choices) < 4:
-                    card = await self.get_valid_card(session)
-                    if card:
-                        name = card.get("name")
-                        if name not in choices:
-                            choices.append(name)
-
-                print(f"🎲 Choix finaux : {choices}")
-
+            true_card = random.choice(all_cards)
+            wrong_choices = random.sample([c for c in all_cards if c["name"] != true_card["name"]], 3)
+            choices = [true_card["name"]] + [c["name"] for c in wrong_choices]
             random.shuffle(choices)
             correct_index = choices.index(true_card["name"])
 
@@ -45,10 +49,6 @@ class Question(commands.Cog):
                 title="🔎 Devine la carte !",
                 color=discord.Color.blue()
             )
-
-            print("🛠️ Vérification des champs de la carte...")
-            for key in ["type", "atk", "def", "level", "attribute", "desc"]:
-                print(f"  - {key}: {true_card.get(key)}")
 
             embed.add_field(name="Type", value=true_card.get("type", "Inconnu"), inline=True)
             embed.add_field(name="ATK", value=str(true_card.get("atk", "—")), inline=True)
@@ -92,20 +92,3 @@ class Question(commands.Cog):
             import traceback
             traceback.print_exc()
             await ctx.send("🚨 Une erreur est survenue lors de la génération de la question.")
-            print(f"❌ ERREUR: {e}")
-
-    async def get_valid_card(self, session, max_retries=5):
-        url = "https://db.ygoprodeck.com/api/v7/randomcard.php?language=fr"
-        for _ in range(max_retries):
-            async with session.get(url) as r:
-                if r.status == 200:
-                    data = await r.json()
-                    if "name" in data:
-                        return data
-                    else:
-                        print("❗ Carte invalide (pas de 'name'), on réessaie...")
-        return None
-
-# 👇 Cette fonction est obligatoire pour que le fichier soit reconnu comme une extension (cog)
-async def setup(bot):
-    await bot.add_cog(Question(bot))
