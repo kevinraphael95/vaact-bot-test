@@ -9,39 +9,34 @@ REACTIONS = ["🇦", "🇧", "🇨", "🇩"]
 class Question(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.cards_cache = []  # on garde les cartes ici
 
-    async def fetch_all_cards(self):
-        if self.cards_cache:
-            return self.cards_cache
-
-        url = "https://db.ygoprodeck.com/api/v7/cardinfo.php?language=fr"
-        async with aiohttp.ClientSession() as session:
+    async def get_valid_card(self, session):
+        url = "https://db.ygoprodeck.com/api/v7/randomcard.php?language=fr"
+        for _ in range(10):  # max 10 tentatives
             async with session.get(url) as resp:
-                if resp.status != 200:
-                    return []
-                data = await resp.json()
-
-        self.cards_cache = [
-            c for c in data["data"]
-            if all(k in c for k in ("name", "desc", "type")) and "token" not in c.get("type", "").lower()
-        ]
-        return self.cards_cache
+                if resp.status == 200:
+                    data = await resp.json()
+                    if all(k in data for k in ("name", "desc", "type")) and "token" not in data.get("type", "").lower():
+                        return data
+        return None
 
     @commands.command(name="question", help="Devine le nom de la carte YuGiOh à partir de sa description.")
     async def question(self, ctx):
         print("✅ Commande !question appelée")
 
         try:
-            all_cards = await self.fetch_all_cards()
+            async with aiohttp.ClientSession() as session:
+                true_card = await self.get_valid_card(session)
+                if not true_card:
+                    await ctx.send("🚨 Impossible de récupérer une carte valide.")
+                    return
 
-            if not all_cards:
-                await ctx.send("🚨 Impossible de récupérer les cartes.")
-                return
+                choices = [true_card["name"]]
+                while len(choices) < 4:
+                    card = await self.get_valid_card(session)
+                    if card and card["name"] not in choices:
+                        choices.append(card["name"])
 
-            true_card = random.choice(all_cards)
-            wrong_choices = random.sample([c for c in all_cards if c["name"] != true_card["name"]], 3)
-            choices = [true_card["name"]] + [c["name"] for c in wrong_choices]
             random.shuffle(choices)
             correct_index = choices.index(true_card["name"])
 
