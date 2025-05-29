@@ -104,11 +104,11 @@ class VocabulaireCommand(commands.Cog):
 
     # 🏷️ Catégorisation personnalisée pour !help
     def cog_load(self):
-        self.vocabulaire.category = "📖 Vocabulaire"
+        self.vocabulaire.category = 🃏 Yu-Gi-Oh!"
 
 # ──────────────────────────────────────────────────────────────
 # 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
 # ──────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     await bot.add_cog(VocabulaireCommand(bot))
-    print("✅ Cog chargé : VocabulaireCommand (catégorie = 📖 Vocabulaire)")
+    print("✅ Cog chargé : VocabulaireCommand (catégorie = 🃏 Yu-Gi-Oh!")")
