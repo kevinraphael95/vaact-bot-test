@@ -29,6 +29,7 @@ class DeckSelectView(View):
         self.deck_data = deck_data
         self.add_item(SaisonSelect(self))
 
+
 class SaisonSelect(Select):
     def __init__(self, parent_view: DeckSelectView):
         self.parent_view = parent_view
@@ -41,10 +42,12 @@ class SaisonSelect(Select):
     async def callback(self, interaction: discord.Interaction):
         saison = self.values[0]
         new_view = DuellisteSelectView(
-            self.parent_view.bot, self.parent_view.deck_data, saison
+            self.parent_view.bot,
+            self.parent_view.deck_data,
+            saison
         )
         await interaction.response.edit_message(
-            content=f"🎴 Saison choisie : **{saison}**\nSélectionne un duelliste :",
+            content=f"🎴 Saison choisie : **{saison}**\n👤 Choisis un duelliste :",
             view=new_view,
             embed=None
         )
@@ -60,6 +63,7 @@ class DuellisteSelectView(View):
         self.saison = saison
         self.add_item(DuellisteSelect(self))
 
+
 class DuellisteSelect(Select):
     def __init__(self, parent_view: DuellisteSelectView):
         self.parent_view = parent_view
@@ -73,13 +77,18 @@ class DuellisteSelect(Select):
     async def callback(self, interaction: discord.Interaction):
         saison = self.parent_view.saison
         duelliste = self.values[0]
-        cartes = self.parent_view.deck_data[saison][duelliste]
+        infos = self.parent_view.deck_data[saison][duelliste]
+
+        deck_text = infos.get("deck", "❌ Aucun deck trouvé.")
+        astuces_text = infos.get("astuces", "❌ Aucune astuce disponible.")
 
         embed = discord.Embed(
-            title=f"🧙‍♂️ Deck de {duelliste} (Saison {saison})",
-            description=cartes,
-            color=discord.Color.blue()
+            title=f"🧙‍♂️ Deck de {duelliste}",
+            description=f"📅 Saison : **{saison}**",
+            color=discord.Color.dark_blue()
         )
+        embed.add_field(name="📘 Deck(s)", value=deck_text, inline=False)
+        embed.add_field(name="💡 Astuces", value=astuces_text, inline=False)
 
         await interaction.response.edit_message(
             content=None,
