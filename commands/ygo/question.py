@@ -80,33 +80,44 @@ class Question(commands.Cog):
     @commands.cooldown(1, 8, commands.BucketType.user)  # Cooldown de 8s par utilisateur
     async def Question(self, ctx):
         try:
-            # Étape 0 — On récupère un échantillon de cartes
-            cards = await self.fetch_card_sample()
-            random.shuffle(cards)
+            # Étape 0 — Échantillon initial de 60 cartes
+            initial_sample = await self.fetch_card_sample(limit=60)
+            random.shuffle(initial_sample)
 
-            # On cherche une carte principale avec un archétype, une description et un nom
-            main_card = next((c for c in cards if c.get("archetype") and "desc" in c and "name" in c), None)
+            # Carte principale : avec un nom et une description
+            main_card = next((c for c in initial_sample if "desc" in c and "name" in c), None)
             if not main_card:
                 await ctx.send("❌ Aucune carte valide trouvée.")
                 return
 
-            archetype = main_card["archetype"]
+            archetype = main_card.get("archetype")
             main_type = main_card.get("type", "").lower()
-
-            # Détermine le type global (monstre/magie/piège)
             type_keyword = "monstre" if "monstre" in main_type else ("magie" if "magie" in main_type else "piège")
+            group = []
 
-            group = []  # Liste des cartes pour les mauvaises réponses
-
-            # Étape 1 — Même archétype + type EXACT
-            if archetype:
+            if not archetype:
+                # Pas d'archétype → chercher dans les 60 cartes du même type exact
+                group = [
+                    c for c in initial_sample
+                    if c.get("name") != main_card["name"]
+                    and "desc" in c
+                    and c.get("type", "").lower() == main_type
+                ]
+                if len(group) < 3:
+                    group = random.sample(
+                        [c for c in initial_sample if c.get("name") != main_card["name"] and "desc" in c],
+                        3
+                    )
+            else:
+                # 1. Essayer de récupérer 60 cartes du même archétype
                 url = f"https://db.ygoprodeck.com/api/v7/cardinfo.php?archetype={archetype}&language=fr"
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url) as resp:
                         if resp.status == 200:
                             data = await resp.json()
-                            arch_cards = data.get("data", [])
+                            arch_cards = random.sample(data.get("data", []), min(60, len(data.get("data", []))))
 
+                            # a. Même type exact
                             group = [
                                 c for c in arch_cards
                                 if c.get("name") != main_card["name"]
@@ -114,7 +125,7 @@ class Question(commands.Cog):
                                 and c.get("type", "").lower() == main_type
                             ]
 
-                            # Étape 2 — Même archétype + type GLOBAL
+                            # b. Sinon : même groupe "monstre/magie/piège"
                             if len(group) < 3:
                                 group = [
                                     c for c in arch_cards
@@ -123,29 +134,21 @@ class Question(commands.Cog):
                                     and type_keyword in c.get("type", "").lower()
                                 ]
 
-            # Étape 3 — Même type GLOBAL dans l’échantillon de base
-            if len(group) < 3:
-                group = [
-                    c for c in cards
-                    if c.get("name") != main_card["name"]
-                    and "desc" in c
-                    and type_keyword in c.get("type", "").lower()
-                ]
+                # 2. Sinon : ignorer l’archetype et revenir à l’échantillon initial
+                if len(group) < 3:
+                    group = [
+                        c for c in initial_sample
+                        if c.get("name") != main_card["name"]
+                        and "desc" in c
+                        and type_keyword in c.get("type", "").lower()
+                    ]
 
-            # Étape 4 — Fallback : dans un set étendu de 300 cartes aléatoires
-            if len(group) < 3:
-                full_cards = await self.fetch_card_sample(limit=300)
-                group = [
-                    c for c in full_cards
-                    if c.get("name") != main_card["name"]
-                    and "desc" in c
-                    and type_keyword in c.get("type", "").lower()
-                ]
-
-            # Si on n’a toujours pas 3 propositions : abandon
-            if len(group) < 3:
-                await ctx.send("❌ Pas assez de cartes similaires trouvées.")
-                return
+                # 3. Sinon : random 3 cartes parmi l’échantillon initial
+                if len(group) < 3:
+                    group = random.sample(
+                        [c for c in initial_sample if c.get("name") != main_card["name"] and "desc" in c],
+                        3
+                    )
 
             # Préparation des propositions (1 vraie + 3 mauvaises)
             true_card = main_card
