@@ -128,15 +128,21 @@ class TestQuestion(commands.Cog):
 
             # 🖼️ Embed visuel
             embed = discord.Embed(
-                title=f"🧩 Archétype : {archetype}",
-                description=f"🔍 **Description :**\n*{desc[:500]}{'...' if len(desc) > 300 else ''}*",
+                title="🧠 Essaie de deviner le nom de cette carte !",
+                description=(
+                    f"📘 **Type :** {true_card.get('type', '—')}\n"
+                    f"🔍 **Description :**\n*{desc[:500]}{'...' if len(desc) > 300 else ''}*"
+                ),
                 color=discord.Color.purple()
             )
+
             embed.set_author(name="YGO Quiz", icon_url="https://cdn-icons-png.flaticon.com/512/361/361678.png")
+
             if image_url:
                 embed.set_thumbnail(url=image_url)
 
-            embed.add_field(name="📘 Type", value=true_card.get("type", "—"), inline=True)
+            embed.set_footer(text=f"🔹 Archétype : ||{archetype}||")
+
 
             # 📊 Stats supplémentaires (pour les monstres uniquement)
             if true_card.get("type", "").lower().startswith("monstre"):
