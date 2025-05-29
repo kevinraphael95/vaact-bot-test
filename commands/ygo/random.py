@@ -23,6 +23,7 @@ class Random(commands.Cog):
     # 🎲 COMMANDE random
     # =======================
     @commands.command(name="random", aliases=["aléatoire", "ran"])
+    @commands.cooldown(1, 5, commands.BucketType.user)  # ⏱️ Cooldown de 5 secondes par utilisateur
     async def random_card(self, ctx: commands.Context):
         """
         Commande !random
