@@ -28,19 +28,19 @@ class ArchetypeCommand(commands.Cog):
             return json.load(f)
 
     # ──────────────────────────────────────────────────────────
-    # 🔹 COMMANDE : !archetype
+    # 🔹 COMMANDE : !archetype / !archétype / !arch
     # ──────────────────────────────────────────────────────────
     @commands.command(
         name="archetype",
         aliases=["archétype", "arch"],
-        help="📚 Affiche la liste des archétypes ou détail d'un archétype."
+        help="📚 Affiche la liste des archétypes ou le détail d’un archétype spécifique."
     )
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)  # 🧊 Anti-spam
     async def archetype(self, ctx: commands.Context, *args):
         if not self.archetypes:
             return await ctx.send("⚠️ Aucun archétype chargé.")
 
-        # 🔍 Recherche spécifique
+        # 🔍 Recherche d’un archétype spécifique
         if args:
             query = " ".join(args).lower()
             found = None
@@ -52,20 +52,20 @@ class ArchetypeCommand(commands.Cog):
             if found:
                 embed = discord.Embed(
                     title=f"📘 Archétype : {found[0]}",
-                    description=found[1]["description"],
+                    description=found[1].get("description", "Aucune description disponible."),
                     color=discord.Color.blue()
                 )
                 return await ctx.send(embed=embed)
             else:
                 return await ctx.send("❌ Archétype non trouvé.")
 
-        # 📄 Liste paginée
+        # 📄 Liste paginée de tous les archétypes
         pages = []
         archetype_names = sorted(self.archetypes.keys())
         chunk_size = 5
 
         for i in range(0, len(archetype_names), chunk_size):
-            chunk = archetype_names[i:i+chunk_size]
+            chunk = archetype_names[i:i + chunk_size]
             desc = "\n".join([f"• **{name}**" for name in chunk])
             embed = discord.Embed(
                 title=f"📚 Archétypes ({i + 1}-{min(i + chunk_size, len(archetype_names))} sur {len(archetype_names)})",
@@ -77,6 +77,9 @@ class ArchetypeCommand(commands.Cog):
         current = 0
         message = await ctx.send(embed=pages[current])
 
+        if len(pages) <= 1:
+            return
+
         await message.add_reaction("⬅️")
         await message.add_reaction("➡️")
 
@@ -85,7 +88,7 @@ class ArchetypeCommand(commands.Cog):
 
         while True:
             try:
-                reaction, user = await self.bot.wait_for("reaction_add", timeout=30.0, check=check)
+                reaction, user = await self.bot.wait_for("reaction_add", timeout=60.0, check=check)
                 await message.remove_reaction(reaction.emoji, user)
 
                 if str(reaction.emoji) == "➡️" and current < len(pages) - 1:
@@ -97,13 +100,22 @@ class ArchetypeCommand(commands.Cog):
             except asyncio.TimeoutError:
                 break
 
-    # 🏷️ Catégorisation pour !help
+    # 🏷️ Catégorisation personnalisée pour !help
     def cog_load(self):
         self.archetype.category = "🃏 Yu-Gi-Oh!"
 
-# ──────────────────────────────────────────────────────────────
-# 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
-# ──────────────────────────────────────────────────────────────
+# =======================
+# ⚙️ SETUP DU COG
+# =======================
 async def setup(bot: commands.Bot):
-    await bot.add_cog(ArchetypeCommand(bot))
-    print("✅ Cog chargé : ArchetypeCommand (catégorie = 🃏 Yu-Gi-Oh!")")
+    """
+    Fonction appelée pour enregistrer ce cog dans le bot principal.
+    On ajoute aussi manuellement une catégorie "🃏 Yu-Gi-Oh!" pour l’affichage dans !help.
+    """
+    cog = ArchetypeCommand(bot)
+
+    # 🗂️ Définir la catégorie "🃏 Yu-Gi-Oh!" pour toutes les commandes du cog
+    for command in cog.get_commands():
+        command.category = "🃏 Yu-Gi-Oh!"
+
+    await bot.add_cog(cog)
