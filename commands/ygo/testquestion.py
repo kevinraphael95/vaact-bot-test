@@ -1,5 +1,5 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# 🧠 testquestion.py — Commande !testquestion
+# 🧠 Question.py — Commande !question
 # But : Deviner une carte Yu-Gi-Oh à partir de sa description parmi 4 du même archétype
 # Fonctionnalités :
 #   - Masquage du nom dans la description
@@ -25,7 +25,7 @@ REACTIONS = ["🇦", "🇧", "🇨", "🇩"]
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔧 Classe du Cog principal
 # ────────────────────────────────────────────────────────────────────────────────
-class TestQuestion(commands.Cog):
+class Question(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -77,15 +77,15 @@ class TestQuestion(commands.Cog):
             }).execute()
 
     # ────────────────────────────────────────────────────────────────────────────
-    # ❓ Commande principale : !testquestion
+    # ❓ Commande principale : !Question
     # Devine une carte Yu-Gi-Oh à partir de sa description parmi 4
     # ────────────────────────────────────────────────────────────────────────────
     @commands.command(
-        name="testquestion",
-        aliases=["tq"],
+        name="Question",
+        aliases=["q"],
         help="Devine la carte Yu-Gi-Oh parmi 4 du même archétype."
     )
-    async def testquestion(self, ctx):
+    async def Question(self, ctx):
         try:
             # 🔄 Récupération initiale
             cards = await self.fetch_card_sample()
@@ -184,14 +184,14 @@ class TestQuestion(commands.Cog):
                 await ctx.send(f"❌ Mauvaise réponse ! C’était **{true_card['name']}**. Série réinitialisée.")
 
         except Exception as e:
-            print("[ERREUR TESTQUESTION]", e)
+            print("[ERREUR Question]", e)
             await ctx.send("🚨 Une erreur est survenue.")
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔌 Chargement du Cog (avec attribution catégorie)
 # ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    cog = TestQuestion(bot)
+    cog = Question(bot)
     for command in cog.get_commands():
         command.category = "🃏 Yu-Gi-Oh!"
     await bot.add_cog(cog)
