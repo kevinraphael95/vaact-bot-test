@@ -29,7 +29,6 @@ class DeckSelectView(View):
         self.deck_data = deck_data
         self.add_item(SaisonSelect(self))
 
-
 class SaisonSelect(Select):
     def __init__(self, parent_view: DeckSelectView):
         self.parent_view = parent_view
@@ -42,12 +41,10 @@ class SaisonSelect(Select):
     async def callback(self, interaction: discord.Interaction):
         saison = self.values[0]
         new_view = DuellisteSelectView(
-            self.parent_view.bot,
-            self.parent_view.deck_data,
-            saison
+            self.parent_view.bot, self.parent_view.deck_data, saison
         )
         await interaction.response.edit_message(
-            content=f"🎴 Saison choisie : **{saison}**\n👤 Choisis un duelliste :",
+            content=f"🎴 Saison choisie : **{saison}**\nSélectionne un duelliste :",
             view=new_view,
             embed=None
         )
@@ -62,7 +59,6 @@ class DuellisteSelectView(View):
         self.deck_data = deck_data
         self.saison = saison
         self.add_item(DuellisteSelect(self))
-
 
 class DuellisteSelect(Select):
     def __init__(self, parent_view: DuellisteSelectView):
@@ -79,13 +75,23 @@ class DuellisteSelect(Select):
         duelliste = self.values[0]
         infos = self.parent_view.deck_data[saison][duelliste]
 
-        deck_text = infos.get("deck", "❌ Aucun deck trouvé.")
-        astuces_text = infos.get("astuces", "❌ Aucune astuce disponible.")
+        deck_data = infos.get("deck", "❌ Aucun deck trouvé.")
+        astuces_data = infos.get("astuces", "❌ Aucune astuce disponible.")
+
+        # Formatage en texte
+        if isinstance(deck_data, list):
+            deck_text = "\n".join(f"• {item}" for item in deck_data)
+        else:
+            deck_text = deck_data
+
+        if isinstance(astuces_data, list):
+            astuces_text = "\n".join(f"💡 {item}" for item in astuces_data)
+        else:
+            astuces_text = astuces_data
 
         embed = discord.Embed(
-            title=f"🧙‍♂️ Deck de {duelliste}",
-            description=f"📅 Saison : **{saison}**",
-            color=discord.Color.dark_blue()
+            title=f"🧙‍♂️ Deck de {duelliste} (Saison {saison})",
+            color=discord.Color.blue()
         )
         embed.add_field(name="📘 Deck(s)", value=deck_text, inline=False)
         embed.add_field(name="💡 Astuces", value=astuces_text, inline=False)
