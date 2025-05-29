@@ -29,10 +29,6 @@ class Question(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # ────────────────────────────────────────────────────────────────────────────
-    # 📦 Récupération d’un échantillon de cartes Yu-Gi-Oh
-    # Utilise l’API officielle YGOPRODeck (cartes en français)
-    # ────────────────────────────────────────────────────────────────────────────
     async def fetch_card_sample(self, limit=150):
         url = "https://db.ygoprodeck.com/api/v7/cardinfo.php?language=fr"
         async with aiohttp.ClientSession() as session:
@@ -43,16 +39,10 @@ class Question(commands.Cog):
                 all_cards = data.get("data", [])
                 return random.sample(all_cards, min(limit, len(all_cards)))
 
-    # ────────────────────────────────────────────────────────────────────────────
-    # 🛡️ Remplace toutes les occurrences du nom de la carte dans sa description
-    # ────────────────────────────────────────────────────────────────────────────
     def censor_card_name(self, description: str, card_name: str) -> str:
         escaped = re.escape(card_name)
         return re.sub(escaped, "█" * len(card_name), description, flags=re.IGNORECASE)
 
-    # ────────────────────────────────────────────────────────────────────────────
-    # 📈 Met à jour le streak d’un utilisateur dans Supabase
-    # ────────────────────────────────────────────────────────────────────────────
     async def update_streak(self, user_id: str, correct: bool):
         data = supabase.table("ygo_streaks").select("*").eq("user_id", user_id).execute()
 
@@ -76,10 +66,6 @@ class Question(commands.Cog):
                 "best_streak": 1 if correct else 0
             }).execute()
 
-    # ────────────────────────────────────────────────────────────────────────────
-    # ❓ Commande principale : !Question
-    # Devine une carte Yu-Gi-Oh à partir de sa description parmi 4
-    # ────────────────────────────────────────────────────────────────────────────
     @commands.command(
         name="Question",
         aliases=["q"],
@@ -87,13 +73,11 @@ class Question(commands.Cog):
     )
     async def Question(self, ctx):
         try:
-            # 🔄 Récupération initiale
             cards = await self.fetch_card_sample()
             if not cards:
                 await ctx.send("🚨 Erreur lors du chargement des cartes.")
                 return
 
-            # 🔍 Trouver une carte avec un archétype
             random.shuffle(cards)
             main_card = next((c for c in cards if c.get("archetype") and "desc" in c and "name" in c), None)
 
@@ -102,30 +86,50 @@ class Question(commands.Cog):
                 return
 
             archetype = main_card["archetype"]
-            main_type = main_card.get("type", "").lower()  # 🔍 Type principal
+            main_type = main_card.get("type", "").lower()
 
-            # 🔗 Récupération des autres cartes du même archétype ET même type
-            url = f"https://db.ygoprodeck.com/api/v7/cardinfo.php?archetype={archetype}&language=fr"
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as resp:
-                    if resp.status != 200:
-                        await ctx.send("❌ Erreur lors de la récupération des cartes de l'archétype.")
-                        return
-                    data = await resp.json()
-                    group = [
-                        c for c in data.get("data", [])
-                        if (
-                            "name" in c and "desc" in c and
-                            c["name"] != main_card["name"] and
-                            c.get("type", "").lower() == main_type
-                        )
-                    ]
+            # 🔗 Recherche de cartes du même archétype et/ou type
+            group = []
+            type_keyword = "monstre" if "monstre" in main_type else ("magie" if "magie" in main_type else "piège")
+
+            if archetype:
+                # 📦 Tentative stricte : même archétype + même type précis
+                url = f"https://db.ygoprodeck.com/api/v7/cardinfo.php?archetype={archetype}&language=fr"
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            full_archetype = data.get("data", [])
+
+                            group = [
+                                c for c in full_archetype
+                                if "name" in c and "desc" in c and
+                                c["name"] != main_card["name"] and
+                                c.get("type", "").lower() == main_type
+                            ]
+
+                            # 🧩 Si pas assez, on relâche à même archétype + même type vague
+                            if len(group) < 3:
+                                group = [
+                                    c for c in full_archetype
+                                    if "name" in c and "desc" in c and
+                                    c["name"] != main_card["name"] and
+                                    type_keyword in c.get("type", "").lower()
+                                ]
+
+            # ⛔ Si pas d’archétype ou pas assez de cartes : fallback au même type vague global
+            if len(group) < 3:
+                group = [
+                    c for c in cards
+                    if "name" in c and "desc" in c and
+                    c["name"] != main_card["name"] and
+                    type_keyword in c.get("type", "").lower()
+                ]
 
             if len(group) < 3:
                 await ctx.send("❌ Pas assez de cartes pour générer des propositions.")
                 return
 
-            # ✅ Préparation des choix
             true_card = main_card
             wrong_choices = random.sample(group, 3)
             all_choices = [true_card["name"]] + [c["name"] for c in wrong_choices]
@@ -134,7 +138,6 @@ class Question(commands.Cog):
             desc = self.censor_card_name(true_card["desc"], true_card["name"])
             image_url = true_card.get("card_images", [{}])[0].get("image_url_cropped", None)
 
-            # 🖼️ Embed visuel
             embed = discord.Embed(
                 title="🧠 Essaie de deviner le nom de cette carte !",
                 description=(
@@ -151,25 +154,21 @@ class Question(commands.Cog):
 
             embed.add_field(name="🔹 Archétype", value=f"||{archetype}||", inline=False)
 
-            # 📊 Stats supplémentaires (pour les monstres uniquement)
             if true_card.get("type", "").lower().startswith("monstre"):
                 embed.add_field(name="💥 ATK", value=str(true_card.get("atk", "—")), inline=True)
                 embed.add_field(name="🛡️ DEF", value=str(true_card.get("def", "—")), inline=True)
                 embed.add_field(name="⭐ Niveau", value=str(true_card.get("level", "—")), inline=True)
                 embed.add_field(name="🌪️ Attribut", value=true_card.get("attribute", "—"), inline=True)
 
-            # 🗳️ Propositions
             options = "\n".join([f"{REACTIONS[i]} {name}" for i, name in enumerate(all_choices)])
             embed.add_field(name="❓ Quelle est cette carte ?", value=options, inline=False)
             embed.set_footer(text="Clique sur la bonne réaction ci-dessous 👇")
 
             msg = await ctx.send(embed=embed)
 
-            # 🧷 Ajout des réactions
             for emoji in REACTIONS[:len(all_choices)]:
                 await msg.add_reaction(emoji)
 
-            # ✅ Attente réponse utilisateur
             def check(reaction, user):
                 return user == ctx.author and reaction.message.id == msg.id and str(reaction.emoji) in REACTIONS
 
@@ -182,7 +181,6 @@ class Question(commands.Cog):
             selected_index = REACTIONS.index(str(reaction.emoji))
             user_id = str(ctx.author.id)
 
-            # 🏁 Résultat
             if selected_index == correct_index:
                 await self.update_streak(user_id, correct=True)
                 await ctx.send(f"✅ Bonne réponse ! C’était bien **{true_card['name']}**.")
@@ -193,6 +191,7 @@ class Question(commands.Cog):
         except Exception as e:
             print("[ERREUR Question]", e)
             await ctx.send("🚨 Une erreur est survenue.")
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔌 Chargement du Cog (avec attribution catégorie)
