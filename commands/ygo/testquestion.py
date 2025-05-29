@@ -129,7 +129,7 @@ class TestQuestion(commands.Cog):
             # 🖼️ Embed visuel
             embed = discord.Embed(
                 title=f"🧩 Archétype : {archetype}",
-                description=f"🔍 **Indice :**\n*{desc[:300]}{'...' if len(desc) > 300 else ''}*",
+                description=f"🔍 **Description :**\n*{desc[:400]}{'...' if len(desc) > 300 else ''}*",
                 color=discord.Color.purple()
             )
             embed.set_author(name="YGO Quiz", icon_url="https://cdn-icons-png.flaticon.com/512/361/361678.png")
