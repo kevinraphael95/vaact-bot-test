@@ -60,8 +60,9 @@ class Tournoi(commands.Cog):
             df["DIFFICULTE"] = df.get("DIFFICULTE", "—").fillna("—")
 
             # 🎯 Filtrage des decks pris et libres
-            pris = df[df["PRIS ?"] == "✅"]
-            libres = df[df["PRIS ?"] != "✅"]
+            pris = df[df["PRIS ?"].astype(str).str.lower().isin(["true", "✅"])]
+            libres = df[~df["PRIS ?"].astype(str).str.lower().isin(["true", "✅"])]
+
 
             # 📅 Récupération de la date depuis Supabase
             tournoi_data = supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
