@@ -106,4 +106,4 @@ class ArchetypeCommand(commands.Cog):
 # ──────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     await bot.add_cog(ArchetypeCommand(bot))
-    print("✅ Cog chargé : ArchetypeCommand (catégorie = Stratégie & Archétypes)")
+    print("✅ Cog chargé : ArchetypeCommand (catégorie = 🃏 Yu-Gi-Oh!")")
