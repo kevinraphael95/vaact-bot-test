@@ -102,8 +102,9 @@ class Question(commands.Cog):
                 return
 
             archetype = main_card["archetype"]
+            main_type = main_card.get("type", "").lower()  # 🔍 Type principal
 
-            # 🔗 Récupération des autres cartes du même archétype
+            # 🔗 Récupération des autres cartes du même archétype ET même type
             url = f"https://db.ygoprodeck.com/api/v7/cardinfo.php?archetype={archetype}&language=fr"
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as resp:
@@ -111,7 +112,14 @@ class Question(commands.Cog):
                         await ctx.send("❌ Erreur lors de la récupération des cartes de l'archétype.")
                         return
                     data = await resp.json()
-                    group = [c for c in data.get("data", []) if "name" in c and "desc" in c and c["name"] != main_card["name"]]
+                    group = [
+                        c for c in data.get("data", [])
+                        if (
+                            "name" in c and "desc" in c and
+                            c["name"] != main_card["name"] and
+                            c.get("type", "").lower() == main_type
+                        )
+                    ]
 
             if len(group) < 3:
                 await ctx.send("❌ Pas assez de cartes pour générer des propositions.")
@@ -141,8 +149,7 @@ class Question(commands.Cog):
             if image_url:
                 embed.set_thumbnail(url=image_url)
 
-            embed.set_footer(text=f"🔹 Archétype : ||{archetype}||")
-
+            embed.add_field(name="🔹 Archétype", value=f"||{archetype}||", inline=False)
 
             # 📊 Stats supplémentaires (pour les monstres uniquement)
             if true_card.get("type", "").lower().startswith("monstre"):
