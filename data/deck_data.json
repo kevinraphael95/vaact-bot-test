@@ -1,45 +1,257 @@
 {
   "Saison 1": {
-    "Atem": "Version Débutant : https://www.duelingbook.com/deck?id=16095319\n\nVersion Expert : https://www.duelingbook.com/deck?id=15130114\nExt. Duel Version Expert : https://www.duelingbook.com/deck?id=15291959",
-    "Seto Kaiba": "Deck: https://www.duelingbook.com/deck?id=9257420",
-    "Joey Wheeler": "Version Débutant : https://www.duelingbook.com/deck?id=16095468\n\nVersion Expert : https://www.duelingbook.com/deck?id=9257303\nExt. Duel version Expert : https://www.duelingbook.com/deck?id=15292212",
-    "Jaden Yuki": "Version Débutant : https://www.duelingbook.com/deck?id=16095651\n\nMain/Side Version Expert : https://www.duelingbook.com/deck?id=15196424\nExtra Version Expert : https://www.duelingbook.com/deck?id=12174715\n\nExt. Duel (toutes versions) : https://www.duelingbook.com/deck?id=15292349",
-    "Chad Princeton": "Version Débutant : https://www.duelingbook.com/deck?id=16102604\n\nVersion Expert : https://www.duelingbook.com/deck?id=15131811",
-    "Zane Truesdale": "Main/Extra/Side : https://www.duelingbook.com/deck?id=17380207\n\nExt. Duel : https://www.duelingbook.com/deck?id=15295840",
-    "Aster Phenix": "Version Débutant : https://www.duelingbook.com/deck?id=15997465\n\nVersion Expert : https://www.duelingbook.com/deck?id=15772122\n\nExt. Duel (toutes versions) : https://www.duelingbook.com/deck?id=15997460",
-    "Yusei Fudo": "Version Débutant : https://www.duelingbook.com/deck?id=9257315\n\nMain/Side Version Expert : https://www.duelingbook.com/deck?id=16102810\nExtra Version Expert : https://www.duelingbook.com/deck?id=12174764",
-    "Jack Atlas": "Deck: https://www.duelingbook.com/deck?id=16715345",
-    "Yuma Tsukumo": "Version Débutant : https://www.duelingbook.com/deck?id=16696766\n\nMain/Side Version Expert : https://www.duelingbook.com/deck?id=15442289\nExtra Version Expert : https://www.duelingbook.com/deck?id=15444951\n\nExt. Duel : https://www.duelingbook.com/deck?id=15295904",
-    "Kite Tenjo": "Deck: https://www.duelingbook.com/deck?id=12144019",
-    "Shark": "Main/Side : https://www.duelingbook.com/deck?id=12117266\n\nExtra : https://www.duelingbook.com/deck?id=12217081\n\nExt. Duel : https://www.duelingbook.com/deck?id=15542596",
-    "Yuya Sakaki": "Main/Extra/Side : https://www.duelingbook.com/deck?id=12152927\nExt. Duel : https://www.duelingbook.com/deck?id=15337778",
-    "Reiji Akaba": "Main/Side : https://www.duelingbook.com/deck?id=12169181\nExtra : https://www.duelingbook.com/deck?id=12174794",
-    "Playmaker": "Main/Side : https://www.duelingbook.com/deck?id=15142824\nExtra : https://www.duelingbook.com/deck?id=12174801",
-    "Revolver": "Main/Side : https://www.duelingbook.com/deck?id=12179334\nExtra : https://www.duelingbook.com/deck?id=12223917"
+    "Atem": {
+      "deck": [
+        "Version Débutant : https://www.duelingbook.com/deck?id=16095319",
+        "Version Expert : https://www.duelingbook.com/deck?id=15130114",
+        "Ext. Duel Version Expert : https://www.duelingbook.com/deck?id=15291959"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Seto Kaiba": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=9257420"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Joey Wheeler": {
+      "deck": [
+        "Version Débutant : https://www.duelingbook.com/deck?id=16095468",
+        "Version Expert : https://www.duelingbook.com/deck?id=9257303",
+        "Ext. Duel version Expert : https://www.duelingbook.com/deck?id=15292212"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Jaden Yuki": {
+      "deck": [
+        "Version Débutant : https://www.duelingbook.com/deck?id=16095651",
+        "Main/Side Version Expert : https://www.duelingbook.com/deck?id=15196424",
+        "Extra Version Expert : https://www.duelingbook.com/deck?id=12174715",
+        "Ext. Duel (toutes versions) : https://www.duelingbook.com/deck?id=15292349"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Chad Princeton": {
+      "deck": [
+        "Version Débutant : https://www.duelingbook.com/deck?id=16102604",
+        "Version Expert : https://www.duelingbook.com/deck?id=15131811"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Zane Truesdale": {
+      "deck": [
+        "Main/Extra/Side : https://www.duelingbook.com/deck?id=17380207",
+        "Ext. Duel : https://www.duelingbook.com/deck?id=15295840"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Aster Phenix": {
+      "deck": [
+        "Version Débutant : https://www.duelingbook.com/deck?id=15997465",
+        "Version Expert : https://www.duelingbook.com/deck?id=15772122",
+        "Ext. Duel (toutes versions) : https://www.duelingbook.com/deck?id=15997460"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Yusei Fudo": {
+      "deck": [
+        "Version Débutant : https://www.duelingbook.com/deck?id=9257315",
+        "Main/Side Version Expert : https://www.duelingbook.com/deck?id=16102810",
+        "Extra Version Expert : https://www.duelingbook.com/deck?id=12174764"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Jack Atlas": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16715345"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Yuma Tsukumo": {
+      "deck": [
+        "Version Débutant : https://www.duelingbook.com/deck?id=16696766",
+        "Main/Side Version Expert : https://www.duelingbook.com/deck?id=15442289",
+        "Extra Version Expert : https://www.duelingbook.com/deck?id=15444951",
+        "Ext. Duel : https://www.duelingbook.com/deck?id=15295904"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Kite Tenjo": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=12144019"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Shark": {
+      "deck": [
+        "Main/Side : https://www.duelingbook.com/deck?id=12117266",
+        "Extra : https://www.duelingbook.com/deck?id=12217081",
+        "Ext. Duel : https://www.duelingbook.com/deck?id=15542596"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Yuya Sakaki": {
+      "deck": [
+        "Main/Extra/Side : https://www.duelingbook.com/deck?id=12152927",
+        "Ext. Duel : https://www.duelingbook.com/deck?id=15337778"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Reiji Akaba": {
+      "deck": [
+        "Main/Side : https://www.duelingbook.com/deck?id=12169181",
+        "Extra : https://www.duelingbook.com/deck?id=12174794"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Playmaker": {
+      "deck": [
+        "Main/Side : https://www.duelingbook.com/deck?id=15142824",
+        "Extra : https://www.duelingbook.com/deck?id=12174801"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Revolver": {
+      "deck": [
+        "Main/Side : https://www.duelingbook.com/deck?id=12179334",
+        "Extra : https://www.duelingbook.com/deck?id=12223917"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    }
   },
   "Saison 1.5": {
-    "Yugi Muto": "Version Débutant : https://www.duelingbook.com/deck?id=16095397\nVersion Expert : https://www.duelingbook.com/deck?id=15134403",
-    "Jaden Yuki Manga": "Main/Side : https://www.duelingbook.com/deck?id=14395009\nExtra : https://www.duelingbook.com/deck?id=14478875\nExt. Duel : https://www.duelingbook.com/deck?id=16095795",
-    "Chad Princeton Manga": "Deck: https://www.duelingbook.com/deck?id=15460026",
-    "Kite Tenjo Arc V": "Deck: https://www.duelingbook.com/deck?id=15430433",
-    "Yuya Sakaki Manga": "Deck: https://www.duelingbook.com/deck?id=14371320"
+    "Yugi Muto": {
+      "deck": [
+        "Version Débutant : https://www.duelingbook.com/deck?id=16095397",
+        "Version Expert : https://www.duelingbook.com/deck?id=15134403"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Jaden Yuki Manga": {
+      "deck": [
+        "Main/Side : https://www.duelingbook.com/deck?id=14395009",
+        "Extra : https://www.duelingbook.com/deck?id=14478875",
+        "Ext. Duel : https://www.duelingbook.com/deck?id=16095795"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Chad Princeton Manga": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=15460026"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Kite Tenjo Arc V": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=15430433"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Yuya Sakaki Manga": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=14371320"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    }
   },
   "Saison 2": {
-    "Mai Valentine": "Main/Extra/Side : https://www.duelingbook.com/deck?id=16404335\n\nExt. Duel : https://www.duelingbook.com/deck?id=17803773",
-    "Syrus Truesdale": "Deck: https://www.duelingbook.com/deck?id=16438567",
-    "Bastien Misawa": "Main/Side : https://www.duelingbook.com/deck?id=12267920\nExt. Duel : https://www.duelingbook.com/deck?id=17541484",
-    "Alexia Rhodes": "Deck: https://www.duelingbook.com/deck?id=16461083",
-    "Akiza Izinski": "Deck: https://www.duelingbook.com/deck?id=16639852",
-    "Crow Hogan": "Deck: https://www.duelingbook.com/deck?id=17185559",
-    "Anna Kaboom": "Deck: https://www.duelingbook.com/deck?id=16637792",
-    "Zuzu Boyle": "Deck: https://www.duelingbook.com/deck?id=16937372",
-    "Gong Strong": "Deck: https://www.duelingbook.com/deck?id=16402963",
-    "Sylvio Sawatari": "Deck: https://www.duelingbook.com/deck?id=16937631",
-    "Shay Obsidian": "Deck: https://www.duelingbook.com/deck?id=16802070",
-    "Sora Perse": "Deck: https://www.duelingbook.com/deck?id=16784992",
-    "Blue Angel": "Deck: https://www.duelingbook.com/deck?id=16812530",
-    "George Gore": "Deck: https://www.duelingbook.com/deck?id=16852439",
-    "Ghost Gal": "Deck: https://www.duelingbook.com/deck?id=17043611",
-    "Soulburner": "Deck: https://www.duelingbook.com/deck?id=16386887"
+    "Mai Valentine": {
+      "deck": [
+        "Main/Extra/Side : https://www.duelingbook.com/deck?id=16404335",
+        "Ext. Duel : https://www.duelingbook.com/deck?id=17803773"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Syrus Truesdale": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16438567"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Bastien Misawa": {
+      "deck": [
+        "Main/Side : https://www.duelingbook.com/deck?id=12267920",
+        "Ext. Duel : https://www.duelingbook.com/deck?id=17541484"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Alexia Rhodes": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16461083"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Akiza Izinski": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16639852"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Crow Hogan": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=17185559"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Anna Kaboom": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16637792"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Zuzu Boyle": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16937372"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Gong Strong": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16402963"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Sylvio Sawatari": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16937631"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Shay Obsidian": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16802070"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Sora Perse": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16784992"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Blue Angel": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16812530"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "George Gore": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16852439"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Ghost Gal": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=17043611"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Soulburner": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16386887"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    }
   }
 }
