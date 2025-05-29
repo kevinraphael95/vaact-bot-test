@@ -60,6 +60,7 @@ class Question(commands.Cog):
             }).execute()
 
     @commands.command(name="Question", aliases=["q"], help="Devine le nom de la carte Yu-Gi-Oh parmi 4 choix.")
+    @commands.cooldown(1, 8, commands.BucketType.user)  # ⏱️ Cooldown de 8 secondes par utilisateur
     async def Question(self, ctx):
         try:
             cards = await self.fetch_card_sample()
