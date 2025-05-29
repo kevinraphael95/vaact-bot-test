@@ -50,19 +50,26 @@ class Tournoi(commands.Cog):
                     data = await resp.read()
 
             # 📊 Lecture et parsing du CSV avec Pandas
-            df = pd.read_csv(io.BytesIO(data))
+            df = pd.read_csv(io.BytesIO(data), encoding="utf-8", sep=",")
+            df.columns = df.columns.str.strip().str.upper()  # 🧼 Nettoyage noms de colonnes
 
-            # 🧼 Nettoyage des colonnes
-            df["PRIS ?"] = df["PRIS ?"].fillna("").str.strip()
+            # 📌 Vérifie la présence des colonnes essentielles
+            required = ["PERSONNAGE", "ARCHETYPE(S)", "MECANIQUES", "DIFFICULTE", "PRIS ?"]
+            for col in required:
+                if col not in df.columns:
+                    await ctx.send(f"🚨 Colonne manquante dans le CSV : `{col}`")
+                    return
+
+            # 🧼 Nettoyage des valeurs
+            df["PRIS ?"] = df["PRIS ?"].fillna("").astype(str).str.lower().str.strip()
             df["PERSONNAGE"] = df["PERSONNAGE"].fillna("Inconnu")
-            df["ARCHETYPE(S)"] = df.get("ARCHETYPE(S)", "—").fillna("—")
-            df["MECANIQUES"] = df.get("MECANIQUES", "—").fillna("—")
-            df["DIFFICULTE"] = df.get("DIFFICULTE", "—").fillna("—")
+            df["ARCHETYPE(S)"] = df["ARCHETYPE(S)"].fillna("—")
+            df["MECANIQUES"] = df["MECANIQUES"].fillna("—")
+            df["DIFFICULTE"] = df["DIFFICULTE"].fillna("—")
 
             # 🎯 Filtrage des decks pris et libres
-            pris = df[df["PRIS ?"].astype(str).str.lower().isin(["true", "✅"])]
-            libres = df[~df["PRIS ?"].astype(str).str.lower().isin(["true", "✅"])]
-
+            pris = df[df["PRIS ?"].isin(["true", "✅"])]
+            libres = df[~df["PRIS ?"].isin(["true", "✅"])]
 
             # 📅 Récupération de la date depuis Supabase
             tournoi_data = supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
@@ -74,10 +81,10 @@ class Tournoi(commands.Cog):
             # 🛠️ Construction de l'embed
             embed = discord.Embed(
                 title="🎴 Tournoi Yu-Gi-Oh VAACT",
-                description=f"Le prochain tournoi aura lieu : **{date_tournoi}**",
+                description=f"📅 Prochain tournoi : **{date_tournoi}**",
                 color=discord.Color.purple()
             )
-            embed.add_field(name="🎮 Decks disponibles", value=str(len(libres)), inline=True)
+            embed.add_field(name="🆓 Decks disponibles", value=str(len(libres)), inline=True)
             embed.add_field(name="🔒 Decks pris", value=str(len(pris)), inline=True)
             embed.add_field(name="📋 Total", value=str(len(df)), inline=True)
 
@@ -85,7 +92,7 @@ class Tournoi(commands.Cog):
             lignes = []
             for _, row in libres.iterrows():
                 ligne = f"• **{row['PERSONNAGE']}** — *{row['ARCHETYPE(S)']}*\n"
-                ligne += f"    ⚙️ {row['MECANIQUES']} | 🎯 Difficulté {row['DIFFICULTE']}\n"
+                ligne += f"   ⚙️ {row['MECANIQUES']} | 🎯 Difficulté {row['DIFFICULTE']}\n"
                 lignes.append(ligne)
 
             texte = "\n".join(lignes)
@@ -93,7 +100,7 @@ class Tournoi(commands.Cog):
                 texte = "\n".join(lignes[:15]) + "\n... *(liste coupée)*"
 
             embed.add_field(
-                name="🆓 Liste des decks libres",
+                name="📜 Liste des decks libres",
                 value=texte if lignes else "Aucun deck disponible.",
                 inline=False
             )
