@@ -1,26 +1,14 @@
 # ──────────────────────────────────────────────────────────────
-# 📁 vocabulaire
+# 📁 vocabulaire.py
 # ──────────────────────────────────────────────────────────────
 
-# ──────────────────────────────────────────────────────────────
-# 📦 Cog principal — Commande !vocabulaire / !voc
-# ──────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────────────────────────
+# 📦 Cog principal — Commande !vocabulaire
+# ───────────────────────────────────────────────────────────────────────────────
 import discord
 from discord.ext import commands
 import json
 import os
-import asyncio
-
-# 📂 Chemin du fichier JSON
-VOCAB_PATH = os.path.join("data", "vocabulaire.json")
-
-# 📚 Fonction utilitaire pour charger le vocabulaire
-def load_vocabulaire():
-    with open(VOCAB_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-# 🔧 Paramètres de pagination
-ENTRIES_PAR_PAGE = 6
 
 # ──────────────────────────────────────────────────────────────
 # 🔧 COG : VocabulaireCommand
@@ -28,86 +16,99 @@ ENTRIES_PAR_PAGE = 6
 class VocabulaireCommand(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot  # 🔌 Stocke l'instance du bot
+        self.vocab_path = os.path.join("data", "vocabulaire.json")  # 📂 Chemin du fichier
 
     # ──────────────────────────────────────────────────────────
-    # 🔹 COMMANDE : !vocabulaire | !voc
+    # 🔹 COMMANDE : !vocabulaire / !voc
     # ──────────────────────────────────────────────────────────
     @commands.command(
         name="vocabulaire",
-        aliases=["voc"],
-        help="📖 Affiche les définitions des termes de jeu par catégorie ou mot-clé."
+        aliases=["voc"],  # 🔁 Alias
+        help="📘 Affiche la définition des termes du jeu, par mot-clé ou catégorie."
     )
-    @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)
-    async def vocabulaire(self, ctx: commands.Context, *, mot_cle=None):
-        vocabulaire = load_vocabulaire()
-        definitions = []
+    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)  # 🧊 Anti-spam
+    async def vocabulaire(self, ctx: commands.Context, *, mot_cle: str = None):
+        # 📥 Chargement des données
+        try:
+            with open(self.vocab_path, "r", encoding="utf-8") as f:
+                vocabulaire = json.load(f)
+        except Exception as e:
+            return await ctx.send(f"❌ Erreur lors du chargement du vocabulaire : {e}")
 
-        # 🔍 Si recherche par mot-clé
-        if mot_cle:
-            mot_cle = mot_cle.lower()
-            for categorie, termes in vocabulaire.items():
-                for terme, definition in termes.items():
-                    if mot_cle in terme.lower() or mot_cle in definition.lower():
-                        definitions.append((categorie, terme, definition))
-            if not definitions:
-                await ctx.send("❌ Aucun terme trouvé avec ce mot-clé.")
-                return
-        else:
-            # 📋 Liste complète triée
-            for categorie, termes in vocabulaire.items():
-                for terme, definition in termes.items():
+        # 📚 Compilation des définitions
+        definitions = []
+        for categorie, termes in vocabulaire.items():
+            for terme, data in termes.items():
+                if isinstance(data, dict):
+                    definition = data.get("definition", "❌ Pas de définition.")
+                    synonymes = data.get("synonymes", [])
+                else:
+                    definition = data
+                    synonymes = []
+
+                ensemble_termes = [terme] + synonymes
+
+                if mot_cle:
+                    for alias in ensemble_termes:
+                        if mot_cle.lower() in alias.lower() or mot_cle.lower() in definition.lower():
+                            definitions.append((categorie, terme, definition))
+                            break  # ✅ Un seul ajout par terme
+                else:
                     definitions.append((categorie, terme, definition))
 
-        # 📊 Tri alphabétique
-        definitions.sort(key=lambda x: x[1].lower())
+        if not definitions:
+            return await ctx.send("❌ Aucun terme trouvé correspondant à ta recherche.")
 
         # 📄 Pagination
-        pages = [definitions[i:i + ENTRIES_PAR_PAGE] for i in range(0, len(definitions), ENTRIES_PAR_PAGE)]
-        total_pages = len(pages)
-
-        # 📤 Fonction pour créer un embed à une page donnée
-        def get_embed(page_index):
+        definitions.sort(key=lambda x: x[1].lower())  # 🔤 Tri alphabétique
+        pages = []
+        max_par_page = 5  # 📌 Nombre de définitions par page
+        for i in range(0, len(definitions), max_par_page):
+            chunk = definitions[i:i + max_par_page]
             embed = discord.Embed(
-                title="📘 Vocabulaire du jeu",
-                description=f"Page {page_index + 1}/{total_pages}",
+                title="📘 Lexique des termes",
                 color=discord.Color.dark_blue()
             )
-            for cat, terme, defi in pages[page_index]:
-                embed.add_field(name=f"🟦 {terme} ({cat})", value=defi, inline=False)
-            return embed
+            for cat, terme, defi in chunk:
+                embed.add_field(name=f"🔹 {terme} ({cat})", value=defi, inline=False)
+            embed.set_footer(text=f"📄 Page {len(pages)+1}/{(len(definitions)-1)//max_par_page+1}")
+            pages.append(embed)
 
-        current_page = 0
-        message = await ctx.send(embed=get_embed(current_page))
+        # ▶️ Navigation par réactions
+        message = await ctx.send(embed=pages[0])
+        if len(pages) <= 1:
+            return
 
-        # ➕ Réactions
-        if total_pages > 1:
-            await message.add_reaction("⏮️")
-            await message.add_reaction("⏭️")
+        await message.add_reaction("◀️")
+        await message.add_reaction("▶️")
 
-            def check(reaction, user):
-                return (
-                    user == ctx.author and str(reaction.emoji) in ["⏮️", "⏭️"] and reaction.message.id == message.id
-                )
+        def check(reaction, user):
+            return (
+                user == ctx.author
+                and str(reaction.emoji) in ["◀️", "▶️"]
+                and reaction.message.id == message.id
+            )
 
-            while True:
-                try:
-                    reaction, _ = await self.bot.wait_for("reaction_add", timeout=60.0, check=check)
-                    if str(reaction.emoji) == "⏮️":
-                        current_page = (current_page - 1) % total_pages
-                    elif str(reaction.emoji) == "⏭️":
-                        current_page = (current_page + 1) % total_pages
-                    await message.edit(embed=get_embed(current_page))
-                    await message.remove_reaction(reaction, ctx.author)
-                except asyncio.TimeoutError:
-                    break
+        index = 0
+        while True:
+            try:
+                reaction, user = await self.bot.wait_for("reaction_add", timeout=60.0, check=check)
+                await message.remove_reaction(reaction, user)
+                if str(reaction.emoji) == "▶️":
+                    index = (index + 1) % len(pages)
+                elif str(reaction.emoji) == "◀️":
+                    index = (index - 1) % len(pages)
+                await message.edit(embed=pages[index])
+            except:
+                break
 
-    # 🏷️ Catégorisation pour !help
+    # 🏷️ Catégorisation personnalisée pour !help
     def cog_load(self):
-        self.vocabulaire.category = "Outils"
+        self.vocabulaire.category = "📖 Vocabulaire"
 
 # ──────────────────────────────────────────────────────────────
 # 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
 # ──────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     await bot.add_cog(VocabulaireCommand(bot))
-    print("✅ Cog chargé : VocabulaireCommand (catégorie = Outils)")
+    print("✅ Cog chargé : VocabulaireCommand (catégorie = 📖 Vocabulaire)")
