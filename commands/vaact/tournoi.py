@@ -1,15 +1,10 @@
-# ───────────────────────────────────────────────────────────────────────────────
-# 🎴 tournoi.py — Commande !tournoi
-# Affiche la date du prochain tournoi ainsi que les decks disponibles.
-# Utilise un fichier CSV (Google Sheets) + table Supabase pour affichage dynamique.
-# Catégorie : "VAACT"
-# ───────────────────────────────────────────────────────────────────────────────
-
 import discord
 from discord.ext import commands
 import pandas as pd
 import aiohttp
 import io
+import ssl
+from aiohttp import TCPConnector
 from supabase import create_client, Client
 import os
 
@@ -40,14 +35,24 @@ class Tournoi(commands.Cog):
                 await ctx.send("🚨 L'URL du fichier CSV n'est pas configurée.")
                 return
 
-            # 🔗 Téléchargement du CSV via HTTP
-            async with aiohttp.ClientSession() as session:
-                async with session.get(SHEET_CSV_URL) as resp:
-                    if resp.status != 200:
-                        await ctx.send("❌ Impossible de récupérer le fichier de données.")
-                        return
-                    data = await resp.read()
-                    text = data.decode("utf-8")
+            # 🔐 Contexte SSL sécurisé + patch compatibilité
+            sslcontext = ssl.create_default_context()
+            sslcontext.set_ciphers('DEFAULT:@SECLEVEL=1')
+            connector = TCPConnector(ssl=sslcontext)
+
+            # 🔗 Téléchargement du CSV via HTTP avec patch SSL
+            async with aiohttp.ClientSession(connector=connector) as session:
+                try:
+                    async with session.get(SHEET_CSV_URL) as resp:
+                        if resp.status != 200:
+                            await ctx.send("❌ Impossible de récupérer le fichier de données.")
+                            return
+                        data = await resp.read()
+                        text = data.decode("utf-8")
+                except aiohttp.ClientConnectionError as e:
+                    print(f"[ERREUR SSL AIOHTTP] {e}")
+                    await ctx.send("🚨 Erreur réseau lors de la récupération du fichier.")
+                    return
 
             # 📊 Lecture du CSV (en ignorant la première ligne inutile)
             df = pd.read_csv(io.StringIO(text), skiprows=1)
