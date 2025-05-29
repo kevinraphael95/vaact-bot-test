@@ -99,7 +99,7 @@ class ArchetypeCommand(commands.Cog):
 
     # 🏷️ Catégorisation pour !help
     def cog_load(self):
-        self.archetype.category = "Stratégie & Archétypes"
+        self.archetype.category = "🃏 Yu-Gi-Oh!"
 
 # ──────────────────────────────────────────────────────────────
 # 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
