@@ -124,7 +124,7 @@ class TestQuestion(commands.Cog):
             random.shuffle(all_choices)
             correct_index = all_choices.index(true_card["name"])
             desc = self.censor_card_name(true_card["desc"], true_card["name"])
-            image_url = true_card.get("card_images", [{}])[0].get("image_url", None)
+            image_url = true_card.get("card_images", [{}])[0].get("image_url_cropped", None)
 
             # 🖼️ Embed visuel
             embed = discord.Embed(
