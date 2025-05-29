@@ -23,6 +23,7 @@ class Help(commands.Cog):
         help="Affiche la liste des commandes ou les infos sur une commande spécifique.",
         description="Utilisation : !help [commande]\nSans argument : liste toutes les commandes.\nAvec une commande : affiche les détails de cette commande."
     )
+    @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)
     async def help_func(self, ctx, commande: str = None):
         prefix = "!"  # 🎯 Tu peux remplacer ce prefix par un système dynamique (selon serveur par exemple)
 
