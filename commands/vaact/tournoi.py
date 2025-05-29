@@ -1,7 +1,7 @@
 # ───────────────────────────────────────────────────────────────────────────────
 # 🎴 tournoi.py — Commande !tournoi
 # Affiche la date du prochain tournoi ainsi que les decks disponibles.
-# Utilise Google Sheets (CSV) et Supabase.
+# Utilise un fichier CSV (Google Sheets) + table Supabase pour affichage dynamique.
 # Catégorie : "VAACT"
 # ───────────────────────────────────────────────────────────────────────────────
 
@@ -14,11 +14,11 @@ from supabase import create_client, Client
 import os
 
 # ───────────────────────────────────────────────────────────────────────────────
-# 🔐 Connexion à Supabase + URL CSV
+# 🔐 Connexion à Supabase et URL du CSV via les variables d'environnement
 # ───────────────────────────────────────────────────────────────────────────────
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
+SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")  # Doit être de forme ?export=csv&gid=...
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -40,34 +40,37 @@ class Tournoi(commands.Cog):
                 await ctx.send("🚨 L'URL du fichier CSV n'est pas configurée.")
                 return
 
-            # 🔗 Lecture du CSV via texte (contourne erreur SSL)
-            connector = aiohttp.TCPConnector(force_close=True)
-            async with aiohttp.ClientSession(connector=connector) as session:
+            # 🔗 Téléchargement du CSV via HTTP
+            async with aiohttp.ClientSession() as session:
                 async with session.get(SHEET_CSV_URL) as resp:
                     if resp.status != 200:
                         await ctx.send("❌ Impossible de récupérer le fichier de données.")
                         return
-                    text = await resp.text()
+                    data = await resp.read()
+                    text = data.decode("utf-8")
 
-            # 📊 Parsing CSV
-            df = pd.read_csv(io.StringIO(text))
-            df["PRIS ?"] = df["PRIS ?"].fillna("").str.strip()
+            # 📊 Lecture du CSV (en ignorant la première ligne inutile)
+            df = pd.read_csv(io.StringIO(text), skiprows=1)
+
+            # 🧼 Nettoyage
+            df["PRIS ?"] = df["PRIS ?"].fillna("").astype(str).str.strip()
             df["PERSONNAGE"] = df["PERSONNAGE"].fillna("Inconnu")
             df["ARCHETYPE(S)"] = df.get("ARCHETYPE(S)", "—").fillna("—")
             df["MECANIQUES"] = df.get("MECANIQUES", "—").fillna("—")
             df["DIFFICULTE"] = df.get("DIFFICULTE", "—").fillna("—")
 
-            pris = df[df["PRIS ?"].astype(str).str.lower().isin(["true", "✅"])]
-            libres = df[~df["PRIS ?"].astype(str).str.lower().isin(["true", "✅"])]
+            # 🎯 Filtrage
+            pris = df[df["PRIS ?"].str.lower().isin(["true", "✅"])]
+            libres = df[~df["PRIS ?"].str.lower().isin(["true", "✅"])]
 
-            # 📅 Date du tournoi depuis Supabase
+            # 📅 Récupération de la date depuis Supabase
             tournoi_data = supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
             if tournoi_data.data and "prochaine_date" in tournoi_data.data[0]:
                 date_tournoi = tournoi_data.data[0]["prochaine_date"]
             else:
                 date_tournoi = "🗓️ à venir !"
 
-            # 🛠️ Embed Discord
+            # 🛠️ Construction de l'embed
             embed = discord.Embed(
                 title="🎴 Tournoi Yu-Gi-Oh VAACT",
                 description=f"Le prochain tournoi aura lieu : **{date_tournoi}**",
@@ -77,6 +80,7 @@ class Tournoi(commands.Cog):
             embed.add_field(name="🔒 Decks pris", value=str(len(pris)), inline=True)
             embed.add_field(name="📋 Total", value=str(len(df)), inline=True)
 
+            # 📃 Affichage des decks disponibles
             lignes = []
             for _, row in libres.iterrows():
                 ligne = f"• **{row['PERSONNAGE']}** — *{row['ARCHETYPE(S)']}*\n"
@@ -101,7 +105,7 @@ class Tournoi(commands.Cog):
             await ctx.send("🚨 Une erreur est survenue lors de la récupération des données du tournoi.")
 
 # ───────────────────────────────────────────────────────────────────────────────
-# 🔌 Setup
+# 🔌 Chargement du Cog
 # ───────────────────────────────────────────────────────────────────────────────
 
 async def setup(bot):
