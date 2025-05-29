@@ -112,12 +112,12 @@ class VocabulaireCommand(commands.Cog):
 async def setup(bot: commands.Bot):
     """
     Fonction appelée pour enregistrer ce cog dans le bot principal.
-    On ajoute aussi manuellement une catégorie "📖 Vocabulaire" pour l’affichage dans !help.
+    On ajoute aussi manuellement une catégorie "🃏 Yu-Gi-Oh!" pour l’affichage dans !help.
     """
     cog = VocabulaireCommand(bot)
 
     # 🗂️ Définir la catégorie pour toutes les commandes de ce cog
     for command in cog.get_commands():
-        command.category = "📖 Vocabulaire"
+        command.category = "🃏 Yu-Gi-Oh!"
 
     await bot.add_cog(cog)
