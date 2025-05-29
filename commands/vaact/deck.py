@@ -85,7 +85,7 @@ class DuellisteSelect(Select):
             deck_text = deck_data
 
         if isinstance(astuces_data, list):
-            astuces_text = "\n".join(f"💡 {item}" for item in astuces_data)
+            astuces_text = "\n".join(f"• {item}" for item in astuces_data)
         else:
             astuces_text = astuces_data
 
