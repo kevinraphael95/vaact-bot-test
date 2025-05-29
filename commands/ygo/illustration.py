@@ -8,7 +8,6 @@ import aiohttp
 import random
 import asyncio
 
-# Émojis pour les choix de réponses
 REACTIONS = ["🇦", "🇧", "🇨", "🇩"]
 
 # ──────────────────────────────────────────────────────────────
@@ -18,15 +17,29 @@ class IllustrationCommand(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    async def fetch_random_card(self):
-        """Récupère une carte aléatoire depuis l'API YGOProDeck."""
+    async def fetch_all_cards(self):
+        """Récupère toutes les cartes en français."""
         url = "https://db.ygoprodeck.com/api/v7/cardinfo.php?language=fr"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
                 if resp.status != 200:
-                    return None
+                    return []
                 data = await resp.json()
-        return random.choice(data.get("data", [])) if data.get("data") else None
+        return data.get("data", [])
+
+    async def get_similar_cards(self, all_cards, true_card):
+        """Retourne jusqu'à 3 cartes similaires par archétype, ou sinon par type."""
+        archetype = true_card.get("archetype")
+        card_type = true_card.get("type", "")
+
+        # 🔎 Filtrage par archétype
+        if archetype:
+            group = [card for card in all_cards if card.get("archetype") == archetype and card["name"] != true_card["name"]]
+        else:
+            # Sinon, filtrage par type (ex: Monstre, Magie, Piège)
+            group = [card for card in all_cards if card.get("type") == card_type and card["name"] != true_card["name"]]
+
+        return random.sample(group, k=min(3, len(group))) if group else []
 
     # ──────────────────────────────────────────────────────────
     # 🔹 COMMANDE : !illustration
@@ -39,44 +52,45 @@ class IllustrationCommand(commands.Cog):
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
     async def illustration(self, ctx: commands.Context):
         try:
-            # 🃏 Carte réelle
-            true_card = await self.fetch_random_card()
-            if not true_card or not true_card.get("name"):
-                await ctx.send("🚨 Impossible de récupérer une carte valide.")
+            all_cards = await self.fetch_all_cards()
+            if not all_cards:
+                await ctx.send("🚨 Impossible de récupérer les cartes.")
                 return
 
-            image_url = true_card.get("card_images", [{}])[0].get("image_url_cropped", None)
+            # 🃏 Carte cible à deviner
+            true_card = random.choice([card for card in all_cards if "image_url_cropped" in card.get("card_images", [{}])[0]])
+            image_url = true_card["card_images"][0].get("image_url_cropped")
             if not image_url:
                 await ctx.send("🚫 Cette carte n’a pas d’illustration croppée.")
                 return
 
-            # ❌ Fausses propositions
-            wrong_choices = []
-            while len(wrong_choices) < 3:
-                card = await self.fetch_random_card()
-                if card and card["name"] != true_card["name"] and card["name"] not in [c["name"] for c in wrong_choices]:
-                    wrong_choices.append(card)
+            # 🎯 Cartes similaires
+            similar_cards = await self.get_similar_cards(all_cards, true_card)
 
-            # 🔀 Mélange des réponses
-            all_choices = [true_card["name"]] + [c["name"] for c in wrong_choices]
+            # ⛔ Si pas assez de propositions
+            if len(similar_cards) < 3:
+                await ctx.send("❌ Pas assez de cartes similaires pour créer des choix.")
+                return
+
+            # 🔀 Préparation des choix
+            all_choices = [true_card["name"]] + [card["name"] for card in similar_cards]
             random.shuffle(all_choices)
             correct_index = all_choices.index(true_card["name"])
 
-            # 📤 Embed
+            # 🖼️ Création de l'embed
             embed = discord.Embed(
                 title="🖼️ Devine la carte à partir de son illustration !",
                 description="\n".join([f"{REACTIONS[i]} {name}" for i, name in enumerate(all_choices)]),
                 color=discord.Color.purple()
             )
             embed.set_image(url=image_url)
-            embed.set_footer(text="Réagis avec l’emoji correspondant à ta réponse.")
+            embed.set_footer(text=f"🔹 Archétype : ||{true_card.get('archetype', 'Aucun')}||")
 
             msg = await ctx.send(embed=embed)
 
             for emoji in REACTIONS[:len(all_choices)]:
                 await msg.add_reaction(emoji)
 
-            # ✅ Vérification réaction utilisateur
             def check(reaction, user):
                 return user == ctx.author and reaction.message.id == msg.id and str(reaction.emoji) in REACTIONS
 
@@ -88,15 +102,14 @@ class IllustrationCommand(commands.Cog):
 
             selected_index = REACTIONS.index(str(reaction.emoji))
             if selected_index == correct_index:
-                await ctx.send(f"✅ Bien joué ! C’était **{true_card['name']}**.")
+                await ctx.send(f"✅ Bonne réponse ! C’était **{true_card['name']}**.")
             else:
-                await ctx.send(f"❌ Mauvaise réponse ! La bonne carte était **{true_card['name']}**.")
+                await ctx.send(f"❌ Mauvaise réponse ! C’était **{true_card['name']}**.")
 
         except Exception as e:
             print("[ERREUR ILLUSTRATION]", e)
             await ctx.send("🚨 Une erreur est survenue pendant le quiz.")
 
-    # 🏷️ Catégorisation
     def cog_load(self):
         self.illustration.category = "🃏 Yu-Gi-Oh!"
 
