@@ -83,7 +83,7 @@ class Question(commands.Cog):
     @commands.command(
         name="Question",
         aliases=["q"],
-        help="Devine la carte Yu-Gi-Oh parmi 4 du même archétype."
+        help="Devine le nom de la carte Yu-Gi-Oh parmi les 4 proposés."
     )
     async def Question(self, ctx):
         try:
