@@ -1,100 +1,94 @@
-# =======================
-# 📦 IMPORTS
-# =======================
-import discord  # Pour créer des embeds et interagir avec Discord
-from discord.ext import commands  # Pour créer des commandes de bot
-import aiohttp  # Pour les requêtes HTTP asynchrones
-import random  # Pour choisir une carte aléatoirement
+# ────────────────────────────────────────────────────────────────────────────────
+# 🎲 Random.py — Commande !random
+# Objectif : Tirer une carte Yu-Gi-Oh! aléatoire et l'afficher joliment dans un embed
+# Source : API publique YGOPRODeck (https://db.ygoprodeck.com/api-guide/)
+# Langue : 🇫🇷 Français uniquement
+# ────────────────────────────────────────────────────────────────────────────────
 
-# =======================
-# 🧠 CLASSE Random
-# =======================
+# ────────────────────────────────────────────────────────────────────────────────
+# 📦 Imports nécessaires
+# ────────────────────────────────────────────────────────────────────────────────
+import discord                                 # Pour créer des embeds Discord
+from discord.ext import commands              # Pour créer des commandes dans un Cog
+import aiohttp                                 # Pour effectuer des requêtes HTTP asynchrones
+import random                                  # Pour choisir une carte au hasard
+
+# ────────────────────────────────────────────────────────────────────────────────
+# 📘 Classe principale du Cog de commande !random
+# ────────────────────────────────────────────────────────────────────────────────
 class Random(commands.Cog):
-    """Cog contenant une commande pour tirer une carte Yu-Gi-Oh! aléatoire."""
+    """Commande !random : tire une carte Yu-Gi-Oh! aléatoire (langue FR)."""
 
     def __init__(self, bot: commands.Bot):
-        """
-        Constructeur du cog.
-        :param bot: instance du bot Discord
-        """
-        self.bot = bot
+        self.bot = bot  # Référence au bot principal
 
-    # =======================
-    # 🎲 COMMANDE random
-    # =======================
+    # ────────────────────────────────────────────────────────────────────────────
+    # 🎲 Commande !random
+    # ────────────────────────────────────────────────────────────────────────────
     @commands.command(name="random", aliases=["aléatoire", "ran"])
-    @commands.cooldown(1, 5, commands.BucketType.user)  # ⏱️ Cooldown de 5 secondes par utilisateur
+    @commands.cooldown(1, 5, commands.BucketType.user)  # ⏱️ Cooldown utilisateur : 5 sec
     async def random_card(self, ctx: commands.Context):
         """
-        Commande !random
-        Tire une carte Yu-Gi-Oh! aléatoire (en français) depuis l'API de YGOPRODeck.
+        Tire une carte Yu-Gi-Oh! aléatoire en français via l’API YGOPRODeck.
         """
 
-        # 🔗 URL de l'API pour toutes les cartes (en français)
+        # 🔗 API publique (cartes en langue française)
         url = "https://db.ygoprodeck.com/api/v7/cardinfo.php?language=fr"
 
-        # 📡 Requête à l’API
+        # 📡 Requête HTTP à l’API
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
                 if resp.status != 200:
-                    await ctx.send("❌ Impossible de récupérer les données depuis l’API.")
+                    await ctx.send("❌ Impossible de contacter l’API.")
                     return
-
                 data = await resp.json()
 
-        # 🛑 Vérification de la validité des données
+        # 🛑 Données invalides
         if "data" not in data:
-            await ctx.send("❌ Données de carte non valides.")
+            await ctx.send("❌ Données reçues invalides.")
             return
 
-        # 🎯 Choix d'une carte au hasard dans les données
+        # 🎯 Tirage d'une carte aléatoire
         carte = random.choice(data["data"])
 
-        # =======================
-        # 🖼️ CRÉATION DE L’EMBED
-        # =======================
+        # ────────────────────────────────────────────────────────────────────────
+        # 🖼️ Création de l'embed de réponse
+        # ────────────────────────────────────────────────────────────────────────
         embed = discord.Embed(
             title=carte["name"],
             description=carte.get("desc", "Pas de description disponible."),
-            color=discord.Color.gold()  # Couleur dorée pour le côté aléatoire
+            color=discord.Color.gold()
         )
 
-        # 🔬 Type général (Magie, Piège, Monstre...)
-        embed.add_field(name="🧪 Type", value=carte.get("type", "?"), inline=True)
+        embed.set_author(name="Carte aléatoire Yu-Gi-Oh!", icon_url="https://cdn-icons-png.flaticon.com/512/361/361678.png")
 
-        # =======================
-        # 🧟 SI MONSTRE, AJOUTER LES STATS
-        # =======================
+        # 🔬 Type général
+        embed.add_field(name="🧪 Type", value=carte.get("type", "—"), inline=True)
+
+        # 💥 Si c'est un monstre, ajouter ses statistiques
         if carte.get("type", "").lower().startswith("monstre"):
-            atk = carte.get("atk", "?")
-            defe = carte.get("def", "?")
-            level = carte.get("level", "?")
-            attr = carte.get("attribute", "?")
-            race = carte.get("race", "?")
+            embed.add_field(name="⚔️ ATK / DEF", value=f"{carte.get('atk', '—')} / {carte.get('def', '—')}", inline=True)
+            embed.add_field(name="⭐ Niveau / Rang", value=str(carte.get("level", "—")), inline=True)
+            embed.add_field(name="🌪️ Attribut", value=carte.get("attribute", "—"), inline=True)
+            embed.add_field(name="👹 Race", value=carte.get("race", "—"), inline=True)
 
-            embed.add_field(name="⚔️ ATK / DEF", value=f"{atk} / {defe}", inline=True)
-            embed.add_field(name="⭐ Niveau / Rang", value=str(level), inline=True)
-            embed.add_field(name="🌪️ Attribut", value=attr, inline=True)
-            embed.add_field(name="👹 Race", value=race, inline=True)
+        # 🖼️ Miniature de la carte
+        image_url = carte.get("card_images", [{}])[0].get("image_url")
+        if image_url:
+            embed.set_thumbnail(url=image_url)
 
-        # 🖼️ Image de la carte
-        embed.set_thumbnail(url=carte["card_images"][0]["image_url"])
-
-        # 📤 Envoi du résultat
+        # 📤 Envoi de l’embed
         await ctx.send(embed=embed)
 
-# =======================
-# ⚙️ SETUP DU COG
-# =======================
+# ────────────────────────────────────────────────────────────────────────────────
+# 🔌 Fonction de setup du Cog
+# ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     """
-    Fonction appelée pour enregistrer ce cog dans le bot principal.
-    On ajoute aussi manuellement une catégorie "YGO" pour l’affichage dans !help.
+    Fonction de chargement du Cog Random.
+    Ajoute la commande dans la catégorie "🃏 Yu-Gi-Oh!".
     """
     cog = Random(bot)
-
-    # 🗂️ Définir la catégorie "YGO" pour toutes les commandes de ce cog
     for command in cog.get_commands():
         command.category = "🃏 Yu-Gi-Oh!"
-
     await bot.add_cog(cog)
