@@ -77,4 +77,4 @@ class BanlistCommand(commands.Cog):
 # ──────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     await bot.add_cog(BanlistCommand(bot))
-    print("✅ Cog chargé : BanlistCommand (catégorie = Yu-Gi-Oh!)")
+    print("✅ Cog chargé : BanlistCommand (catégorie = 🃏 Yu-Gi-Oh!)")
