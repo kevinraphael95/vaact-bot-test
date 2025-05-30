@@ -1,119 +1,124 @@
-# 📁 ygo/carte.py
+# ────────────────────────────────────────────────────────────────────────────────
+# 📁 ygo/carte.py — Commande !carte
+# ────────────────────────────────────────────────────────────────────────────────
+# Ce module permet de rechercher et afficher les détails d’une carte Yu-Gi-Oh!
+# en utilisant l’API YGOPRODeck (en français).
+# ────────────────────────────────────────────────────────────────────────────────
 
-# =======================
+# ────────────────────────────────────────────────────────────────────────────────
 # 📦 IMPORTS
-# =======================
-import discord  # Pour créer des embeds et interagir avec Discord
-from discord.ext import commands  # Pour les commandes de bot Discord
-import aiohttp  # Pour faire des requêtes HTTP de manière asynchrone
-import urllib.parse  # Pour encoder les noms de cartes dans l’URL
+# ────────────────────────────────────────────────────────────────────────────────
+import discord                            # 📦 Outils de création d'embeds pour Discord
+from discord.ext import commands          # 🧩 Pour les commandes du bot
+import aiohttp                            # 🌐 Requêtes HTTP asynchrones
+import urllib.parse                       # 🔠 Encodage URL pour les noms de cartes
 
-# =======================
-# 🧠 CLASSE Carte
-# =======================
+# ────────────────────────────────────────────────────────────────────────────────
+# 🧠 COG : Carte
+# ────────────────────────────────────────────────────────────────────────────────
 class Carte(commands.Cog):
-    """Cog contenant la commande pour rechercher une carte Yu-Gi-Oh!"""
+    """
+    🔎 Cog contenant la commande !carte permettant de chercher une carte
+    Yu-Gi-Oh! en langue française via l'API YGOPRODeck.
+    """
 
     def __init__(self, bot: commands.Bot):
-        """
-        Constructeur du cog.
-        :param bot: instance du bot Discord
-        """
-        self.bot = bot
+        self.bot = bot  # 🔌 Stocke l’instance du bot
 
-    # =======================
-    # 🔍 COMMANDE carte
-    # =======================
-    @commands.command(name="carte", aliases=["card"])
+    # ────────────────────────────────────────────────────────────────────────────
+    # 🔹 COMMANDE : !carte / !card
+    # ────────────────────────────────────────────────────────────────────────────
+    @commands.command(
+        name="carte",
+        aliases=["card"],
+        help="📄 Affiche les infos d’une carte Yu-Gi-Oh! en français."
+    )
     async def carte(self, ctx: commands.Context, *, nom: str):
         """
-        Commande !carte <nom>
-        Recherche une carte Yu-Gi-Oh! en français via l’API de YGOPRODeck.
-        Le nom doit être exact.
+        🧠 Commande !carte <nom>
+        Recherche une carte Yu-Gi-Oh! par son nom (exact), et affiche ses infos.
         """
 
-        # 1️⃣ Encodage du nom pour l’URL
+        # 1️⃣ Encodage du nom de la carte pour l’URL (ex : "Dragon Blanc" → "Dragon%20Blanc")
         nom_encode = urllib.parse.quote(nom)
 
-        # 2️⃣ Construction de l’URL de l’API (langue = français)
+        # 2️⃣ Construction de l’URL vers l’API YGOPRODeck (langue = fr)
         url = f"https://db.ygoprodeck.com/api/v7/cardinfo.php?name={nom_encode}&language=fr"
 
-        # 3️⃣ Envoi de la requête HTTP à l’API
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
-                # ❌ Si l’API ne répond pas correctement
-                if resp.status != 200:
-                    await ctx.send("❌ Impossible de récupérer les données depuis l’API.")
-                    return
+        try:
+            # 3️⃣ Envoi de la requête asynchrone à l’API
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as resp:
+                    # ❌ Si l’API ne répond pas correctement
+                    if resp.status != 200:
+                        await ctx.send("🚨 Erreur : Impossible de récupérer les données depuis l’API.")
+                        return
+                    data = await resp.json()
 
-                # ✅ Lecture de la réponse JSON
-                data = await resp.json()
+            # 4️⃣ Vérifie si la carte existe dans les données retournées
+            if "data" not in data:
+                await ctx.send("❌ Carte introuvable. Vérifie l’orthographe exacte.")
+                return
 
-        # 4️⃣ Vérifie si des données de carte ont été reçues
-        if "data" not in data:
-            await ctx.send("❌ Carte introuvable. Vérifie le nom exact.")
-            return
+            # 5️⃣ Récupère la première carte trouvée dans le résultat
+            carte = data["data"][0]
 
-        # 5️⃣ On récupère la première carte trouvée
-        carte = data["data"][0]
+            # ────────────────────────────────────────────────────────────────────
+            # 🎨 CRÉATION DE L'EMBED — Informations de la carte
+            # ────────────────────────────────────────────────────────────────────
+            embed = discord.Embed(
+                title=carte.get("name", "Carte inconnue"),  # 🔠 Nom de la carte
+                description=carte.get("desc", "Pas de description disponible."),  # 📜 Texte d'effet
+                color=discord.Color.red()  # 🎨 Couleur thématique Yu-Gi-Oh!
+            )
 
-        # =======================
-        # 📋 CRÉATION DE L'EMBED
-        # =======================
-        embed = discord.Embed(
-            title=carte["name"],  # Nom de la carte
-            description=carte.get("desc", "Pas de description disponible."),  # Description de la carte
-            color=discord.Color.red()  # Couleur rouge pour le thème Yu-Gi-Oh!
-        )
+            # 🔬 Type général (Magie, Monstre, Piège, etc.)
+            embed.add_field(name="🧪 Type", value=carte.get("type", "?"), inline=True)
 
-        # 🔬 Type général de la carte (Monstre, Magie, Piège, etc.)
-        embed.add_field(name="🧪 Type", value=carte.get("type", "?"), inline=True)
+            # ────────────────────────────────────────────────────────────────────
+            # 🧟 SI C’EST UN MONSTRE : Ajouter ATK/DEF/Niveau/Attribut/Race
+            # ────────────────────────────────────────────────────────────────────
+            if carte.get("type", "").lower().startswith("monstre"):
+                atk = carte.get("atk", "?")
+                defe = carte.get("def", "?")
+                level = carte.get("level", "?")
+                attr = carte.get("attribute", "?")
+                race = carte.get("race", "?")
 
-        # =======================
-        # 🧟 SI C’EST UN MONSTRE
-        # =======================
-        if carte.get("type", "").lower().startswith("monstre"):
-            # Statistiques du monstre
-            atk = carte.get("atk", "?")
-            defe = carte.get("def", "?")
-            level = carte.get("level", "?")
-            attr = carte.get("attribute", "?")
-            race = carte.get("race", "?")
+                embed.add_field(name="⚔️ ATK / DEF", value=f"{atk} / {defe}", inline=True)
+                embed.add_field(name="⭐ Niveau / Rang", value=str(level), inline=True)
+                embed.add_field(name="🌪️ Attribut", value=attr, inline=True)
+                embed.add_field(name="👹 Race", value=race, inline=True)
 
-            # Champs additionnels pour les monstres
-            embed.add_field(name="⚔️ ATK / DEF", value=f"{atk} / {defe}", inline=True)
-            embed.add_field(name="⭐ Niveau / Rang", value=str(level), inline=True)
-            embed.add_field(name="🌪️ Attribut", value=attr, inline=True)
-            embed.add_field(name="👹 Race", value=race, inline=True)
+            # 🖼️ Image de la carte
+            embed.set_thumbnail(url=carte["card_images"][0]["image_url"])
 
-        # 🖼️ Ajout de l’image miniature de la carte
-        embed.set_thumbnail(url=carte["card_images"][0]["image_url"])
+            # 📤 Envoi du message embed dans le salon
+            await ctx.send(embed=embed)
 
-        # 📤 Envoi de l’embed dans le salon
-        await ctx.send(embed=embed)
+        except Exception as e:
+            print(f"[ERREUR CARTE] {e}")
+            await ctx.send("💥 Une erreur est survenue lors de la recherche de la carte.")
 
-# =======================
+    # ────────────────────────────────────────────────────────────────────────────
+    # 🏷️ CATÉGORIE personnalisée pour !help
+    # ────────────────────────────────────────────────────────────────────────────
+    def cog_load(self):
+        self.carte.category = "🃏 Yu-Gi-Oh!"
+
+# ────────────────────────────────────────────────────────────────────────────────
 # ⚙️ SETUP DU COG
-# =======================
+# ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     """
-    Fonction appelée pour enregistrer ce cog dans le bot principal.
-    """
-    await bot.add_cog(Carte(bot))
-
-# =======================
-# ⚙️ SETUP DU COG
-# =======================
-async def setup(bot: commands.Bot):
-    """
-    Fonction appelée pour enregistrer ce cog dans le bot principal.
-    Elle ajoute aussi manuellement une catégorie à chaque commande.
+    🔁 Fonction appelée lors du chargement du cog.
+    Elle ajoute le cog et définit une catégorie visible dans !help.
     """
     cog = Carte(bot)
 
-    # Ajout de la catégorie "YGO" à toutes les commandes de ce cog
+    # 🗂️ Ajout d'une catégorie à toutes les commandes du cog
     for command in cog.get_commands():
         command.category = "🃏 Yu-Gi-Oh!"
 
     await bot.add_cog(cog)
-
+    print("✅ Cog chargé : Carte (catégorie = 🃏 Yu-Gi-Oh!)")
