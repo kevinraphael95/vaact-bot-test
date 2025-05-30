@@ -1,43 +1,54 @@
-# =============================================================
+# ────────────────────────────────────────────────────────────────────────────────
 # 📁 help.py — Commande !help personnalisée
-# Ce fichier fournit une commande !help avancée pour afficher
-# soit la liste des commandes par catégorie, soit l'aide d'une
-# commande spécifique.
-# =============================================================
+# ────────────────────────────────────────────────────────────────────────────────
+# Fournit un système d’aide dynamique :
+# - !help           → Liste des commandes regroupées par catégorie
+# - !help <commande> → Détails sur une commande spécifique
+# ────────────────────────────────────────────────────────────────────────────────
 
-import discord
-from discord.ext import commands
+# ────────────────────────────────────────────────────────────────────────────────
+# 📦 IMPORTS
+# ────────────────────────────────────────────────────────────────────────────────
+import discord                                  # 🧱 Pour les embeds
+from discord.ext import commands                # ⚙️ Pour créer des commandes de bot
 
-# =============================================================
-# 📚 Cog : Help
-# =============================================================
+# ────────────────────────────────────────────────────────────────────────────────
+# 📚 COG : Help
+# ────────────────────────────────────────────────────────────────────────────────
 class Help(commands.Cog):
     """Affiche la liste des commandes disponibles ou l'aide d'une commande précise."""
 
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot  # 🔌 Stockage de l’instance du bot
 
+    # ────────────────────────────────────────────────────────────────────────────
+    # 🆘 COMMANDE : !help / !aide / !h
+    # ────────────────────────────────────────────────────────────────────────────
     @commands.command(
         name="help",
         aliases=["aide", "h"],
         help="Affiche la liste des commandes ou les infos sur une commande spécifique.",
-        description="Utilisation : !help [commande]\nSans argument : liste toutes les commandes.\nAvec une commande : affiche les détails de cette commande."
+        description=(
+            "Utilisation : !help [commande]\n"
+            "Sans argument : liste toutes les commandes disponibles.\n"
+            "Avec une commande : affiche ses détails complets."
+        )
     )
-    @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)
-    async def help_func(self, ctx, commande: str = None):
-        prefix = "!"  # 🎯 Tu peux remplacer ce prefix par un système dynamique (selon serveur par exemple)
+    @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)  # 🧊 Cooldown utilisateur : 3s
+    async def help_func(self, ctx: commands.Context, commande: str = None):
+        prefix = "!"  # 🎯 Préfixe à personnaliser selon le serveur si besoin
 
         # ──────────────────────────────────────────────────────
-        # 🗂️ Affichage général : liste de toutes les commandes
+        # 🗂️ CAS 1 : Affichage de toutes les commandes
         # ──────────────────────────────────────────────────────
         if commande is None:
             categories = {}
 
             for cmd in self.bot.commands:
                 if cmd.hidden:
-                    continue  # 🚫 Ignore les commandes masquées
+                    continue  # 🚫 Commandes cachées non listées
 
-                cat = getattr(cmd, "category", "Autres")  # 📦 Catégorie personnalisée ou fallback
+                cat = getattr(cmd, "category", "Autres")  # 📁 Catégorie ou fallback
                 categories.setdefault(cat, []).append(cmd)
 
             embed = discord.Embed(
@@ -46,17 +57,17 @@ class Help(commands.Cog):
                 color=discord.Color.green()
             )
 
-            # Ajoute chaque catégorie avec ses commandes
+            # 🔠 Affichage trié par catégorie
             for cat, cmds in sorted(categories.items()):
                 cmds.sort(key=lambda c: c.name)
                 lignes = [f"`{prefix}{c.name}` : {c.help or 'Pas de description.'}" for c in cmds]
                 embed.add_field(name=f"📂 {cat}", value="\n".join(lignes), inline=False)
 
-            embed.set_footer(text=f"💡 Utilise {prefix}help <commande> pour plus d'infos sur une commande.")
+            embed.set_footer(text=f"💡 Astuce : utilise {prefix}help <commande> pour les détails.")
             await ctx.send(embed=embed)
 
         # ──────────────────────────────────────────────────────
-        # 🔍 Aide spécifique à une commande donnée
+        # 🔍 CAS 2 : Aide pour une commande précise
         # ──────────────────────────────────────────────────────
         else:
             cmd = self.bot.get_command(commande)
@@ -65,32 +76,34 @@ class Help(commands.Cog):
                 return
 
             embed = discord.Embed(
-                title=f"ℹ️ Aide : `{prefix}{cmd.name}`",
+                title=f"ℹ️ Aide sur la commande : `{prefix}{cmd.name}`",
                 color=discord.Color.blue()
             )
-            embed.add_field(name="📝 Description", value=cmd.help or "Pas de description.", inline=False)
+            embed.add_field(name="📝 Description", value=cmd.help or "Pas de description disponible.", inline=False)
 
-            # Affiche les alias, s'il y en a
+            # 🔁 Alias éventuels
             if cmd.aliases:
                 embed.add_field(name="🔁 Alias", value=", ".join(f"`{a}`" for a in cmd.aliases), inline=False)
 
-            # Notes d'utilisation
-            embed.set_footer(text="📌 Les paramètres entre < > sont obligatoires, ceux entre [ ] sont optionnels.")
+            embed.set_footer(text="📌 <obligatoire> — [optionnel]")
             await ctx.send(embed=embed)
 
+    # 🏷️ Attribution personnalisée pour !help
     def cog_load(self):
-        # 🏷️ Définit la catégorie visible dans le système d’aide personnalisé
-        self.help_func.category = "Général"
+        self.help_func.category = "📁 Général"
 
-# =============================================================
-# ⚙️ Setup du Cog
-# =============================================================
-async def setup(bot):
+# ────────────────────────────────────────────────────────────────────────────────
+# ⚙️ SETUP DU COG
+# ────────────────────────────────────────────────────────────────────────────────
+async def setup(bot: commands.Bot):
+    """
+    Fonction appelée pour enregistrer le cog Help dans le bot principal.
+    """
     cog = Help(bot)
 
-    # Associe une catégorie par défaut si non définie
+    # 🗂️ Attribution d'une catégorie par défaut
     for command in cog.get_commands():
         if not hasattr(command, "category"):
-            command.category = "Général"
+            command.category = "📁 Général"
 
     await bot.add_cog(cog)
