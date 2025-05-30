@@ -82,13 +82,13 @@ class Streak(commands.Cog):
 async def setup(bot: commands.Bot):
     """
     🔧 Fonction de chargement du Cog Streak.
-    Attribue la catégorie personnalisée "🧠 VAACT" pour l’aide du bot.
+    Attribue la catégorie personnalisée "🃏 Yu-Gi-Oh!" pour l’aide du bot.
     """
     cog = Streak(bot)
 
     # 📁 Attribution de la catégorie personnalisée (utile si tu as une commande d’aide personnalisée)
     for command in cog.get_commands():
         if not hasattr(command, "category"):
-            command.category = "🧠 VAACT"
+            command.category = "🃏 Yu-Gi-Oh!"
 
     await bot.add_cog(cog)
