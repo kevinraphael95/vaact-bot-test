@@ -1,78 +1,65 @@
 # ────────────────────────────────────────────────────────────────────────────────
 # 🧱 TEMPLATE DE COMMANDE — ping.py
-# Utilisation : commande pour vérifier la latence du bot
+# Utilisation : vérifie la latence du bot avec la commande !ping
+# Objectif : démonstration conforme du template général pour les commandes
 # ────────────────────────────────────────────────────────────────────────────────
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 📦 Imports nécessaires
 # ────────────────────────────────────────────────────────────────────────────────
-import discord                                 # Gestion des embeds et interactions Discord
-from discord.ext import commands              # Système de commandes basé sur les Cogs
+import discord                                 # 🎨 Embeds, interactions et couleurs Discord
+from discord.ext import commands              # 🧩 Système de commandes modulaire via Cogs
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🧠 Classe principale du Cog — Ping
 # ────────────────────────────────────────────────────────────────────────────────
 class Ping(commands.Cog):
     """
-    🧩 Commande !ping : affiche la latence actuelle du bot.
-    Permet de tester la réactivité du bot via un joli embed.
+    🧩 Commande !ping : vérifie si le bot est réactif en renvoyant sa latence.
     """
 
     def __init__(self, bot: commands.Bot):
-        self.bot = bot  # 🔗 Référence au bot principal
+        self.bot = bot  # 🔗 Référence au bot principal pour interagir avec Discord
 
     # ────────────────────────────────────────────────────────────────────────────
-    # 🎯 Commande principale — !ping / !test
+    # 🎯 Commande principale — !ping
     # ────────────────────────────────────────────────────────────────────────────
     @commands.command(
-        name="ping",                              # 🏷️ Nom utilisé pour invoquer la commande
-        aliases=["test"],                         # 🗂️ Aliases possibles
-        help="Affiche la latence du bot."         # 🆘 Pour le help()
+        name="ping",                               # 🏷️ Nom pour invoquer la commande
+        aliases=["pong", "latence"],               # 🗂️ Alias alternatifs pour la commande
+        help="Affiche la latence actuelle du bot." # 🆘 Description pour !help
     )
-    @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)  # 🧊 Cooldown utilisateur : 3s
     async def ping(self, ctx: commands.Context):
         """
-        📚 Affiche la latence actuelle du bot Discord en millisecondes.
-        Utile pour tester si le bot répond rapidement.
+        📚 Affiche la latence actuelle du bot (en millisecondes).
+        Permet de tester la réactivité du bot sur le serveur Discord.
         """
 
         try:
             # ────────────────────────────────────────────────────────────────────
-            # 💡 LOGIQUE DE LA COMMANDE
-            # Calcul de la latence actuelle
+            # 💡 LOGIQUE DE LA COMMANDE ICI
+            # Mesure de la latence et affichage dans le chat
             # ────────────────────────────────────────────────────────────────────
-            latence = round(self.bot.latency * 1000)  # 📶 Latence en ms
-
-            embed = discord.Embed(
-                title="🏓 Pong !",
-                description=f"📶 Latence actuelle : `{latence} ms`",
-                color=discord.Color.green()
-            )
-            await ctx.send(embed=embed)
+            latence = round(self.bot.latency * 1000)  # 🔢 Conversion en millisecondes
+            await ctx.send(f"🏓 Pong ! Latence : {latence} ms")  # ✉️ Réponse utilisateur
 
         except Exception as e:
-            # 🚨 Gestion des erreurs
+            # 🚨 Gestion d'erreur propre
             print("[ERREUR PING]", e)
             await ctx.send("🚨 Une erreur est survenue lors de l'exécution de la commande.")
 
-    # 🏷️ Attribution d’une catégorie personnalisée (au chargement du cog)
-    def cog_load(self):
-        self.ping.category = "📂 Général"
-
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔌 Fonction de setup du Cog
-# À utiliser pour ajouter le cog à votre bot et définir sa catégorie
 # ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     """
-    🔧 Setup du Cog Ping.
-    Ajoute la commande au bot et définit une catégorie personnalisée.
+    🔧 Setup du Cog : ajoute le cog au bot et attribue une catégorie personnalisée
     """
     cog = Ping(bot)  # 🧱 Instanciation du Cog
 
     for command in cog.get_commands():
-        # 🎯 Attribution d’une catégorie personnalisée si absente
+        # 🏷️ Attribution d’une catégorie personnalisée (affichée dans !help)
         if not hasattr(command, "category"):
-            command.category = "Général"
+            command.category = "Général"  # 🗂️ Personnalise selon la catégorie du module
 
-    await bot.add_cog(cog)
+    await bot.add_cog(cog)  # ⚙️ Enregistrement du Cog dans le bot
