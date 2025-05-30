@@ -1,62 +1,76 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# 📁 code.py
-# ────────────────────────────────────────────────────────────────────────────────
-# Description : Commande !code — Affiche le lien vers le dépôt GitHub du bot
-# Catégorie : Général
+# 💻 code.py — Commande !code
+# Affiche le lien vers le dépôt GitHub du bot
+# Catégorie : 📂 Général
 # Accès : Public
 # ────────────────────────────────────────────────────────────────────────────────
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 📦 IMPORTS
+# 📦 Imports nécessaires
 # ────────────────────────────────────────────────────────────────────────────────
-import discord                                  # 🧱 Pour les embeds
-from discord.ext import commands                # ⚙️ Pour la création de commandes
+import discord                                 # Gestion des embeds pour Discord
+from discord.ext import commands              # Système de commandes (Cogs)
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 🔗 COG : Code
+# 🧠 Classe principale du Cog — Code
 # ────────────────────────────────────────────────────────────────────────────────
 class Code(commands.Cog):
-    """Affiche le lien du code source du bot."""
+    """
+    💻 Commande !code — Fournit le lien vers le code source du bot.
+    Permet aux utilisateurs d’accéder directement au dépôt GitHub.
+    """
 
     def __init__(self, bot: commands.Bot):
-        self.bot = bot  # 🔌 Référence au bot
+        self.bot = bot  # 🔗 Référence au bot principal
 
     # ────────────────────────────────────────────────────────────────────────────
-    # 💻 COMMANDE : !code
+    # 🎯 Commande principale — !code
+    # Fournit un lien vers le dépôt GitHub du projet
     # ────────────────────────────────────────────────────────────────────────────
     @commands.command(
-        name="code",
-        help="Affiche le lien vers le dépôt GitHub du bot.",
-        description="Retourne le lien public du code source du bot Discord."
+        name="code",                              # 🏷️ Nom de la commande
+        help="Affiche le lien vers le dépôt GitHub du bot.",  # 🆘 Description help()
+        description="Retourne le lien public du code source du bot Discord."  # 📚 Pour le help riche (si supporté)
     )
-    @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)  # 🧊 Anti-spam 3s
+    @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)  # 🧊 Anti-spam : 1 usage toutes les 3 secondes par utilisateur
     async def code(self, ctx: commands.Context):
-        # 🔗 Création de l'embed
-        embed = discord.Embed(
-            title="💻 Code source",
-            description="[Clique ici pour voir le dépôt GitHub](https://github.com/kevinraphael95/ygotest)",
-            color=discord.Color.blurple()
-        )
-        embed.set_footer(text="Yu Gi Oooooh !")  # 🎴 Footer fun
+        """
+        🔗 Envoie un embed contenant le lien vers le dépôt GitHub.
+        Utilisation : !code
+        """
 
-        # 📤 Envoi
-        await ctx.send(embed=embed)
+        try:
+            # ────────────────────────────────────────────────────────────────────
+            # 📤 Création de l'embed contenant le lien GitHub
+            # ────────────────────────────────────────────────────────────────────
+            embed = discord.Embed(
+                title="💻 Code source",
+                description="[Clique ici pour voir le dépôt GitHub](https://github.com/kevinraphael95/ygotest)",
+                color=discord.Color.blurple()
+            )
+            embed.set_footer(text="Yu Gi Oooooh !")  # 🎴 Footer personnalisé
 
-    # 🏷️ Définition de la catégorie pour !help
-    def cog_load(self):
-        self.code.category = "Général"
+            # 📩 Envoi de l'embed dans le canal
+            await ctx.send(embed=embed)
+
+        except Exception as e:
+            # 🚨 Gestion d’erreur
+            print("[ERREUR CODE]", e)
+            await ctx.send("🚨 Une erreur est survenue lors de l’envoi du lien.")
 
 # ────────────────────────────────────────────────────────────────────────────────
-# ⚙️ SETUP DU COG
+# 🔌 Fonction de setup du Cog
+# Ajoute ce cog au bot et assigne une catégorie personnalisée
 # ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     """
-    Enregistre ce cog dans le bot principal et assigne une catégorie personnalisée.
+    🔧 Setup du Cog "Code".
+    Enregistre le cog dans le bot principal et attribue une catégorie.
     """
-    cog = Code(bot)
+    cog = Code(bot)  # 🧱 Instanciation du cog
 
-    # 🗂️ Attribution manuelle de la catégorie pour toutes les commandes du cog
     for command in cog.get_commands():
+        # 🗂️ Catégorie personnalisée visible via !help
         command.category = "Général"
 
     await bot.add_cog(cog)
