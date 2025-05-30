@@ -1,105 +1,87 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# 📁 deck.py — Commande interactive !deck
-# ────────────────────────────────────────────────────────────────────────────────
-# Permet à l'utilisateur de sélectionner une saison et un duelliste pour consulter
-# son deck et ses astuces. Utilise les menus déroulants interactifs (UI Discord).
+# 🎴 deck.py — Commande interactive !deck
+# Objectif : Choisir une saison et un duelliste pour afficher son deck et ses astuces
+# Catégorie : 🧠 VAACT
+# Accès : Public
 # ────────────────────────────────────────────────────────────────────────────────
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 📦 IMPORTS
+# 📦 Imports nécessaires
 # ────────────────────────────────────────────────────────────────────────────────
-import discord                                  # 🎨 Embeds et UI Discord
-from discord.ext import commands                # ⚙️ Framework de commandes
-from discord.ui import View, Select             # 🎛️ Interfaces utilisateur (menus déroulants)
-import json                                     # 📄 Lecture des fichiers JSON
-import os                                       # 🗂️ Gestion des chemins de fichiers
+import discord                                 # 🎨 Embeds, interactions et menus
+from discord.ext import commands              # 🧩 Framework de commandes avec Cogs
+from discord.ui import View, Select           # 🎛️ Menus déroulants interactifs
+import json                                    # 📄 Lecture de fichiers JSON
+import os                                      # 🗂️ Gestion des chemins
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 📂 CHEMIN VERS LE FICHIER JSON
+# 📂 Chargement des données JSON — deck_data.json
 # ────────────────────────────────────────────────────────────────────────────────
-DECK_JSON_PATH = os.path.join("data", "deck_data.json")  # 📁 data/deck_data.json
+DECK_JSON_PATH = os.path.join("data", "deck_data.json")
 
-# ────────────────────────────────────────────────────────────────────────────────
-# 📚 Chargement du contenu JSON
-# ────────────────────────────────────────────────────────────────────────────────
 def load_deck_data():
-    """Charge les données de deck depuis le fichier JSON."""
+    """Charge les données des decks depuis le fichier JSON."""
     with open(DECK_JSON_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 🎛️ VUE 1 — Choix de la saison
+# 🎛️ UI — Sélection de saison
 # ────────────────────────────────────────────────────────────────────────────────
 class DeckSelectView(View):
-    """Vue interactive pour choisir une saison."""
+    """Vue principale pour choisir une saison."""
     def __init__(self, bot, deck_data):
         super().__init__(timeout=120)
         self.bot = bot
         self.deck_data = deck_data
-        self.add_item(SaisonSelect(self))  # Ajoute le menu déroulant des saisons
+        self.add_item(SaisonSelect(self))
 
 class SaisonSelect(Select):
-    """Menu déroulant pour sélectionner une saison."""
+    """Menu pour sélectionner une saison."""
     def __init__(self, parent_view: DeckSelectView):
         self.parent_view = parent_view
-
-        # Génère les options du menu depuis les clés JSON (saisons)
-        options = [
-            discord.SelectOption(label=saison, value=saison)
-            for saison in self.parent_view.deck_data.keys()
-        ]
+        options = [discord.SelectOption(label=s, value=s) for s in self.parent_view.deck_data]
         super().__init__(placeholder="📅 Choisis une saison", options=options)
 
     async def callback(self, interaction: discord.Interaction):
-        """Action lorsque l'utilisateur sélectionne une saison."""
         saison = self.values[0]
         new_view = DuellisteSelectView(self.parent_view.bot, self.parent_view.deck_data, saison)
-
         await interaction.response.edit_message(
             content=f"🎴 Saison choisie : **{saison}**\nSélectionne un duelliste :",
             view=new_view,
-            embed=None  # Supprime l’ancien embed
+            embed=None
         )
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 🎛️ VUE 2 — Choix du duelliste
+# 🎛️ UI — Sélection de duelliste
 # ────────────────────────────────────────────────────────────────────────────────
 class DuellisteSelectView(View):
-    """Vue interactive pour choisir un duelliste d'une saison donnée."""
+    """Vue secondaire pour choisir un duelliste."""
     def __init__(self, bot, deck_data, saison):
         super().__init__(timeout=120)
         self.bot = bot
         self.deck_data = deck_data
         self.saison = saison
-        self.add_item(DuellisteSelect(self))  # Menu déroulant des duellistes
+        self.add_item(DuellisteSelect(self))
 
 class DuellisteSelect(Select):
-    """Menu déroulant pour choisir un duelliste."""
+    """Menu pour sélectionner un duelliste."""
     def __init__(self, parent_view: DuellisteSelectView):
         self.parent_view = parent_view
-
         duellistes = list(self.parent_view.deck_data[self.parent_view.saison].keys())
-        options = [
-            discord.SelectOption(label=d, value=d)
-            for d in duellistes
-        ]
+        options = [discord.SelectOption(label=d, value=d) for d in duellistes]
         super().__init__(placeholder="👤 Choisis un duelliste", options=options)
 
     async def callback(self, interaction: discord.Interaction):
-        """Action lorsque l'utilisateur choisit un duelliste."""
         saison = self.parent_view.saison
         duelliste = self.values[0]
         infos = self.parent_view.deck_data[saison][duelliste]
 
-        # 🔎 Récupération des données
         deck_data = infos.get("deck", "❌ Aucun deck trouvé.")
         astuces_data = infos.get("astuces", "❌ Aucune astuce disponible.")
 
-        # 🧾 Formatage propre (liste ou texte brut)
-        deck_text = "\n".join(f"• {item}" for item in deck_data) if isinstance(deck_data, list) else deck_data
-        astuces_text = "\n".join(f"• {item}" for item in astuces_data) if isinstance(astuces_data, list) else astuces_data
+        deck_text = "\n".join(f"• {c}" for c in deck_data) if isinstance(deck_data, list) else deck_data
+        astuces_text = "\n".join(f"• {a}" for a in astuces_data) if isinstance(astuces_data, list) else astuces_data
 
-        # 📑 Embed final
         embed = discord.Embed(
             title=f"🧙‍♂️ Deck de {duelliste} (Saison {saison})",
             color=discord.Color.blue()
@@ -110,44 +92,52 @@ class DuellisteSelect(Select):
         await interaction.response.edit_message(
             content=None,
             embed=embed,
-            view=None  # ❌ Supprime les menus pour figer la réponse
+            view=None
         )
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 🧠 COG : Deck
+# 🧠 Classe principale du Cog — Deck
 # ────────────────────────────────────────────────────────────────────────────────
 class Deck(commands.Cog):
-    """Commande interactive pour consulter les decks des duellistes par saison."""
+    """
+    🎴 Commande !deck — Interface interactive pour consulter les decks
+    Permet de naviguer par saison et duelliste pour afficher les données liées.
+    """
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     # ────────────────────────────────────────────────────────────────────────────
-    # 📥 COMMANDE : !deck
+    # 🎯 Commande principale — !deck
     # ────────────────────────────────────────────────────────────────────────────
     @commands.command(
         name="deck",
         help="Affiche les decks d’un duelliste par saison.",
-        description="Affiche une interface pour choisir une saison et un duelliste."
+        description="Affiche une interface interactive pour choisir une saison et un duelliste."
     )
-    async def deck_command(self, ctx: commands.Context):
-        """Commande principale appelée avec !deck"""
+    async def deck(self, ctx: commands.Context):
+        """
+        📚 Affiche un menu déroulant pour consulter les decks disponibles selon les saisons et les duellistes.
+        """
         try:
-            deck_data = load_deck_data()  # 📦 Charge les données depuis le fichier
+            deck_data = load_deck_data()
             view = DeckSelectView(self.bot, deck_data)
             await ctx.send("📦 Choisis une saison :", view=view)
         except Exception as e:
-            await ctx.send(f"❌ Erreur lors du chargement des decks : {e}")
+            print("[ERREUR DECK]", e)
+            await ctx.send("❌ Une erreur est survenue lors du chargement des decks.")
 
 # ────────────────────────────────────────────────────────────────────────────────
-# ⚙️ SETUP DU COG
+# 🔌 Fonction de setup du Cog
 # ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    """Fonction appelée pour enregistrer ce cog."""
+    """
+    🔧 Setup du Cog : ajoute le cog au bot et attribue une catégorie personnalisée
+    """
     cog = Deck(bot)
 
-    # 🏷️ Attribution manuelle d'une catégorie personnalisée
     for command in cog.get_commands():
-        command.category = "VAACT"
+        if not hasattr(command, "category"):
+            command.category = "VAACT"
 
     await bot.add_cog(cog)
