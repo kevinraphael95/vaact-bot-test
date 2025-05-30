@@ -44,7 +44,7 @@ class Code(commands.Cog):
 
     # 🏷️ Définition de la catégorie pour !help
     def cog_load(self):
-        self.code.category = "📁 Général"
+        self.code.category = "Général"
 
 # ────────────────────────────────────────────────────────────────────────────────
 # ⚙️ SETUP DU COG
@@ -57,6 +57,6 @@ async def setup(bot: commands.Bot):
 
     # 🗂️ Attribution manuelle de la catégorie pour toutes les commandes du cog
     for command in cog.get_commands():
-        command.category = "📁 Général"
+        command.category = "Général"
 
     await bot.add_cog(cog)
