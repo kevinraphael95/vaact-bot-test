@@ -126,6 +126,6 @@ async def setup(bot: commands.Bot):
     for command in cog.get_commands():
         # 🏷️ Attribution personnalisée pour l’aide (visible dans !help)
         if not hasattr(command, "category"):
-            command.category = "📂 Général"
+            command.category = "Général"
 
     await bot.add_cog(cog)  # ✅ Ajout final du cog
