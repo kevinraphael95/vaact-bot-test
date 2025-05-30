@@ -99,12 +99,12 @@ class TopQS(commands.Cog):
 async def setup(bot: commands.Bot):
     """
     🔧 Fonction d'enregistrement du Cog TopQS.
-    Attribue la catégorie '🧠 VAACT' si aucune catégorie définie.
+    Attribue la catégorie '🃏 Yu-Gi-Oh!' si aucune catégorie définie.
     """
     cog = TopQS(bot)
 
     for command in cog.get_commands():
         if not hasattr(command, "category"):
-            command.category = "🧠 VAACT"
+            command.category = "🃏 Yu-Gi-Oh!"
 
     await bot.add_cog(cog)
