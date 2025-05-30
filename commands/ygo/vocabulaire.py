@@ -1,85 +1,83 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# 📁 vocabulaire.py
+# 📁 vocabulaire.py — Commande !vocabulaire
 # ────────────────────────────────────────────────────────────────────────────────
-# Description : Commande !vocabulaire — Affiche des définitions de termes de jeu
-# Format : Multi-page avec navigation par réactions
-# Données : Fichier JSON (📂 data/vocabulaire.json)
-# Langue : 🇫🇷 Français
+# Description : Affiche des définitions de termes du jeu (depuis un fichier JSON)
+# Format : Pagination par réactions (multi-page)
+# Données : 📂 data/vocabulaire.json
 # ────────────────────────────────────────────────────────────────────────────────
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 📦 IMPORTS
+# 📦 Imports nécessaires
 # ────────────────────────────────────────────────────────────────────────────────
-import discord                                  # Pour créer les embeds
-from discord.ext import commands                # Pour gérer les commandes
-import json                                     # Pour lire les fichiers .json
-import os                                       # Pour la gestion de chemin de fichier
+import discord                                 # 🎨 Embeds, interactions et couleurs Discord
+from discord.ext import commands              # 🧩 Système de commandes modulaire via Cogs
+import json                                   # 📄 Lecture du fichier JSON
+import os                                     # 🗂️ Gestion des chemins de fichiers
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 🧠 COG : VocabulaireCommand
+# 🧠 Classe principale du Cog — VocabulaireCommand
 # ────────────────────────────────────────────────────────────────────────────────
 class VocabulaireCommand(commands.Cog):
+    """
+    📘 Commande !vocabulaire : affiche les définitions des termes liés au jeu.
+    Peut être utilisée avec un mot-clé ou sans pour afficher tout le lexique.
+    """
+
     def __init__(self, bot: commands.Bot):
-        self.bot = bot  # 🔌 Référence au bot
-        self.vocab_path = os.path.join("data", "vocabulaire.json")  # 📂 Chemin du fichier JSON
+        self.bot = bot  # 🔗 Référence au bot principal pour interagir avec Discord
+        self.vocab_path = os.path.join("data", "vocabulaire.json")  # 📂 Fichier de données
 
     # ────────────────────────────────────────────────────────────────────────────
-    # 📘 COMMANDE : !vocabulaire | !voc
+    # 🎯 Commande principale — !vocabulaire | !voc
     # ────────────────────────────────────────────────────────────────────────────
     @commands.command(
         name="vocabulaire",
         aliases=["voc"],
         help="📘 Affiche la définition des termes du jeu, par mot-clé ou catégorie."
     )
-    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)  # 🧊 Cooldown anti-spam
+    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
     async def vocabulaire(self, ctx: commands.Context, *, mot_cle: str = None):
-        
-        # 📥 Chargement du fichier JSON
+        """
+        📚 Affiche les définitions des termes du jeu.
+        Si un mot-clé est fourni, filtre les résultats. Sinon, affiche tout le lexique.
+        """
+
         try:
             with open(self.vocab_path, "r", encoding="utf-8") as f:
                 vocabulaire = json.load(f)
         except Exception as e:
-            return await ctx.send(f"❌ Erreur lors du chargement du vocabulaire : {e}")
+            await ctx.send(f"❌ Erreur lors du chargement du fichier : {e}")
+            return
 
-        # 🧾 Compilation des définitions
+        # 🔎 Recherche et filtrage
         definitions = []
         for categorie, termes in vocabulaire.items():
             for terme, data in termes.items():
-                if isinstance(data, dict):
-                    definition = data.get("definition", "❌ Pas de définition.")
-                    synonymes = data.get("synonymes", [])
-                else:
-                    definition = data
-                    synonymes = []
-
-                ensemble_termes = [terme] + synonymes
+                definition = data.get("definition") if isinstance(data, dict) else data
+                synonymes = data.get("synonymes", []) if isinstance(data, dict) else []
+                noms_possibles = [terme] + synonymes
 
                 if mot_cle:
-                    for alias in ensemble_termes:
-                        if mot_cle.lower() in alias.lower() or mot_cle.lower() in definition.lower():
-                            definitions.append((categorie, terme, definition))
-                            break  # ✅ Ne pas dupliquer un même terme
+                    if any(mot_cle.lower() in mot.lower() for mot in noms_possibles) or mot_cle.lower() in definition.lower():
+                        definitions.append((categorie, terme, definition))
                 else:
                     definitions.append((categorie, terme, definition))
 
-        # ❗ Aucun résultat trouvé
         if not definitions:
-            return await ctx.send("❌ Aucun terme trouvé correspondant à ta recherche.")
+            await ctx.send("❌ Aucun terme trouvé correspondant à ta recherche.")
+            return
 
-        # ────────────────────────────────────────────────────────────────────────
-        # 📄 PAGINATION DES DÉFINITIONS
-        # ────────────────────────────────────────────────────────────────────────
-        definitions.sort(key=lambda x: x[1].lower())  # 🔤 Tri alphabétique
+        # 🗂️ Pagination des résultats
+        definitions.sort(key=lambda x: x[1].lower())
         pages = []
-        max_par_page = 5  # 📌 Nombre de termes par page
+        max_par_page = 5
 
         for i in range(0, len(definitions), max_par_page):
-            chunk = definitions[i:i + max_par_page]
             embed = discord.Embed(
                 title="📘 Lexique des termes",
                 color=discord.Color.dark_blue()
             )
-            for cat, terme, defi in chunk:
+            for cat, terme, defi in definitions[i:i + max_par_page]:
                 embed.add_field(
                     name=f"🔹 {terme} ({cat})",
                     value=defi,
@@ -90,23 +88,22 @@ class VocabulaireCommand(commands.Cog):
             )
             pages.append(embed)
 
-        # ▶️ Affichage de la première page
+        # ▶️ Envoi du premier embed
         message = await ctx.send(embed=pages[0])
         if len(pages) <= 1:
-            return  # ⛔ Pas besoin de navigation
+            return
 
-        # 🧭 Ajout des réactions de navigation
         await message.add_reaction("◀️")
         await message.add_reaction("▶️")
 
         def check(reaction, user):
             return (
                 user == ctx.author and
-                str(reaction.emoji) in ["◀️", "▶️"] and
-                reaction.message.id == message.id
+                reaction.message.id == message.id and
+                str(reaction.emoji) in ["◀️", "▶️"]
             )
 
-        index = 0  # 🔢 Page actuelle
+        index = 0
         while True:
             try:
                 reaction, user = await self.bot.wait_for("reaction_add", timeout=60.0, check=check)
@@ -120,24 +117,19 @@ class VocabulaireCommand(commands.Cog):
                 await message.edit(embed=pages[index])
 
             except:
-                break  # ⏳ Temps écoulé ou erreur → fin de la navigation
-
-    # 🏷️ Catégorisation personnalisée pour le !help
-    def cog_load(self):
-        self.vocabulaire.category = "📖 Vocabulaire"
+                break  # ⏱️ Timeout ou erreur → fin navigation
 
 # ────────────────────────────────────────────────────────────────────────────────
-# ⚙️ SETUP DU COG
+# 🔌 Fonction de setup du Cog
 # ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     """
-    Enregistre ce cog dans le bot principal.
-    Assigne la catégorie '🃏 Yu-Gi-Oh!' pour le tri dans le !help.
+    🔧 Setup du Cog : ajoute le cog au bot et attribue une catégorie personnalisée.
     """
     cog = VocabulaireCommand(bot)
 
-    # 🗂️ Attribution manuelle de la catégorie à chaque commande
     for command in cog.get_commands():
-        command.category = "🃏 Yu-Gi-Oh!"
+        if not hasattr(command, "category"):
+            command.category = "🃏 Yu-Gi-Oh!"
 
     await bot.add_cog(cog)
