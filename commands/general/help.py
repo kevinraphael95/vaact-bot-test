@@ -7,6 +7,7 @@
 # ────────────────────────────────────────────────────────────────────────────────
 # 📦 Imports nécessaires
 # ────────────────────────────────────────────────────────────────────────────────
+import os                                      # 🌍 Accès aux variables d’environnement
 import discord                                 # 🎨 Embeds et interactions riches Discord
 from discord.ext import commands              # ⚙️ Gestion des commandes avec Cogs
 
@@ -44,9 +45,7 @@ class Help(commands.Cog):
         - !help ping    → détails de la commande ping
         """
 
-        import os  # en haut du fichier si ce n’est pas encore importé
-        prefix = os.getenv("COMMAND_PREFIX", "!")  # 🔄 Récupération du préfixe dynamique depuis les variables d’environnement
-
+        prefix = os.getenv("COMMAND_PREFIX", "!")  # 🔄 Récupération du préfixe dynamique
 
         try:
             # ────────────────────────────────────────────────────────────────────
@@ -126,6 +125,6 @@ async def setup(bot: commands.Bot):
     for command in cog.get_commands():
         # 🏷️ Attribution personnalisée pour l’aide (visible dans !help)
         if not hasattr(command, "category"):
-            command.category = "Général"
+            command.category = "Général"  # 🗂️ Regroupement par défaut
 
     await bot.add_cog(cog)  # ✅ Ajout final du cog
