@@ -148,6 +148,6 @@ async def setup(bot: commands.Bot):
 
     # 🏷️ Attribution manuelle d'une catégorie personnalisée
     for command in cog.get_commands():
-        command.category = "📁 VAACT"
+        command.category = "VAACT"
 
     await bot.add_cog(cog)
