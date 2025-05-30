@@ -104,6 +104,6 @@ async def setup(bot: commands.Bot):
     # 🗂️ Attribution d'une catégorie par défaut
     for command in cog.get_commands():
         if not hasattr(command, "category"):
-            command.category = "📁 Général"
+            command.category = "Général"
 
     await bot.add_cog(cog)
