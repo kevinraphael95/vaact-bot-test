@@ -22,7 +22,7 @@ class Code(commands.Cog):
     """
 
     def __init__(self, bot: commands.Bot):
-        self.bot = bot  # 🔗 Stockage de la référence du bot pour l'utiliser ailleurs si besoin
+        self.bot = bot  # 🔗 Référence au bot principal
 
     # ────────────────────────────────────────────────────────────────────────────
     # 🎯 Commande principale — !code
@@ -42,25 +42,20 @@ class Code(commands.Cog):
 
         try:
             # ────────────────────────────────────────────────────────────────────
-            # 🌐 Création de l'embed avec titre, description (lien cliquable) et style
+            # 🌐 Création de l'embed contenant le lien GitHub
             # ────────────────────────────────────────────────────────────────────
             embed = discord.Embed(
                 title="💻 Code source du bot",
-                description="[📂 Voir le dépôt GitHub](https://github.com/kevinraphael95/ygotest)",  # 🔗 Lien vers le repo
-                color=discord.Color.blurple()  # 🎨 Couleur esthétique (blurple = bleu Discord)
+                description="[📂 Voir le dépôt GitHub](https://github.com/kevinraphael95/ygotest)",
+                color=discord.Color.blurple()
             )
             embed.set_footer(text="✨ Open-source, baby ! | Projet Yu Gi Oooooh !")  # 🖋️ Pied de page personnalisé
 
-            # ────────────────────────────────────────────────────────────────────
-            # 📤 Envoi de l'embed dans le canal d'où vient la commande
-            # ────────────────────────────────────────────────────────────────────
             await ctx.send(embed=embed)
 
         except Exception as e:
-            # ────────────────────────────────────────────────────────────────────
-            # 🚨 Gestion d’erreur : affichage console + message utilisateur
-            # ────────────────────────────────────────────────────────────────────
-            print("[ERREUR - COMMANDE !code]", e)  # 🛠️ Log interne pour le dev
+            # 🚨 Gestion d’erreur
+            print("[ERREUR - COMMANDE !code]", e)
             await ctx.send("🚨 Une erreur est survenue lors de l’envoi du lien vers le code source.")
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -77,6 +72,6 @@ async def setup(bot: commands.Bot):
     for command in cog.get_commands():
         # 🏷️ Attribution personnalisée pour !help (appelé lors du chargement du cog)
         if not hasattr(command, "category"):
-            command.category = "Général"  # 📁 Catégorie visible dans la commande !help
+            command.category = "Général"  # 🗂️ Catégorie affichée dans !help
 
     await bot.add_cog(cog)  # ✅ Ajout du cog au bot
