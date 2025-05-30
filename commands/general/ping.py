@@ -41,7 +41,7 @@ class Ping(commands.Cog):
 
     # 🏷️ Catégorie pour la commande dans le système d’aide
     def cog_load(self):
-        self.ping.category = "📁 Général"
+        self.ping.category = "Général"
 
 # ────────────────────────────────────────────────────────────────────────────────
 # ⚙️ SETUP DU COG
@@ -54,6 +54,6 @@ async def setup(bot: commands.Bot):
 
     # 🗂️ Attribution manuelle de la catégorie
     for command in cog.get_commands():
-        command.category = "📁 Général"
+        command.category = "Général"
 
     await bot.add_cog(cog)
