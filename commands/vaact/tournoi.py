@@ -3,7 +3,7 @@ from discord.ext import commands
 import pandas as pd
 import aiohttp
 import io, ssl, os, traceback
-from aiohttp import TCPConnector
+from aiohttp import TCPConnector, ClientConnectionError
 from supabase import create_client, Client
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -80,12 +80,14 @@ class TournoiCommand(commands.Cog):
             difficulte_order = ["1/3", "2/3", "3/3"]
 
             def make_pages(df_cat, couleur):
-                pages = []
+                # Trier par difficulté et créer des pages de 15 decks max par difficulté
                 df_cat["DIFFICULTÉ"] = pd.Categorical(df_cat["DIFFICULTÉ"], categories=difficulte_order, ordered=True)
                 df_cat = df_cat.sort_values("DIFFICULTÉ")
+                pages = []
 
                 for diff in difficulte_order:
                     df_diff = df_cat[df_cat["DIFFICULTÉ"] == diff]
+                    # Chunk de 15 decks max par page
                     for i in range(0, len(df_diff), 15):
                         chunk = df_diff.iloc[i:i+15]
                         texte = ""
@@ -95,6 +97,7 @@ class TournoiCommand(commands.Cog):
                             texte = "Aucun deck."
                         embed = discord.Embed(description=texte, color=couleur)
                         pages.append(embed)
+
                 return pages
 
             pages_libres = make_pages(libres, discord.Color.green())
