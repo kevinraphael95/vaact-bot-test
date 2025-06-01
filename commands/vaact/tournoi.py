@@ -121,13 +121,43 @@ class TournoiCommand(commands.Cog):
                     select_libres.callback = callback_libres
                     view.add_item(select_libres)
 
+
+
+                        # Options et menu déroulant pour decks libres
+            if libres_grouped:
+                options_libres = [
+                    discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
+                    for diff, df in libres_grouped.items() if len(df) > 0
+                ]
+                if options_libres:  # <-- IMPORTANT : ne créer le Select que s'il y a des options
+                    select_libres = discord.ui.Select(
+                        placeholder="Sélectionnez la difficulté des decks libres",
+                        options=options_libres,
+                        custom_id="select_libres"
+                    )
+
+                    async def callback_libres(interaction: discord.Interaction):
+                        diff = interaction.data["values"][0]
+                        decks = libres_grouped.get(diff)
+                        if decks is None:
+                            await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
+                            return
+
+                        texte = f"**Decks libres — Difficulté {diff} :**\n"
+                        for _, row in decks.iterrows():
+                            texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+                        await interaction.response.send_message(texte, ephemeral=True)
+
+                    select_libres.callback = callback_libres
+                    view.add_item(select_libres)
+
             # Options et menu déroulant pour decks pris
             if pris_grouped:
                 options_pris = [
                     discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
                     for diff, df in pris_grouped.items() if len(df) > 0
                 ]
-                if options_pris:
+                if options_pris:  # <-- même vérification ici
                     select_pris = discord.ui.Select(
                         placeholder="Sélectionnez la difficulté des decks pris",
                         options=options_pris,
@@ -148,7 +178,6 @@ class TournoiCommand(commands.Cog):
 
                     select_pris.callback = callback_pris
                     view.add_item(select_pris)
-
 
 
            
