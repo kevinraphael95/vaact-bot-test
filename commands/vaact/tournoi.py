@@ -94,10 +94,13 @@ class TournoiCommand(commands.Cog):
             view = discord.ui.View(timeout=180)
 
             # 🟢 Menu : decks libres
+            
             options_libres = [
-                discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
-                for diff, df in libres_grouped.items() if len(df) > 0
+                discord.SelectOption(label=diff.strip(), description=f"{len(df)} deck(s)")
+                for diff, df in libres_grouped.items()
+                if isinstance(diff, str) and diff.strip() != "" and len(df) > 0
             ]
+
             if options_libres:
                 select_libres = discord.ui.Select(
                     placeholder="Sélectionnez la difficulté des decks libres",
@@ -120,10 +123,15 @@ class TournoiCommand(commands.Cog):
                 view.add_item(select_libres)
 
             # 🔴 Menu : decks pris
+
             options_pris = [
-                discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
-                for diff, df in pris_grouped.items() if len(df) > 0
+                discord.SelectOption(label=diff.strip(), description=f"{len(df)} deck(s)")
+                for diff, df in pris_grouped.items()
+                if isinstance(diff, str) and diff.strip() != "" and len(df) > 0
             ]
+
+
+            
             if options_pris:
                 select_pris = discord.ui.Select(
                     placeholder="Sélectionnez la difficulté des decks pris",
