@@ -91,7 +91,7 @@ class TestTournoiCommand(commands.Cog):
                 date_tournoi = "🗓️ à venir !"
 
             # ───── Étape 5 : Construction de l'embed Discord ─────
-              embed = discord.Embed(
+            embed = discord.Embed(
                 title="🎴 Prochain Tournoi Yu-Gi-Oh VAACT",
                 description=f"📅 **Le prochain tournoi aura lieu :**\n🎯 __**{date_tournoi}**__",
                 color=discord.Color.dark_orange()
