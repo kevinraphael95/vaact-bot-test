@@ -67,7 +67,7 @@ class TournoiCommand(commands.Cog):
     # 🔹 COMMANDE : !tournoi
     # ──────────────────────────────────────────────────────────
 
-    @commands.command(
+        @commands.command(
         name="tournoi",
         aliases=["decks", "tournoivaact"],
         help="📅 Affiche la date du tournoi et la liste des decks disponibles/pris avec menus déroulants."
@@ -83,16 +83,23 @@ class TournoiCommand(commands.Cog):
                 description=f"📅 **{date_tournoi}**",
                 color=discord.Color.purple()
             )
+
+            # Ajout des messages selon la dispo des decks
+            if not libres_grouped:
+                embed.add_field(name="Decks libres", value="Aucun deck libre.", inline=False)
+            if not pris_grouped:
+                embed.add_field(name="Decks pris", value="Aucun deck pris.", inline=False)
+
             embed.set_footer(text="Decks fournis par l'organisation du tournoi.")
 
             view = discord.ui.View(timeout=180)
 
             # Options et menu déroulant pour decks libres
-            options_libres = [
-                discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
-                for diff, df in libres_grouped.items()
-            ]
-            if options_libres:
+            if libres_grouped:
+                options_libres = [
+                    discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
+                    for diff, df in libres_grouped.items()
+                ]
                 select_libres = discord.ui.Select(
                     placeholder="Sélectionnez la difficulté des decks libres",
                     options=options_libres,
@@ -114,11 +121,11 @@ class TournoiCommand(commands.Cog):
                 view.add_item(select_libres)
 
             # Options et menu déroulant pour decks pris
-            options_pris = [
-                discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
-                for diff, df in pris_grouped.items()
-            ]
-            if options_pris:
+            if pris_grouped:
+                options_pris = [
+                    discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
+                    for diff, df in pris_grouped.items()
+                ]
                 select_pris = discord.ui.Select(
                     placeholder="Sélectionnez la difficulté des decks pris",
                     options=options_pris,
@@ -139,9 +146,10 @@ class TournoiCommand(commands.Cog):
                 select_pris.callback = callback_pris
                 view.add_item(select_pris)
 
-            # Si aucun menu à afficher (aucun deck libre ni pris)
+            # Envoi
             if len(view.children) == 0:
-                await ctx.send(embed=embed, content="Aucun deck libre ou pris disponible.")
+                # Pas de menus à afficher, donc juste l'embed
+                await ctx.send(embed=embed)
             else:
                 await ctx.send(embed=embed, view=view)
 
@@ -149,6 +157,7 @@ class TournoiCommand(commands.Cog):
             print(f"[ERREUR GLOBALE] {e}")
             traceback.print_exc()
             await ctx.send("🚨 Une erreur inattendue est survenue.")
+
 
 
     # ──────────────────────────────────────────────────────────
