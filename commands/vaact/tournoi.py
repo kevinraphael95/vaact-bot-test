@@ -7,11 +7,10 @@
 # ──────────────────────────────────────────────────────────────
 import discord
 from discord.ext import commands
-from discord import app_commands
 import pandas as pd
 import aiohttp
 import io, ssl, os, traceback
-from aiohttp import TCPConnector, ClientConnectionError
+from aiohttp import TCPConnector
 from supabase import create_client, Client
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -58,7 +57,10 @@ class TournoiCommand(commands.Cog):
     async def get_date_tournoi(self):
         try:
             tournoi_data = supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
-            return tournoi_data.data[0]["prochaine_date"] if tournoi_data.data and "prochaine_date" in tournoi_data.data[0] else "🗓️ à venir !"
+            if tournoi_data.data and "prochaine_date" in tournoi_data.data[0]:
+                return tournoi_data.data[0]["prochaine_date"]
+            else:
+                return "🗓️ à venir !"
         except Exception as e:
             print(f"[ERREUR SUPABASE] {e}")
             return "🗓️ à venir !"
@@ -66,8 +68,7 @@ class TournoiCommand(commands.Cog):
     # ──────────────────────────────────────────────────────────
     # 🔹 COMMANDE : !tournoi
     # ──────────────────────────────────────────────────────────
-
-        @commands.command(
+    @commands.command(
         name="tournoi",
         aliases=["decks", "tournoivaact"],
         help="📅 Affiche la date du tournoi et la liste des decks disponibles/pris avec menus déroulants."
@@ -84,7 +85,6 @@ class TournoiCommand(commands.Cog):
                 color=discord.Color.purple()
             )
 
-            # Ajout des messages selon la dispo des decks
             if not libres_grouped:
                 embed.add_field(name="Decks libres", value="Aucun deck libre.", inline=False)
             if not pris_grouped:
@@ -93,7 +93,8 @@ class TournoiCommand(commands.Cog):
             embed.set_footer(text="Decks fournis par l'organisation du tournoi.")
 
             view = discord.ui.View(timeout=180)
-            # Options et menu déroulant pour decks libres
+
+            # Menu déroulant pour decks libres
             if libres_grouped:
                 options_libres = [
                     discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
@@ -112,7 +113,6 @@ class TournoiCommand(commands.Cog):
                         if decks is None:
                             await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
                             return
-
                         texte = f"**Decks libres — Difficulté {diff} :**\n"
                         for _, row in decks.iterrows():
                             texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
@@ -121,43 +121,13 @@ class TournoiCommand(commands.Cog):
                     select_libres.callback = callback_libres
                     view.add_item(select_libres)
 
-
-
-                        # Options et menu déroulant pour decks libres
-            if libres_grouped:
-                options_libres = [
-                    discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
-                    for diff, df in libres_grouped.items() if len(df) > 0
-                ]
-                if options_libres:  # <-- IMPORTANT : ne créer le Select que s'il y a des options
-                    select_libres = discord.ui.Select(
-                        placeholder="Sélectionnez la difficulté des decks libres",
-                        options=options_libres,
-                        custom_id="select_libres"
-                    )
-
-                    async def callback_libres(interaction: discord.Interaction):
-                        diff = interaction.data["values"][0]
-                        decks = libres_grouped.get(diff)
-                        if decks is None:
-                            await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
-                            return
-
-                        texte = f"**Decks libres — Difficulté {diff} :**\n"
-                        for _, row in decks.iterrows():
-                            texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
-                        await interaction.response.send_message(texte, ephemeral=True)
-
-                    select_libres.callback = callback_libres
-                    view.add_item(select_libres)
-
-            # Options et menu déroulant pour decks pris
+            # Menu déroulant pour decks pris
             if pris_grouped:
                 options_pris = [
                     discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
                     for diff, df in pris_grouped.items() if len(df) > 0
                 ]
-                if options_pris:  # <-- même vérification ici
+                if options_pris:
                     select_pris = discord.ui.Select(
                         placeholder="Sélectionnez la difficulté des decks pris",
                         options=options_pris,
@@ -170,7 +140,6 @@ class TournoiCommand(commands.Cog):
                         if decks is None:
                             await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
                             return
-
                         texte = f"**Decks pris — Difficulté {diff} :**\n"
                         for _, row in decks.iterrows():
                             texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
@@ -179,12 +148,8 @@ class TournoiCommand(commands.Cog):
                     select_pris.callback = callback_pris
                     view.add_item(select_pris)
 
-
-           
-
-            # Envoi
+            # Envoi du message
             if len(view.children) == 0:
-                # Pas de menus à afficher, donc juste l'embed
                 await ctx.send(embed=embed)
             else:
                 await ctx.send(embed=embed, view=view)
@@ -193,8 +158,6 @@ class TournoiCommand(commands.Cog):
             print(f"[ERREUR GLOBALE] {e}")
             traceback.print_exc()
             await ctx.send("🚨 Une erreur inattendue est survenue.")
-
-
 
     # ──────────────────────────────────────────────────────────
     # 🏷️ Catégorisation pour !help
