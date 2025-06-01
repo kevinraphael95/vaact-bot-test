@@ -1,46 +1,36 @@
+# ──────────────────────────────────────────────────────────────
+# 📁 tournoi.py
+# ──────────────────────────────────────────────────────────────
+
 import discord
 from discord.ext import commands
 import pandas as pd
 import aiohttp
-import io, ssl, os, traceback
+import io
+import ssl
+import os
+import traceback
 from aiohttp import TCPConnector, ClientConnectionError
 from supabase import create_client, Client
 
+# 🔐 Variables d'environnement
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
 
+# 🔌 Connexion Supabase
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-class TournoiView(discord.ui.View):
-    def __init__(self, pages, titre, timeout=180):
-        super().__init__(timeout=timeout)
-        self.pages = pages
-        self.page = 0
-        self.titre = titre
-
-    async def update_embed(self, interaction: discord.Interaction):
-        embed = self.pages[self.page]
-        embed.title = self.titre
-        embed.set_footer(text=f"Page {self.page + 1}/{len(self.pages)} • Decks triés par difficulté")
-        await interaction.response.edit_message(embed=embed, view=self)
-
-    @discord.ui.button(label="⬅️", style=discord.ButtonStyle.secondary)
-    async def prev_page(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.page = (self.page - 1) % len(self.pages)
-        await self.update_embed(interaction)
-
-    @discord.ui.button(label="➡️", style=discord.ButtonStyle.secondary)
-    async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.page = (self.page + 1) % len(self.pages)
-        await self.update_embed(interaction)
 
 
 class TournoiCommand(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(name="tournoi", aliases=["decks", "tournoivaact"])
+    @commands.command(
+        name="tournoi",
+        aliases=["decks", "tournoivaact"],
+        help="📅 Affiche la date du tournoi et les decks disponibles/pris."
+    )
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
     async def tournoi(self, ctx: commands.Context):
         try:
@@ -68,7 +58,7 @@ class TournoiCommand(commands.Cog):
             pris = df[df["PRIS ?"].str.lower().isin(["true", "✅"])]
             libres = df[~df["PRIS ?"].str.lower().isin(["true", "✅"])]
 
-            # Récupérer date tournoi supabase
+            # Récupérer la date du tournoi depuis supabase
             try:
                 tournoi_data = supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
                 date_tournoi = tournoi_data.data[0]["prochaine_date"] if tournoi_data.data and "prochaine_date" in tournoi_data.data[0] else "🗓️ à venir !"
@@ -76,40 +66,65 @@ class TournoiCommand(commands.Cog):
                 date_tournoi = "🗓️ à venir !"
 
             difficulte_order = ["1/3", "2/3", "3/3"]
-            libres["DIFFICULTÉ"] = pd.Categorical(libres["DIFFICULTÉ"], categories=difficulte_order, ordered=True)
-            pris["DIFFICULTÉ"] = pd.Categorical(pris["DIFFICULTÉ"], categories=difficulte_order, ordered=True)
 
-            # Fonction pour créer la description texte d'une DataFrame
-            def format_decks_section(df_section):
+            def format_decks(df_slice):
                 texte = ""
-                for _, row in df_section.iterrows():
+                for _, row in df_slice.iterrows():
                     texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}* ({row['DIFFICULTÉ']})\n"
-                return texte if texte else "Aucun deck ici."
+                return texte if texte else "Aucun deck."
 
-            # Construire pages : on alterne entre libres et pris, par difficulté
+            groupes = []
+            for statut, label_statut, color in [
+                (libres, "Decks Libres", discord.Color.green()),
+                (pris, "Decks Pris", discord.Color.red())
+            ]:
+                for diff in difficulte_order:
+                    df_part = statut[statut["DIFFICULTÉ"] == diff]
+                    groupes.append({
+                        "label": f"{label_statut} — Difficulté {diff}",
+                        "color": color,
+                        "decks": df_part
+                    })
+
             pages = []
-            titre_embed = f"🎴 Prochain Tournoi Yu-Gi-Oh VAACT\n📅 **{date_tournoi}**"
+            for groupe in groupes:
+                decks_df = groupe["decks"]
+                chunks = [decks_df.iloc[i:i+15] for i in range(0, len(decks_df), 15)] or [decks_df]
 
-            for diff in difficulte_order:
-                # Decks libres pour cette difficulté
-                libres_diff = libres[libres["DIFFICULTÉ"] == diff]
-                texte_libres = format_decks_section(libres_diff)
-
-                # Decks pris pour cette difficulté
-                pris_diff = pris[pris["DIFFICULTÉ"] == diff]
-                texte_pris = format_decks_section(pris_diff)
-
-                description = f"**Decks Libres — Difficulté {diff}**\n{texte_libres}\n\n" \
-                              f"**Decks Pris — Difficulté {diff}**\n{texte_pris}"
-
-                embed = discord.Embed(description=description, color=discord.Color.blurple())
-                pages.append(embed)
+                for chunk in chunks:
+                    embed = discord.Embed(
+                        title=f"🎴 Prochain Tournoi Yu-Gi-Oh VAACT — {groupe['label']}",
+                        description=format_decks(chunk),
+                        color=groupe["color"]
+                    )
+                    embed.set_footer(text=f"📅 {date_tournoi}")
+                    pages.append(embed)
 
             if not pages:
-                await ctx.send("Aucun deck disponible ni pris trouvé.")
+                await ctx.send("📭 Aucun deck trouvé pour ce tournoi.")
                 return
 
-            view = TournoiView(pages, titre_embed)
+            class TournoiView(discord.ui.View):
+                def __init__(self, pages):
+                    super().__init__(timeout=180)
+                    self.pages = pages
+                    self.index = 0
+
+                async def update(self, interaction):
+                    embed = self.pages[self.index]
+                    await interaction.response.edit_message(embed=embed, view=self)
+
+                @discord.ui.button(label="⬅️", style=discord.ButtonStyle.secondary)
+                async def prev(self, interaction: discord.Interaction, button: discord.ui.Button):
+                    self.index = (self.index - 1) % len(self.pages)
+                    await self.update(interaction)
+
+                @discord.ui.button(label="➡️", style=discord.ButtonStyle.secondary)
+                async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
+                    self.index = (self.index + 1) % len(self.pages)
+                    await self.update(interaction)
+
+            view = TournoiView(pages)
             await ctx.send(embed=pages[0], view=view)
 
         except Exception:
@@ -119,6 +134,10 @@ class TournoiCommand(commands.Cog):
     def cog_load(self):
         self.tournoi.category = "VAACT"
 
+
+# ──────────────────────────────────────────────────────────────
+# 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
+# ──────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     await bot.add_cog(TournoiCommand(bot))
     print("✅ Cog chargé : TournoiCommand (catégorie = VAACT)")
