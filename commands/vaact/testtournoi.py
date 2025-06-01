@@ -1,30 +1,30 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# 📁 tournoi.py — Commande !tournoi
+# 📁 testtournoi.py
 # ────────────────────────────────────────────────────────────────────────────────
 # Cette commande affiche :
-# 1. 📅 La date du prochain tournoi (depuis Supabase)
-# 2. 🆓 Les decks disponibles
-# 3. 🔒 Les decks déjà pris
+# 1. La date du prochain tournoi (depuis Supabase)
+# 2. Les decks disponibles
+# 3. Les decks déjà pris
 # Les données sont lues depuis un fichier CSV (Google Sheets publié).
 # ────────────────────────────────────────────────────────────────────────────────
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 📦 IMPORTS
 # ────────────────────────────────────────────────────────────────────────────────
-import discord                                          # 🎨 Composants Discord (Embed, etc.)
-from discord.ext import commands                        # ⚙️ Système de commandes
-import pandas as pd                                     # 📊 Manipulation du CSV
-import aiohttp                                          # 🌐 Requêtes HTTP asynchrones
-import io, ssl, os, traceback                           # 🧰 Utilitaires système
-from aiohttp import TCPConnector, ClientConnectionError # 🔐 Connexions sécurisées
-from supabase import create_client, Client              # ☁️ Accès base Supabase
+import discord                                          # Composants Discord (Embed, etc.)
+from discord.ext import commands                        # Système de commandes
+import pandas as pd                                     # Manipulation du CSV
+import aiohttp                                          # Requêtes HTTP asynchrones
+import io, ssl, os, traceback                           # Utilitaires système
+from aiohttp import TCPConnector, ClientConnectionError # Connexions sécurisées
+from supabase import create_client, Client              # Accès base Supabase
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔐 VARIABLES D’ENVIRONNEMENT
 # ────────────────────────────────────────────────────────────────────────────────
-SUPABASE_URL = os.getenv("SUPABASE_URL")               # 🌐 URL Supabase
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")               # 🔑 Clé API Supabase
-SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")             # 📄 URL du CSV en ligne
+SUPABASE_URL = os.getenv("SUPABASE_URL")               # URL Supabase
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")               # Clé API Supabase
+SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")             # URL du CSV en ligne
 
 # 🔌 Connexion à Supabase (objet global)
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -32,22 +32,18 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔧 COG : TournoiCommand
 # ────────────────────────────────────────────────────────────────────────────────
-class TournoiCommand(commands.Cog):
-    """Commande !tournoi — Affiche la liste des decks et la prochaine date."""
+class TestTournoiCommand(commands.Cog):
+    """Commande !testtournoi — Affiche la liste des decks et la prochaine date."""
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot  # 🔌 Référence du bot
 
     # ────────────────────────────────────────────────────────────────────────────
-    # 🔹 COMMANDE : !tournoi
+    # 🔹 COMMANDE : !testtournoi
     # ────────────────────────────────────────────────────────────────────────────
-    @commands.command(
-        name="testtournoi",
-        aliases=[],
-        help="📅 Affiche la date du tournoi et la liste des decks disponibles/pris."
-    )
-    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)  # 🧊 Anti-spam
-    async def tournoi(self, ctx: commands.Context):
+    @commands.command(name="testtournoi",aliases=[],help="📅 Affiche la date du tournoi et la liste des decks disponibles/pris.") # noms de commande
+    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)  # 🧊 cooldown
+    async def testtournoi(self, ctx: commands.Context):
         try:
             # ───── Étape 1 : Vérifie que l’URL du CSV est présente ─────
             if not SHEET_CSV_URL:
