@@ -42,8 +42,8 @@ class TournoiCommand(commands.Cog):
     # 🔹 COMMANDE : !tournoi
     # ────────────────────────────────────────────────────────────────────────────
     @commands.command(
-        name="tournoi",
-        aliases=["decks", "tournoivaact"],
+        name="testtournoi",
+        aliases=[],
         help="📅 Affiche la date du tournoi et la liste des decks disponibles/pris."
     )
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)  # 🧊 Anti-spam
@@ -142,12 +142,12 @@ class TournoiCommand(commands.Cog):
     # ────────────────────────────────────────────────────────────────────────────
     def cog_load(self):
         """Classement de la commande pour !help"""
-        self.tournoi.category = "VAACT"
+        self.testtournoi.category = "VAACT"
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔌 SETUP : Chargement automatique du cog
 # ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     """Fonction appelée pour ajouter ce cog au bot."""
-    await bot.add_cog(TournoiCommand(bot))
-    print("✅ Cog chargé : TournoiCommand (catégorie = VAACT)")
+    await bot.add_cog(TestTournoiCommand(bot))
+    print("✅ Cog chargé : TestTournoiCommand (catégorie = VAACT)")
