@@ -89,13 +89,21 @@ class TestTournoiCommand(commands.Cog):
             except Exception as e:
                 print(f"[ERREUR SUPABASE] {e}")
                 date_tournoi = "🗓️ à venir !"
+                
 
             # ───── Étape 5 : Construction de l'embed Discord ─────
             embed = discord.Embed(
                 title="🎴 Prochain Tournoi Yu-Gi-Oh VAACT",
                 description=f"📅 **Le prochain tournoi aura lieu :**\n🎯 __**{date_tournoi}**__",
                 color=discord.Color.dark_orange()
-            )  
+            )
+
+            embed.add_field(name="🆓 Decks disponibles", value=texte_libres or "Aucun deck libre.", inline=False)
+            embed.add_field(name="🔒 Decks pris", value=texte_pris or "Aucun deck pris.", inline=False)
+
+            embed.set_footer(text="Decks fournis par l'organisation du tournoi.")
+            await ctx.send(embed=embed)
+
 
 
             # 🆓 Decks disponibles groupés par saison
