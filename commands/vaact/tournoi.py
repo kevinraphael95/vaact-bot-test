@@ -1,25 +1,17 @@
-# ──────────────────────────────────────────────────────────────
-# 📁 tournoi.py
-# ──────────────────────────────────────────────────────────────
-
 import discord
 from discord.ext import commands
 import pandas as pd
 import aiohttp
 import io, ssl, os, traceback
-from aiohttp import TCPConnector, ClientConnectionError
+from aiohttp import TCPConnector
 from supabase import create_client, Client
 
-# 🔐 Variables d'environnement
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
 
-# 🔌 Connexion Supabase
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# ──────────────────────────────────────────────────────────────
-# 🔧 View pour pagination
 class TournoiView(discord.ui.View):
     def __init__(self, pages, titre, timeout=180):
         super().__init__(timeout=timeout)
@@ -43,8 +35,6 @@ class TournoiView(discord.ui.View):
         self.page = (self.page + 1) % len(self.pages)
         await self.update_embed(interaction)
 
-# ──────────────────────────────────────────────────────────────
-# 🔧 COG : TournoiCommand
 class TournoiCommand(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -89,7 +79,6 @@ class TournoiCommand(commands.Cog):
 
             difficulte_order = ["1/3", "2/3", "3/3"]
 
-            # Fonction pour créer des pages pour une catégorie (libres/pris) et difficulté
             def make_pages(df_cat, couleur):
                 pages = []
                 df_cat["DIFFICULTÉ"] = pd.Categorical(df_cat["DIFFICULTÉ"], categories=difficulte_order, ordered=True)
@@ -97,7 +86,6 @@ class TournoiCommand(commands.Cog):
 
                 for diff in difficulte_order:
                     df_diff = df_cat[df_cat["DIFFICULTÉ"] == diff]
-                    # Chunker par 15 decks max par page
                     for i in range(0, len(df_diff), 15):
                         chunk = df_diff.iloc[i:i+15]
                         texte = ""
@@ -111,8 +99,6 @@ class TournoiCommand(commands.Cog):
 
             pages_libres = make_pages(libres, discord.Color.green())
             pages_pris = make_pages(pris, discord.Color.red())
-
-            # On combine toutes les pages : libres d'abord, puis pris
             pages = pages_libres + pages_pris
 
             if not pages:
@@ -131,8 +117,6 @@ class TournoiCommand(commands.Cog):
     def cog_load(self):
         self.tournoi.category = "VAACT"
 
-# ──────────────────────────────────────────────────────────────
-# 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
 async def setup(bot: commands.Bot):
     await bot.add_cog(TournoiCommand(bot))
     print("✅ Cog chargé : TournoiCommand (catégorie = VAACT)")
