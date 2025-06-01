@@ -100,6 +100,7 @@ class TournoiCommand(commands.Cog):
                 for diff, df in libres_grouped.items()
                 if isinstance(diff, str) and diff.strip() != "" and len(df) > 0
             ]
+            print("🟢 DEBUG — options_libres:", options_libres)  # ← Debug
 
             if options_libres:
                 select_libres = discord.ui.Select(
@@ -129,6 +130,7 @@ class TournoiCommand(commands.Cog):
                 for diff, df in pris_grouped.items()
                 if isinstance(diff, str) and diff.strip() != "" and len(df) > 0
             ]
+            print("🔴 DEBUG — options_pris:", options_pris)  # ← Debug
 
 
             
