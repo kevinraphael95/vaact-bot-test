@@ -95,103 +95,86 @@ class TournoiCommand(commands.Cog):
 
 
 
-            # 🟢 Menu : decks libres
-            options_libres = []
-            for diff, df in libres_grouped.items():
-                if isinstance(diff, str) and diff.strip():
-                    label = diff.strip()
-                    if len(df) > 0:
-                        options_libres.append(
-                            discord.SelectOption(
-                                label=label[:100],
-                                description=f"{len(df)} deck(s)",
-                                value=label  # OBLIGATOIRE
-                            )
-                        )
+            
 
-            # Si pas d'options valides, on force une option "Vide"
-            if not options_libres:
-                options_libres.append(
-                    discord.SelectOption(
-                        label="Vide",
-                        description="Aucun deck libre disponible",
-                        value="none",
-                        default=True
-                    )
-                )
+						# 🟢 Menu : decks libres
+						options_libres = []
+						for diff, df in libres_grouped.items():
+							if isinstance(diff, str) and diff.strip():
+								label = diff.strip()
+								if len(df) > 0:
+									options_libres.append(
+										discord.SelectOption(
+											label=label[:100],
+											description=f"{len(df)} deck(s)",
+											value=label
+										)
+									)
 
-            select_libres = discord.ui.Select(
-                placeholder="Sélectionnez la difficulté des decks libres",
-                options=options_libres,
-                custom_id="select_libres"
-            )
+						select_libres = None
+						if options_libres:
+							select_libres = discord.ui.Select(
+								placeholder="Sélectionnez la difficulté des decks libres",
+								options=options_libres,
+								custom_id="select_libres"
+							)
 
-            async def callback_libres(interaction: discord.Interaction):
-                choix = interaction.data["values"][0]
-                if choix == "none":
-                    await interaction.response.send_message("❌ Aucun deck libre disponible.", ephemeral=True)
-                    return
-                decks = libres_grouped.get(choix)
-                if decks is None:
-                    await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
-                    return
-                texte = f"**Decks libres — Difficulté {choix} :**\n"
-                for _, row in decks.iterrows():
-                    texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
-                await interaction.response.send_message(texte, ephemeral=True)
+							async def callback_libres(interaction: discord.Interaction):
+								choix = interaction.data["values"][0]
+								decks = libres_grouped.get(choix)
+								if decks is None:
+									await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
+									return
+								texte = f"**Decks libres — Difficulté {choix} :**\n"
+								for _, row in decks.iterrows():
+									texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+								await interaction.response.send_message(texte, ephemeral=True)
 
-            select_libres.callback = callback_libres
-            view.add_item(select_libres)
+							select_libres.callback = callback_libres
+							view.add_item(select_libres)
+						else:
+							# Pas de decks libres, on ajoute un champ dans l'embed
+							embed.add_field(name="Decks libres", value="Aucun deck libre disponible.", inline=False)
 
 
-            # 🔴 Menu : decks pris
-            options_pris = []
-            for diff, df in pris_grouped.items():
-                if isinstance(diff, str) and diff.strip():
-                    label = diff.strip()
-                    if len(df) > 0:
-                        options_pris.append(
-                            discord.SelectOption(
-                                label=label[:100],
-                                description=f"{len(df)} deck(s)",
-                                value=label  # OBLIGATOIRE
-                            )
-                        )
+						# 🔴 Menu : decks pris
+						options_pris = []
+						for diff, df in pris_grouped.items():
+							if isinstance(diff, str) and diff.strip():
+								label = diff.strip()
+								if len(df) > 0:
+									options_pris.append(
+										discord.SelectOption(
+											label=label[:100],
+											description=f"{len(df)} deck(s)",
+											value=label
+										)
+									)
 
-            # Si pas d'options valides, on force une option "Vide"
-            if not options_pris:
-                options_pris.append(
-                    discord.SelectOption(
-                        label="Vide",
-                        description="Aucun deck pris disponible",
-                        value="none",
-                        default=True
-                    )
-                )
+						select_pris = None
+						if options_pris:
+							select_pris = discord.ui.Select(
+								placeholder="Sélectionnez la difficulté des decks pris",
+								options=options_pris,
+								custom_id="select_pris"
+							)
 
-            select_pris = discord.ui.Select(
-                placeholder="Sélectionnez la difficulté des decks pris",
-                options=options_pris,
-                custom_id="select_pris"
-            )
+							async def callback_pris(interaction: discord.Interaction):
+								choix = interaction.data["values"][0]
+								decks = pris_grouped.get(choix)
+								if decks is None:
+									await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
+									return
+								texte = f"**Decks pris — Difficulté {choix} :**\n"
+								for _, row in decks.iterrows():
+									texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+								await interaction.response.send_message(texte, ephemeral=True)
 
-            async def callback_pris(interaction: discord.Interaction):
-                choix = interaction.data["values"][0]
-                if choix == "none":
-                    await interaction.response.send_message("❌ Aucun deck pris disponible.", ephemeral=True)
-                    return
-                decks = pris_grouped.get(choix)
-                if decks is None:
-                    await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
-                    return
-                texte = f"**Decks pris — Difficulté {choix} :**\n"
-                for _, row in decks.iterrows():
-                    texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
-                await interaction.response.send_message(texte, ephemeral=True)
-
-            select_pris.callback = callback_pris
-            view.add_item(select_pris)
-
+							select_pris.callback = callback_pris
+							view.add_item(select_pris)
+						else:
+							# Pas de decks pris, on ajoute un champ dans l'embed
+							embed.add_field(name="Decks pris", value="Aucun deck pris disponible.", inline=False)
 
 
             # ✅ Envoi final
