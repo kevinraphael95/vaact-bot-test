@@ -92,8 +92,6 @@ class TournoiCommand(commands.Cog):
 
             embed.set_footer(text="Decks fournis par l'organisation du tournoi.")
             view = discord.ui.View(timeout=180)
-						
-###
 
             # ▶️ Traitement des decks libres
             total_decks_libres = 0
@@ -176,10 +174,6 @@ class TournoiCommand(commands.Cog):
                 await ctx.send(embed=embed)
             else:
                 await ctx.send(embed=embed, view=view)
-
-	    
-	    ####
-
 
         except Exception as e:
             print(f"[ERREUR GLOBALE] {e}")
