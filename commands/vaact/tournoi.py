@@ -93,58 +93,65 @@ class TournoiCommand(commands.Cog):
             embed.set_footer(text="Decks fournis par l'organisation du tournoi.")
 
             view = discord.ui.View(timeout=180)
-
             # Options et menu déroulant pour decks libres
             if libres_grouped:
                 options_libres = [
                     discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
-                    for diff, df in libres_grouped.items()
+                    for diff, df in libres_grouped.items() if len(df) > 0
                 ]
-                select_libres = discord.ui.Select(
-                    placeholder="Sélectionnez la difficulté des decks libres",
-                    options=options_libres,
-                    custom_id="select_libres"
-                )
-                async def callback_libres(interaction: discord.Interaction):
-                    diff = interaction.data["values"][0]
-                    decks = libres_grouped.get(diff)
-                    if decks is None:
-                        await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
-                        return
+                if options_libres:
+                    select_libres = discord.ui.Select(
+                        placeholder="Sélectionnez la difficulté des decks libres",
+                        options=options_libres,
+                        custom_id="select_libres"
+                    )
 
-                    texte = f"**Decks libres — Difficulté {diff} :**\n"
-                    for _, row in decks.iterrows():
-                        texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
-                    await interaction.response.send_message(texte, ephemeral=True)
+                    async def callback_libres(interaction: discord.Interaction):
+                        diff = interaction.data["values"][0]
+                        decks = libres_grouped.get(diff)
+                        if decks is None:
+                            await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
+                            return
 
-                select_libres.callback = callback_libres
-                view.add_item(select_libres)
+                        texte = f"**Decks libres — Difficulté {diff} :**\n"
+                        for _, row in decks.iterrows():
+                            texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+                        await interaction.response.send_message(texte, ephemeral=True)
+
+                    select_libres.callback = callback_libres
+                    view.add_item(select_libres)
 
             # Options et menu déroulant pour decks pris
             if pris_grouped:
                 options_pris = [
                     discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
-                    for diff, df in pris_grouped.items()
+                    for diff, df in pris_grouped.items() if len(df) > 0
                 ]
-                select_pris = discord.ui.Select(
-                    placeholder="Sélectionnez la difficulté des decks pris",
-                    options=options_pris,
-                    custom_id="select_pris"
-                )
-                async def callback_pris(interaction: discord.Interaction):
-                    diff = interaction.data["values"][0]
-                    decks = pris_grouped.get(diff)
-                    if decks is None:
-                        await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
-                        return
+                if options_pris:
+                    select_pris = discord.ui.Select(
+                        placeholder="Sélectionnez la difficulté des decks pris",
+                        options=options_pris,
+                        custom_id="select_pris"
+                    )
 
-                    texte = f"**Decks pris — Difficulté {diff} :**\n"
-                    for _, row in decks.iterrows():
-                        texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
-                    await interaction.response.send_message(texte, ephemeral=True)
+                    async def callback_pris(interaction: discord.Interaction):
+                        diff = interaction.data["values"][0]
+                        decks = pris_grouped.get(diff)
+                        if decks is None:
+                            await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
+                            return
 
-                select_pris.callback = callback_pris
-                view.add_item(select_pris)
+                        texte = f"**Decks pris — Difficulté {diff} :**\n"
+                        for _, row in decks.iterrows():
+                            texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+                        await interaction.response.send_message(texte, ephemeral=True)
+
+                    select_pris.callback = callback_pris
+                    view.add_item(select_pris)
+
+
+
+           
 
             # Envoi
             if len(view.children) == 0:
