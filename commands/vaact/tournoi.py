@@ -3,7 +3,7 @@ from discord.ext import commands
 import pandas as pd
 import aiohttp
 import io, ssl, os, traceback
-from aiohttp import TCPConnector, ClientConnectionError
+from aiohttp import TCPConnector
 from supabase import create_client, Client
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -14,16 +14,16 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 difficulte_order = ["1/3", "2/3", "3/3"]
 
-# La vue avec Select + boutons de pagination
 class TournoiView(discord.ui.View):
     def __init__(self, data_dict, titre, timeout=180):
         """
-        data_dict = {
-            "Libre 1/3": [embed, embed, ...],
-            "Libre 2/3": [...],
-            "Pris 1/3": [...],
-            ...
-        }
+        data_dict: dict
+            {
+                "Libre 1/3": [embed, embed, ...],
+                "Libre 2/3": [...],
+                "Pris 1/3": [...],
+                ...
+            }
         """
         super().__init__(timeout=timeout)
         self.data = data_dict
@@ -31,15 +31,15 @@ class TournoiView(discord.ui.View):
         self.page = 0
         self.current_key = list(self.data.keys())[0]
 
-        # Ajouter le select
+        # Select unique avec toutes les catégories
         options = [discord.SelectOption(label=k, value=k) for k in self.data.keys()]
-        self.select = discord.ui.Select(placeholder="Choisissez catégorie + difficulté", options=options, row=0)
+        self.select = discord.ui.Select(placeholder="Choisissez catégorie + difficulté", options=options)
         self.select.callback = self.select_callback
         self.add_item(self.select)
 
-        # Boutons pagination (row=1 pour les boutons)
-        self.prev_button = discord.ui.Button(label="⬅️", style=discord.ButtonStyle.secondary, row=1)
-        self.next_button = discord.ui.Button(label="➡️", style=discord.ButtonStyle.secondary, row=1)
+        # Boutons de pagination
+        self.prev_button = discord.ui.Button(label="⬅️", style=discord.ButtonStyle.secondary)
+        self.next_button = discord.ui.Button(label="➡️", style=discord.ButtonStyle.secondary)
         self.prev_button.callback = self.prev_page
         self.next_button.callback = self.next_page
         self.add_item(self.prev_button)
@@ -107,11 +107,14 @@ class TournoiCommand(commands.Cog):
                 date_tournoi = "🗓️ à venir !"
 
             def make_pages(df_cat, couleur):
+                # Trier par difficulté dans l'ordre défini
                 df_cat["DIFFICULTÉ"] = pd.Categorical(df_cat["DIFFICULTÉ"], categories=difficulte_order, ordered=True)
                 df_cat = df_cat.sort_values("DIFFICULTÉ")
+
                 pages = []
-                for i in range(0, len(df_cat), 15):
-                    chunk = df_cat.iloc[i:i+15]
+                max_lines_per_page = 12  # éviter embed trop long
+                for i in range(0, len(df_cat), max_lines_per_page):
+                    chunk = df_cat.iloc[i:i+max_lines_per_page]
                     texte = ""
                     for _, row in chunk.iterrows():
                         texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}* ({row['DIFFICULTÉ']})\n"
@@ -139,7 +142,6 @@ class TournoiCommand(commands.Cog):
             titre_embed = f"🎴 Prochain Tournoi Yu-Gi-Oh VAACT\n📅 **{date_tournoi}**"
             view = TournoiView(data_dict, titre_embed)
 
-            # Envoie le premier embed correspondant à la première clé
             first_key = list(data_dict.keys())[0]
             first_embed = data_dict[first_key][0]
             first_embed.title = f"{titre_embed}\n📂 {first_key}"
