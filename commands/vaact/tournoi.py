@@ -4,37 +4,36 @@ import pandas as pd
 import aiohttp
 import io, ssl, os, traceback
 from aiohttp import TCPConnector
-from supabase import create_client, Client
+from supabase import create_client
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 DIFFICULTE_ORDER = ["1/3", "2/3", "3/3"]
 
 class TournoiView(discord.ui.View):
     def __init__(self, data_dict, titre, timeout=180):
         super().__init__(timeout=timeout)
-        self.data = data_dict  # dict { "Libre 1/3": [embed, embed, ...], "Pris 2/3": [...], ... }
+        self.data = data_dict  # dict clé -> liste d'embeds
         self.titre = titre
         self.page = 0
         self.current_key = list(self.data.keys())[0]
 
-        # Select unique avec toutes les catégories + difficultés
+        # Un seul Select avec toutes les clés
         options = [discord.SelectOption(label=k, value=k) for k in self.data.keys()]
         self.select = discord.ui.Select(
             placeholder="Choisissez catégorie + difficulté",
-            options=options,
-            row=0
+            options=options
         )
         self.select.callback = self.select_callback
         self.add_item(self.select)
 
         # Boutons précédent / suivant
-        self.prev_button = discord.ui.Button(label="⬅️", style=discord.ButtonStyle.secondary, row=1)
-        self.next_button = discord.ui.Button(label="➡️", style=discord.ButtonStyle.secondary, row=1)
+        self.prev_button = discord.ui.Button(label="⬅️", style=discord.ButtonStyle.secondary)
+        self.next_button = discord.ui.Button(label="➡️", style=discord.ButtonStyle.secondary)
         self.prev_button.callback = self.prev_page
         self.next_button.callback = self.next_page
         self.add_item(self.prev_button)
@@ -56,20 +55,16 @@ class TournoiView(discord.ui.View):
     async def update_embed(self, interaction: discord.Interaction):
         embed = self.data[self.current_key][self.page]
         embed.title = f"{self.titre}\n📂 {self.current_key}"
-        embed.set_footer(text=f"Page {self.page+1}/{len(self.data[self.current_key])} • Decks triés par difficulté")
+        embed.set_footer(text=f"Page {self.page + 1}/{len(self.data[self.current_key])} • Decks triés par difficulté")
         await interaction.response.edit_message(embed=embed, view=self)
 
 class TournoiCommand(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(
-        name="tournoi",
-        aliases=["decks", "tournoivaact"],
-        help="📅 Affiche la date du tournoi et les decks disponibles/pris."
-    )
+    @commands.command(name="tournoi", aliases=["decks", "tournoivaact"], help="📅 Affiche la date du tournoi et les decks disponibles/pris.")
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
-    async def tournoi(self, ctx: commands.Context):
+    async def tournoi(self, ctx):
         try:
             if not SHEET_CSV_URL:
                 await ctx.send("🚨 L'URL du fichier CSV est manquante.")
@@ -103,11 +98,9 @@ class TournoiCommand(commands.Cog):
                 date_tournoi = "🗓️ à venir !"
 
             def make_pages(df_cat, couleur):
-                # Trier par difficulté définie
                 df_cat["DIFFICULTÉ"] = pd.Categorical(df_cat["DIFFICULTÉ"], categories=DIFFICULTE_ORDER, ordered=True)
                 df_cat = df_cat.sort_values("DIFFICULTÉ")
                 pages = []
-                # 15 decks max par page
                 for i in range(0, len(df_cat), 15):
                     chunk = df_cat.iloc[i:i+15]
                     texte = ""
@@ -135,7 +128,6 @@ class TournoiCommand(commands.Cog):
             titre_embed = f"🎴 Prochain Tournoi Yu-Gi-Oh VAACT\n📅 **{date_tournoi}**"
             view = TournoiView(data_dict, titre_embed)
 
-            # Envoie le premier embed (première clé, première page)
             first_key = list(data_dict.keys())[0]
             first_embed = data_dict[first_key][0]
             first_embed.title = f"{titre_embed}\n📂 {first_key}"
@@ -147,6 +139,5 @@ class TournoiCommand(commands.Cog):
             traceback.print_exc()
             await ctx.send("🚨 Une erreur inattendue est survenue.")
 
-async def setup(bot: commands.Bot):
+async def setup(bot):
     await bot.add_cog(TournoiCommand(bot))
-    print("✅ Cog chargé : TournoiCommand (catégorie = VAACT)")
