@@ -260,5 +260,27 @@
       ],
       "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
     }
+  },
+    ,
+  "Saison 2.5": {
+    "Bastien Misawa Manga": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16841503"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Alexia Rhodes Manga": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=16958761"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    },
+    "Sylvio Sawatari 2": {
+      "deck": [
+        "Deck: https://www.duelingbook.com/deck?id=17087209"
+      ],
+      "astuces": "📝 Ajouter ici des astuces et conseils de jeu pour ce personnage."
+    }
   }
+
 }
