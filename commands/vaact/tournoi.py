@@ -3,7 +3,7 @@
 # ──────────────────────────────────────────────────────────────
 
 # ──────────────────────────────────────────────────────────────
-# 📦 Cog principal — Commande !tournoi avec menus déroulants
+# 📦 Cog principal — Commande !tournoi
 # ──────────────────────────────────────────────────────────────
 import discord
 from discord.ext import commands
@@ -13,27 +13,26 @@ import io, ssl, os, traceback
 from aiohttp import TCPConnector
 from supabase import create_client, Client
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 # ──────────────────────────────────────────────────────────────
 # 🔧 COG : TournoiCommand
 # ──────────────────────────────────────────────────────────────
 class TournoiCommand(commands.Cog):
     def __init__(self, bot: commands.Bot):
-        self.bot = bot
+        self.bot = bot  # 🔌 Stocke l'instance du bot
 
-    # Helper : charge les données du CSV
+        SUPABASE_URL = os.getenv("SUPABASE_URL")
+        SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+        self.SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
+        self.supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+    # 🧩 Charge les données CSV
     async def load_decks(self):
         sslcontext = ssl.create_default_context()
         sslcontext.set_ciphers('DEFAULT:@SECLEVEL=1')
         connector = TCPConnector(ssl=sslcontext)
 
         async with aiohttp.ClientSession(connector=connector) as session:
-            async with session.get(SHEET_CSV_URL) as resp:
+            async with session.get(self.SHEET_CSV_URL) as resp:
                 if resp.status != 200:
                     raise Exception("Erreur téléchargement CSV")
                 text = (await resp.read()).decode("utf-8")
@@ -47,16 +46,15 @@ class TournoiCommand(commands.Cog):
         pris = df[df["PRIS ?"].str.lower().isin(["true", "✅"])]
         libres = df[~df["PRIS ?"].str.lower().isin(["true", "✅"])]
 
-        # Group by difficulty
-        libres_grouped = {k: v for k, v in libres.groupby("DIFFICULTE")}
-        pris_grouped = {k: v for k, v in pris.groupby("DIFFICULTE")}
+        return {
+            "libres": {k: v for k, v in libres.groupby("DIFFICULTE")},
+            "pris": {k: v for k, v in pris.groupby("DIFFICULTE")}
+        }
 
-        return libres_grouped, pris_grouped
-
-    # Helper : récupère la date du tournoi
+    # 📅 Récupère la date du tournoi
     async def get_date_tournoi(self):
         try:
-            tournoi_data = supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
+            tournoi_data = self.supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
             if tournoi_data.data and "prochaine_date" in tournoi_data.data[0]:
                 return tournoi_data.data[0]["prochaine_date"]
             else:
@@ -76,7 +74,9 @@ class TournoiCommand(commands.Cog):
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
     async def tournoi(self, ctx: commands.Context):
         try:
-            libres_grouped, pris_grouped = await self.load_decks()
+            data = await self.load_decks()
+            libres_grouped = data["libres"]
+            pris_grouped = data["pris"]
             date_tournoi = await self.get_date_tournoi()
 
             embed = discord.Embed(
@@ -91,64 +91,61 @@ class TournoiCommand(commands.Cog):
                 embed.add_field(name="Decks pris", value="Aucun deck pris.", inline=False)
 
             embed.set_footer(text="Decks fournis par l'organisation du tournoi.")
-
             view = discord.ui.View(timeout=180)
 
-            # Menu déroulant pour decks libres
-            if libres_grouped:
-                options_libres = [
-                    discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
-                    for diff, df in libres_grouped.items() if len(df) > 0
-                ]
-                if options_libres:
-                    select_libres = discord.ui.Select(
-                        placeholder="Sélectionnez la difficulté des decks libres",
-                        options=options_libres,
-                        custom_id="select_libres"
-                    )
+            # 🟢 Menu : decks libres
+            options_libres = [
+                discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
+                for diff, df in libres_grouped.items() if len(df) > 0
+            ]
+            if options_libres:
+                select_libres = discord.ui.Select(
+                    placeholder="Sélectionnez la difficulté des decks libres",
+                    options=options_libres,
+                    custom_id="select_libres"
+                )
 
-                    async def callback_libres(interaction: discord.Interaction):
-                        diff = interaction.data["values"][0]
-                        decks = libres_grouped.get(diff)
-                        if decks is None:
-                            await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
-                            return
-                        texte = f"**Decks libres — Difficulté {diff} :**\n"
-                        for _, row in decks.iterrows():
-                            texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
-                        await interaction.response.send_message(texte, ephemeral=True)
+                async def callback_libres(interaction: discord.Interaction):
+                    diff = interaction.data["values"][0]
+                    decks = libres_grouped.get(diff)
+                    if decks is None:
+                        await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
+                        return
+                    texte = f"**Decks libres — Difficulté {diff} :**\n"
+                    for _, row in decks.iterrows():
+                        texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+                    await interaction.response.send_message(texte, ephemeral=True)
 
-                    select_libres.callback = callback_libres
-                    view.add_item(select_libres)
+                select_libres.callback = callback_libres
+                view.add_item(select_libres)
 
-            # Menu déroulant pour decks pris
-            if pris_grouped:
-                options_pris = [
-                    discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
-                    for diff, df in pris_grouped.items() if len(df) > 0
-                ]
-                if options_pris:
-                    select_pris = discord.ui.Select(
-                        placeholder="Sélectionnez la difficulté des decks pris",
-                        options=options_pris,
-                        custom_id="select_pris"
-                    )
+            # 🔴 Menu : decks pris
+            options_pris = [
+                discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
+                for diff, df in pris_grouped.items() if len(df) > 0
+            ]
+            if options_pris:
+                select_pris = discord.ui.Select(
+                    placeholder="Sélectionnez la difficulté des decks pris",
+                    options=options_pris,
+                    custom_id="select_pris"
+                )
 
-                    async def callback_pris(interaction: discord.Interaction):
-                        diff = interaction.data["values"][0]
-                        decks = pris_grouped.get(diff)
-                        if decks is None:
-                            await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
-                            return
-                        texte = f"**Decks pris — Difficulté {diff} :**\n"
-                        for _, row in decks.iterrows():
-                            texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
-                        await interaction.response.send_message(texte, ephemeral=True)
+                async def callback_pris(interaction: discord.Interaction):
+                    diff = interaction.data["values"][0]
+                    decks = pris_grouped.get(diff)
+                    if decks is None:
+                        await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
+                        return
+                    texte = f"**Decks pris — Difficulté {diff} :**\n"
+                    for _, row in decks.iterrows():
+                        texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+                    await interaction.response.send_message(texte, ephemeral=True)
 
-                    select_pris.callback = callback_pris
-                    view.add_item(select_pris)
+                select_pris.callback = callback_pris
+                view.add_item(select_pris)
 
-            # Envoi du message
+            # ✅ Envoi final
             if len(view.children) == 0:
                 await ctx.send(embed=embed)
             else:
@@ -159,9 +156,7 @@ class TournoiCommand(commands.Cog):
             traceback.print_exc()
             await ctx.send("🚨 Une erreur inattendue est survenue.")
 
-    # ──────────────────────────────────────────────────────────
-    # 🏷️ Catégorisation pour !help
-    # ──────────────────────────────────────────────────────────
+    # 🏷️ Catégorisation pour affichage personnalisé dans !help
     def cog_load(self):
         self.tournoi.category = "VAACT"
 
