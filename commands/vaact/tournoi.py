@@ -92,96 +92,94 @@ class TournoiCommand(commands.Cog):
 
             embed.set_footer(text="Decks fournis par l'organisation du tournoi.")
             view = discord.ui.View(timeout=180)
+						
+###
 
+            # ▶️ Traitement des decks libres
+            total_decks_libres = 0
+            for diff, df in libres_grouped.items():
+                if len(df) == 0:
+                    continue
 
+                total_decks_libres += len(df)
 
-            
+                select_libres = discord.ui.Select(
+                    placeholder=f"Decks libres — difficulté {diff}",
+                    options=[
+                        discord.SelectOption(
+                            label=row["PERSONNAGE"][:100],
+                            description=row["ARCHETYPE(S)"][:100],
+                            value=str(i)
+                        ) for i, (_, row) in enumerate(df.iterrows())
+                    ],
+                    custom_id=f"select_libres_{diff}"
+                )
 
-						# 🟢 Menu : decks libres
-						options_libres = []
-						for diff, df in libres_grouped.items():
-							if isinstance(diff, str) and diff.strip():
-								label = diff.strip()
-								if len(df) > 0:
-									options_libres.append(
-										discord.SelectOption(
-											label=label[:100],
-											description=f"{len(df)} deck(s)",
-											value=label
-										)
-									)
+                async def make_callback_libres(diff):
+                    async def callback(interaction: discord.Interaction):
+                        decks = libres_grouped.get(diff)
+                        if not decks or decks.empty:
+                            await interaction.response.send_message("❌ Aucun deck trouvé.", ephemeral=True)
+                            return
+                        texte = f"**Decks libres — Difficulté {diff} :**\n"
+                        for _, row in decks.iterrows():
+                            texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+                        await interaction.response.send_message(texte, ephemeral=True)
+                    return callback
 
-						select_libres = None
-						if options_libres:
-							select_libres = discord.ui.Select(
-								placeholder="Sélectionnez la difficulté des decks libres",
-								options=options_libres,
-								custom_id="select_libres"
-							)
+                select_libres.callback = await make_callback_libres(diff)
+                view.add_item(select_libres)
 
-							async def callback_libres(interaction: discord.Interaction):
-								choix = interaction.data["values"][0]
-								decks = libres_grouped.get(choix)
-								if decks is None:
-									await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
-									return
-								texte = f"**Decks libres — Difficulté {choix} :**\n"
-								for _, row in decks.iterrows():
-									texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
-								await interaction.response.send_message(texte, ephemeral=True)
+            if total_decks_libres == 0:
+                embed.add_field(name="Decks libres", value="❌ Là y'a vraiment rien à afficher.", inline=False)
 
-							select_libres.callback = callback_libres
-							view.add_item(select_libres)
-						else:
-							# Pas de decks libres, on ajoute un champ dans l'embed
-							embed.add_field(name="Decks libres", value="Aucun deck libre disponible.", inline=False)
+            # 🔴 Traitement des decks pris
+            total_decks_pris = 0
+            for diff, df in pris_grouped.items():
+                if len(df) == 0:
+                    continue
 
+                total_decks_pris += len(df)
 
-						# 🔴 Menu : decks pris
-						options_pris = []
-						for diff, df in pris_grouped.items():
-							if isinstance(diff, str) and diff.strip():
-								label = diff.strip()
-								if len(df) > 0:
-									options_pris.append(
-										discord.SelectOption(
-											label=label[:100],
-											description=f"{len(df)} deck(s)",
-											value=label
-										)
-									)
+                select_pris = discord.ui.Select(
+                    placeholder=f"Decks pris — difficulté {diff}",
+                    options=[
+                        discord.SelectOption(
+                            label=row["PERSONNAGE"][:100],
+                            description=row["ARCHETYPE(S)"][:100],
+                            value=str(i)
+                        ) for i, (_, row) in enumerate(df.iterrows())
+                    ],
+                    custom_id=f"select_pris_{diff}"
+                )
 
-						select_pris = None
-						if options_pris:
-							select_pris = discord.ui.Select(
-								placeholder="Sélectionnez la difficulté des decks pris",
-								options=options_pris,
-								custom_id="select_pris"
-							)
+                async def make_callback_pris(diff):
+                    async def callback(interaction: discord.Interaction):
+                        decks = pris_grouped.get(diff)
+                        if not decks or decks.empty:
+                            await interaction.response.send_message("❌ Aucun deck trouvé.", ephemeral=True)
+                            return
+                        texte = f"**Decks pris — Difficulté {diff} :**\n"
+                        for _, row in decks.iterrows():
+                            texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+                        await interaction.response.send_message(texte, ephemeral=True)
+                    return callback
 
-							async def callback_pris(interaction: discord.Interaction):
-								choix = interaction.data["values"][0]
-								decks = pris_grouped.get(choix)
-								if decks is None:
-									await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
-									return
-								texte = f"**Decks pris — Difficulté {choix} :**\n"
-								for _, row in decks.iterrows():
-									texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
-								await interaction.response.send_message(texte, ephemeral=True)
+                select_pris.callback = await make_callback_pris(diff)
+                view.add_item(select_pris)
 
-							select_pris.callback = callback_pris
-							view.add_item(select_pris)
-						else:
-							# Pas de decks pris, on ajoute un champ dans l'embed
-							embed.add_field(name="Decks pris", value="Aucun deck pris disponible.", inline=False)
-
+            if total_decks_pris == 0:
+                embed.add_field(name="Decks pris", value="❌ Là y'a vraiment rien à afficher.", inline=False)
 
             # ✅ Envoi final
             if len(view.children) == 0:
                 await ctx.send(embed=embed)
             else:
                 await ctx.send(embed=embed, view=view)
+
+	    
+	    ####
+
 
         except Exception as e:
             print(f"[ERREUR GLOBALE] {e}")
