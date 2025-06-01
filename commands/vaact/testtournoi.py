@@ -1,58 +1,52 @@
-# ────────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────
 # 📁 testtournoi.py
-# ────────────────────────────────────────────────────────────────────────────────
-# Cette commande affiche :
-# 1. La date du prochain tournoi (depuis Supabase)
-# 2. Les decks disponibles
-# 3. Les decks déjà pris
-# Les données sont lues depuis un fichier CSV (Google Sheets publié).
-# ────────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────
 
-# ────────────────────────────────────────────────────────────────────────────────
-# 📦 IMPORTS
-# ────────────────────────────────────────────────────────────────────────────────
-import discord                                          # Composants Discord (Embed, etc.)
-from discord.ext import commands                        # Système de commandes
-import pandas as pd                                     # Manipulation du CSV
-import aiohttp                                          # Requêtes HTTP asynchrones
-import io, ssl, os, traceback                           # Utilitaires système
-from aiohttp import TCPConnector, ClientConnectionError # Connexions sécurisées
-from supabase import create_client, Client              # Accès base Supabase
+# ───────────────────────────────────────────────────────────────────────────────
+# 📦 Cog principal — Commande !testtournoi
+# ───────────────────────────────────────────────────────────────────────────────
+import discord
+from discord.ext import commands
+import pandas as pd
+import aiohttp
+import io
+import ssl
+import os
+import traceback
+from aiohttp import TCPConnector, ClientConnectionError
+from supabase import create_client, Client
 
-# ────────────────────────────────────────────────────────────────────────────────
-# 🔐 VARIABLES D’ENVIRONNEMENT
-# ────────────────────────────────────────────────────────────────────────────────
-SUPABASE_URL = os.getenv("SUPABASE_URL")               # URL Supabase
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")               # Clé API Supabase
-SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")             # URL du CSV en ligne
+# Variables d'environnement
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
 
-# 🔌 Connexion à Supabase (objet global)
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# ────────────────────────────────────────────────────────────────────────────────
-# 🔧 COG : TournoiCommand
-# ────────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────
+# 🔧 COG : TestTournoiCommand
+# ──────────────────────────────────────────────────────────────
 class TestTournoiCommand(commands.Cog):
-    """Commande !testtournoi — Affiche la liste des decks et la prochaine date."""
-
     def __init__(self, bot: commands.Bot):
-        self.bot = bot  # 🔌 Référence du bot
+        self.bot = bot  # 🔌 Stocke l'instance du bot
 
-    # ────────────────────────────────────────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────
     # 🔹 COMMANDE : !testtournoi
-    # ────────────────────────────────────────────────────────────────────────────
-    @commands.command(name="testtournoi",aliases=[],help="📅 Affiche la date du tournoi et la liste des decks disponibles/pris.") # noms de commande
-    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)  # 🧊 cooldown
+    # ──────────────────────────────────────────────────────────
+    @commands.command(
+        name="testtournoi",
+        aliases=[],
+        help="📅 Affiche la date du tournoi et la liste des decks disponibles/pris."
+    )
+    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
     async def testtournoi(self, ctx: commands.Context):
         try:
-            # ───── Étape 1 : Vérifie que l’URL du CSV est présente ─────
             if not SHEET_CSV_URL:
                 await ctx.send("🚨 L'URL du fichier CSV est manquante.")
                 return
 
-            # ───── Étape 2 : Téléchargement du CSV (avec SSL custom) ─────
             sslcontext = ssl.create_default_context()
-            sslcontext.set_ciphers('DEFAULT:@SECLEVEL=1')  # 🔐 Niveau de sécurité modifié
+            sslcontext.set_ciphers('DEFAULT:@SECLEVEL=1')
             connector = TCPConnector(ssl=sslcontext)
 
             try:
@@ -61,52 +55,33 @@ class TestTournoiCommand(commands.Cog):
                         if resp.status != 200:
                             await ctx.send("❌ Erreur lors du téléchargement du fichier CSV.")
                             return
-                        text = (await resp.read()).decode("utf-8")  # 📄 Contenu brut
+                        text = (await resp.read()).decode("utf-8")
             except ClientConnectionError as e:
                 print(f"[ERREUR AIOHTTP] {e}")
                 await ctx.send("🚨 Erreur réseau lors de la récupération du fichier.")
                 return
 
-            # ───── Étape 3 : Lecture et nettoyage du CSV ─────
             try:
-                df = pd.read_csv(io.StringIO(text), skiprows=1)  # 📊 Charge les données en ignorant l’en-tête double
-                df["PRIS ?"] = df["PRIS ?"].fillna("").astype(str).str.strip()  # ✅ Nettoie les colonnes
+                df = pd.read_csv(io.StringIO(text), skiprows=1)
+                df["PRIS ?"] = df["PRIS ?"].fillna("").astype(str).str.strip()
                 df["PERSONNAGE"] = df["PERSONNAGE"].fillna("Inconnu")
                 df["ARCHETYPE(S)"] = df.get("ARCHETYPE(S)", "—").fillna("—")
 
-                pris = df[df["PRIS ?"].str.lower().isin(["true", "✅"])]      # 🔒 Decks pris
-                libres = df[~df["PRIS ?"].str.lower().isin(["true", "✅"])]   # 🆓 Decks libres
+                pris = df[df["PRIS ?"].str.lower().isin(["true", "✅"])]
+                libres = df[~df["PRIS ?"].str.lower().isin(["true", "✅"])]
             except Exception as e:
                 print(f"[ERREUR CSV] {e}")
                 traceback.print_exc()
                 await ctx.send("📉 Fichier CSV invalide ou mal formaté.")
                 return
 
-            # ───── Étape 4 : Récupération de la date du tournoi (Supabase) ─────
             try:
                 tournoi_data = supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
                 date_tournoi = tournoi_data.data[0]["prochaine_date"] if tournoi_data.data and "prochaine_date" in tournoi_data.data[0] else "🗓️ à venir !"
             except Exception as e:
                 print(f"[ERREUR SUPABASE] {e}")
                 date_tournoi = "🗓️ à venir !"
-                
 
-            # ───── Étape 5 : Construction de l'embed Discord ─────
-            embed = discord.Embed(
-                title="🎴 Prochain Tournoi Yu-Gi-Oh VAACT",
-                description=f"📅 **Le prochain tournoi aura lieu :**\n🎯 __**{date_tournoi}**__",
-                color=discord.Color.dark_orange()
-            )
-
-            embed.add_field(name="🆓 Decks disponibles", value=texte_libres or "Aucun deck libre.", inline=False)
-            embed.add_field(name="🔒 Decks pris", value=texte_pris or "Aucun deck pris.", inline=False)
-
-            embed.set_footer(text="Decks fournis par l'organisation du tournoi.")
-            await ctx.send(embed=embed)
-
-
-
-            # 🆓 Decks disponibles groupés par saison
             texte_libres = ""
             if "SAISON" in libres.columns:
                 groupes_libres = libres.groupby("SAISON")
@@ -118,9 +93,6 @@ class TestTournoiCommand(commands.Cog):
             else:
                 texte_libres = "⚠️ Colonne 'SAISON' manquante dans le fichier."
 
-
-            # 🔒 Decks déjà pris
-            # 🔒 Decks pris groupés par saison
             texte_pris = ""
             if "SAISON" in pris.columns:
                 groupes_pris = pris.groupby("SAISON")
@@ -132,8 +104,15 @@ class TestTournoiCommand(commands.Cog):
             else:
                 texte_pris = "⚠️ Colonne 'SAISON' manquante dans le fichier."
 
-
+            embed = discord.Embed(
+                title="🎴 Prochain Tournoi Yu-Gi-Oh VAACT",
+                description=f"📅 **Le prochain tournoi aura lieu :**\n🎯 __**{date_tournoi}**__",
+                color=discord.Color.dark_orange()
+            )
+            embed.add_field(name="🆓 Decks disponibles", value=texte_libres or "Aucun deck libre.", inline=False)
+            embed.add_field(name="🔒 Decks pris", value=texte_pris or "Aucun deck pris.", inline=False)
             embed.set_footer(text="Decks fournis par l'organisation du tournoi.")
+
             await ctx.send(embed=embed)
 
         except Exception as e:
@@ -141,17 +120,13 @@ class TestTournoiCommand(commands.Cog):
             traceback.print_exc()
             await ctx.send("🚨 Une erreur inattendue est survenue.")
 
-    # ────────────────────────────────────────────────────────────────────────────
-    # 🏷️ CATÉGORISATION
-    # ────────────────────────────────────────────────────────────────────────────
+    # 🏷️ Catégorisation pour affichage personnalisé dans !help
     def cog_load(self):
-        """Classement de la commande pour !help"""
         self.testtournoi.category = "VAACT"
 
-# ────────────────────────────────────────────────────────────────────────────────
-# 🔌 SETUP : Chargement automatique du cog
-# ────────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────
+# 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
+# ──────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    """Fonction appelée pour ajouter ce cog au bot."""
     await bot.add_cog(TestTournoiCommand(bot))
     print("✅ Cog chargé : TestTournoiCommand (catégorie = VAACT)")
