@@ -12,34 +12,29 @@ SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-difficulte_order = ["1/3", "2/3", "3/3"]
+DIFFICULTE_ORDER = ["1/3", "2/3", "3/3"]
 
 class TournoiView(discord.ui.View):
     def __init__(self, data_dict, titre, timeout=180):
-        """
-        data_dict: dict
-            {
-                "Libre 1/3": [embed, embed, ...],
-                "Libre 2/3": [...],
-                "Pris 1/3": [...],
-                ...
-            }
-        """
         super().__init__(timeout=timeout)
-        self.data = data_dict
+        self.data = data_dict  # dict { "Libre 1/3": [embed, embed, ...], "Pris 2/3": [...], ... }
         self.titre = titre
         self.page = 0
         self.current_key = list(self.data.keys())[0]
 
-        # Select unique avec toutes les catégories
+        # Select unique avec toutes les catégories + difficultés
         options = [discord.SelectOption(label=k, value=k) for k in self.data.keys()]
-        self.select = discord.ui.Select(placeholder="Choisissez catégorie + difficulté", options=options)
+        self.select = discord.ui.Select(
+            placeholder="Choisissez catégorie + difficulté",
+            options=options,
+            row=0
+        )
         self.select.callback = self.select_callback
         self.add_item(self.select)
 
-        # Boutons de pagination
-        self.prev_button = discord.ui.Button(label="⬅️", style=discord.ButtonStyle.secondary)
-        self.next_button = discord.ui.Button(label="➡️", style=discord.ButtonStyle.secondary)
+        # Boutons précédent / suivant
+        self.prev_button = discord.ui.Button(label="⬅️", style=discord.ButtonStyle.secondary, row=1)
+        self.next_button = discord.ui.Button(label="➡️", style=discord.ButtonStyle.secondary, row=1)
         self.prev_button.callback = self.prev_page
         self.next_button.callback = self.next_page
         self.add_item(self.prev_button)
@@ -100,6 +95,7 @@ class TournoiCommand(commands.Cog):
             pris = df[df["PRIS ?"].str.lower().isin(["true", "✅"])]
             libres = df[~df["PRIS ?"].str.lower().isin(["true", "✅"])]
 
+            # Récupération date tournoi depuis Supabase
             try:
                 tournoi_data = supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
                 date_tournoi = tournoi_data.data[0]["prochaine_date"] if tournoi_data.data and "prochaine_date" in tournoi_data.data[0] else "🗓️ à venir !"
@@ -107,14 +103,13 @@ class TournoiCommand(commands.Cog):
                 date_tournoi = "🗓️ à venir !"
 
             def make_pages(df_cat, couleur):
-                # Trier par difficulté dans l'ordre défini
-                df_cat["DIFFICULTÉ"] = pd.Categorical(df_cat["DIFFICULTÉ"], categories=difficulte_order, ordered=True)
+                # Trier par difficulté définie
+                df_cat["DIFFICULTÉ"] = pd.Categorical(df_cat["DIFFICULTÉ"], categories=DIFFICULTE_ORDER, ordered=True)
                 df_cat = df_cat.sort_values("DIFFICULTÉ")
-
                 pages = []
-                max_lines_per_page = 12  # éviter embed trop long
-                for i in range(0, len(df_cat), max_lines_per_page):
-                    chunk = df_cat.iloc[i:i+max_lines_per_page]
+                # 15 decks max par page
+                for i in range(0, len(df_cat), 15):
+                    chunk = df_cat.iloc[i:i+15]
                     texte = ""
                     for _, row in chunk.iterrows():
                         texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}* ({row['DIFFICULTÉ']})\n"
@@ -124,14 +119,12 @@ class TournoiCommand(commands.Cog):
                     pages.append(embed)
                 return pages
 
-            # Construire le dictionnaire des pages pour chaque catégorie + difficulté
             data_dict = {}
-
             for cat_name, df_cat in [("Libre", libres), ("Pris", pris)]:
-                for diff in difficulte_order:
+                for diff in DIFFICULTE_ORDER:
                     df_diff = df_cat[df_cat["DIFFICULTÉ"] == diff]
                     key = f"{cat_name} {diff}"
-                    pages = make_pages(df_diff, discord.Color.green() if cat_name=="Libre" else discord.Color.red())
+                    pages = make_pages(df_diff, discord.Color.green() if cat_name == "Libre" else discord.Color.red())
                     if pages:
                         data_dict[key] = pages
 
@@ -142,6 +135,7 @@ class TournoiCommand(commands.Cog):
             titre_embed = f"🎴 Prochain Tournoi Yu-Gi-Oh VAACT\n📅 **{date_tournoi}**"
             view = TournoiView(data_dict, titre_embed)
 
+            # Envoie le premier embed (première clé, première page)
             first_key = list(data_dict.keys())[0]
             first_embed = data_dict[first_key][0]
             first_embed.title = f"{titre_embed}\n📂 {first_key}"
@@ -152,9 +146,6 @@ class TournoiCommand(commands.Cog):
         except Exception:
             traceback.print_exc()
             await ctx.send("🚨 Une erreur inattendue est survenue.")
-
-    def cog_load(self):
-        self.tournoi.category = "VAACT"
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(TournoiCommand(bot))
