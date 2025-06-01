@@ -1,1 +1,1 @@
-
+self.testtournoi.category = "VAACT"
