@@ -16,7 +16,9 @@ import traceback
 from aiohttp import TCPConnector, ClientConnectionError
 from supabase import create_client, Client
 
-# Variables d'environnement
+# ──────────────────────────────────────────────────────────────
+# 🔧 Variables d'environnement
+# ──────────────────────────────────────────────────────────────
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
@@ -28,7 +30,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ──────────────────────────────────────────────────────────────
 class TestTournoiCommand(commands.Cog):
     def __init__(self, bot: commands.Bot):
-        self.bot = bot  # 🔌 Stocke l'instance du bot
+        self.bot = bot
 
     # ──────────────────────────────────────────────────────────
     # 🔹 COMMANDE : !testtournoi
@@ -128,5 +130,8 @@ class TestTournoiCommand(commands.Cog):
 # 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
 # ──────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    await bot.add_cog(TestTournoiCommand(bot))
-    print("✅ Cog chargé : TestTournoiCommand (catégorie = "VAACT")")
+    cog = TestTournoiCommand(bot)
+    for command in cog.get_commands():
+        command.category = "VAACT"
+    await bot.add_cog(cog)
+    print("✅ Cog chargé : TestTournoiCommand (catégorie = VAACT)")
