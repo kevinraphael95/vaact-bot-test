@@ -95,13 +95,19 @@ class TournoiCommand(commands.Cog):
 
 
             # 🟢 Menu : decks libres
-            options_libres = []
-            for diff, df in libres_grouped.items():
-                if isinstance(diff, str):
-                    label = diff.strip()
-                    if label and len(df) > 0:
-                        options_libres.append(discord.SelectOption(label=label[:100], description=f"{len(df)} deck(s)"))
+			options_libres = []
+			for diff, df in libres_grouped.items():
+				if isinstance(diff, str) and diff.strip():
+					label = diff.strip()
+					if len(df) > 0:
+						options_libres.append(
+							discord.SelectOption(
+								label=label[:100],
+								description=f"{len(df)} deck(s)"
+							)
+						)
 
+            
             print("🟢 DEBUG — options_libres:", options_libres)
 
             if options_libres:
@@ -127,13 +133,19 @@ class TournoiCommand(commands.Cog):
 
            
             # 🔴 Menu : decks pris
-            options_pris = []
-            for diff, df in pris_grouped.items():
-                if isinstance(diff, str):
-                    label = diff.strip()
-                    if label and len(df) > 0:
-                        options_pris.append(discord.SelectOption(label=label[:100], description=f"{len(df)} deck(s)"))
+			options_pris = []
+			for diff, df in pris_grouped.items():
+				if isinstance(diff, str) and diff.strip():
+					label = diff.strip()
+					if len(df) > 0:
+						options_pris.append(
+							discord.SelectOption(
+								label=label[:100],
+								description=f"{len(df)} deck(s)"
+							)
+						)
 
+            
             print("🔴 DEBUG — options_pris:", options_pris)
 
             if options_pris:
