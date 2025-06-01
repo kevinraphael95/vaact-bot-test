@@ -66,119 +66,119 @@ class TournoiCommand(commands.Cog):
     # ──────────────────────────────────────────────────────────
     # 🔹 COMMANDE : !tournoi
     # ──────────────────────────────────────────────────────────
-    @commands.command(
-        name="tournoi",
-        aliases=["decks", "tournoivaact"],
-        help="📅 Affiche la date du tournoi et la liste des decks disponibles/pris avec menus déroulants."
-    )
-    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
-    async def tournoi(self, ctx: commands.Context):
-        try:
-            data = await self.load_decks()
-            libres_grouped = data["libres"]
-            pris_grouped = data["pris"]
-            date_tournoi = await self.get_date_tournoi()
+		@commands.command(
+		    name="tournoi",
+		    aliases=["decks", "tournoivaact"],
+		    help="📅 Affiche la date du tournoi et la liste des decks disponibles/pris avec menus déroulants."
+		)
+		@commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
+		async def tournoi(self, ctx: commands.Context):
+		    try:
+		        data = await self.load_decks()
+		        libres_grouped = data["libres"]
+		        pris_grouped = data["pris"]
+		        date_tournoi = await self.get_date_tournoi()
 
-            embed = discord.Embed(
-                title="🎴 Prochain Tournoi Yu-Gi-Oh VAACT",
-                description=f"📅 **{date_tournoi}**",
-                color=discord.Color.purple()
-            )
+		        embed = discord.Embed(
+		            title="🎴 Prochain Tournoi Yu-Gi-Oh VAACT",
+		            description=f"📅 **{date_tournoi}**",
+		            color=discord.Color.purple()
+		        )
+		        embed.set_footer(text="Decks fournis par l'organisation du tournoi.")
 
-            if not libres_grouped:
-                embed.add_field(name="Decks libres", value="Aucun deck libre.", inline=False)
-            if not pris_grouped:
-                embed.add_field(name="Decks pris", value="Aucun deck pris.", inline=False)
+		        view = discord.ui.View(timeout=180)
 
-            embed.set_footer(text="Decks fournis par l'organisation du tournoi.")
-            view = discord.ui.View(timeout=180)
+		        def safe_option(label, description, value):
+		            return discord.SelectOption(
+		                label=str(label).replace("\n", " ")[:100],
+		                description=str(description).replace("\n", " ")[:100],
+		                value=str(value)[:100]
+		            )
 
-            # ▶️ Traitement des decks libres
-            total_decks_libres = 0
-            for diff, df in libres_grouped.items():
-                if len(df) == 0:
-                    continue
+		        total_decks_libres = 0
+		        for diff, df in libres_grouped.items():
+		            if len(df) == 0 or len(view.children) >= 25:
+		                continue
 
-                total_decks_libres += len(df)
+		            total_decks_libres += len(df)
 
-                select_libres = discord.ui.Select(
-                    placeholder=f"Decks libres — difficulté {diff}",
-                    options=[
-                        discord.SelectOption(
-                            label=row["PERSONNAGE"][:100],
-                            description=row["ARCHETYPE(S)"][:100],
-                            value=str(i)
-                        ) for i, (_, row) in enumerate(df.iterrows())
-                    ],
-                    custom_id=f"select_libres_{diff}"
-                )
+		            options = [
+		                safe_option(row["PERSONNAGE"], row["ARCHETYPE(S)"], f"libre_{diff}_{i}")
+		                for i, (_, row) in enumerate(df.iterrows())
+		            ]
 
-                async def make_callback_libres(diff):
-                    async def callback(interaction: discord.Interaction):
-                        decks = libres_grouped.get(diff)
-                        if not decks or decks.empty:
-                            await interaction.response.send_message("❌ Aucun deck trouvé.", ephemeral=True)
-                            return
-                        texte = f"**Decks libres — Difficulté {diff} :**\n"
-                        for _, row in decks.iterrows():
-                            texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
-                        await interaction.response.send_message(texte, ephemeral=True)
-                    return callback
+		            select_libres = discord.ui.Select(
+		                placeholder=f"Decks libres — difficulté {diff}",
+		                options=options,
+		                custom_id=f"select_libres_{diff}"
+		            )
 
-                select_libres.callback = await make_callback_libres(diff)
-                view.add_item(select_libres)
+		            async def make_callback_libres(diff_inner):
+		                async def callback(interaction: discord.Interaction):
+		                    decks = libres_grouped.get(diff_inner)
+		                    if not decks or decks.empty:
+		                        await interaction.response.send_message("❌ Aucun deck trouvé.", ephemeral=True)
+		                        return
+		                    texte = f"**Decks libres — Difficulté {diff_inner} :**\n"
+		                    for _, row in decks.iterrows():
+		                        texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+		                    await interaction.response.send_message(texte, ephemeral=True)
+		                return callback
 
-            if total_decks_libres == 0:
-                embed.add_field(name="Decks libres", value="❌ Là y'a vraiment rien à afficher.", inline=False)
+		            select_libres.callback = await make_callback_libres(diff)
+		            view.add_item(select_libres)
 
-            # 🔴 Traitement des decks pris
-            total_decks_pris = 0
-            for diff, df in pris_grouped.items():
-                if len(df) == 0:
-                    continue
+		        if total_decks_libres == 0:
+		            embed.add_field(name="Decks libres", value="❌ Là y'a vraiment rien à afficher.", inline=False)
 
-                total_decks_pris += len(df)
+		        total_decks_pris = 0
+		        for diff, df in pris_grouped.items():
+		            if len(df) == 0 or len(view.children) >= 25:
+		                continue
 
-                select_pris = discord.ui.Select(
-                    placeholder=f"Decks pris — difficulté {diff}",
-                    options=[
-                        discord.SelectOption(
-                            label=row["PERSONNAGE"][:100],
-                            description=row["ARCHETYPE(S)"][:100],
-                            value=str(i)
-                        ) for i, (_, row) in enumerate(df.iterrows())
-                    ],
-                    custom_id=f"select_pris_{diff}"
-                )
+		            total_decks_pris += len(df)
 
-                async def make_callback_pris(diff):
-                    async def callback(interaction: discord.Interaction):
-                        decks = pris_grouped.get(diff)
-                        if not decks or decks.empty:
-                            await interaction.response.send_message("❌ Aucun deck trouvé.", ephemeral=True)
-                            return
-                        texte = f"**Decks pris — Difficulté {diff} :**\n"
-                        for _, row in decks.iterrows():
-                            texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
-                        await interaction.response.send_message(texte, ephemeral=True)
-                    return callback
+		            options = [
+		                safe_option(row["PERSONNAGE"], row["ARCHETYPE(S)"], f"pris_{diff}_{i}")
+		                for i, (_, row) in enumerate(df.iterrows())
+		            ]
 
-                select_pris.callback = await make_callback_pris(diff)
-                view.add_item(select_pris)
+		            select_pris = discord.ui.Select(
+		                placeholder=f"Decks pris — difficulté {diff}",
+		                options=options,
+		                custom_id=f"select_pris_{diff}"
+		            )
 
-            if total_decks_pris == 0:
-                embed.add_field(name="Decks pris", value="❌ Là y'a vraiment rien à afficher.", inline=False)
+		            async def make_callback_pris(diff_inner):
+		                async def callback(interaction: discord.Interaction):
+		                    decks = pris_grouped.get(diff_inner)
+		                    if not decks or decks.empty:
+		                        await interaction.response.send_message("❌ Aucun deck trouvé.", ephemeral=True)
+		                        return
+		                    texte = f"**Decks pris — Difficulté {diff_inner} :**\n"
+		                    for _, row in decks.iterrows():
+		                        texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+		                    await interaction.response.send_message(texte, ephemeral=True)
+		                return callback
 
-            # ✅ Envoi final
-            if len(view.children) == 0:
-                await ctx.send(embed=embed)
-            else:
-                await ctx.send(embed=embed, view=view)
+		            select_pris.callback = await make_callback_pris(diff)
+		            view.add_item(select_pris)
 
-        except Exception as e:
-            print(f"[ERREUR GLOBALE] {e}")
-            traceback.print_exc()
-            await ctx.send("🚨 Une erreur inattendue est survenue.")
+		        if total_decks_pris == 0:
+		            embed.add_field(name="Decks pris", value="❌ Là y'a vraiment rien à afficher.", inline=False)
+
+		        if len(view.children) == 0:
+		            await ctx.send(embed=embed)
+		        else:
+		            await ctx.send(embed=embed, view=view)
+
+		    except Exception as e:
+		        print(f"[ERREUR GLOBALE] {e}")
+		        traceback.print_exc()
+		        await ctx.send("🚨 Une erreur inattendue est survenue.")
+
+
+
 
     # 🏷️ Catégorisation pour affichage personnalisé dans !help
     def cog_load(self):
