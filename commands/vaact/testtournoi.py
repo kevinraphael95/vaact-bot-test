@@ -129,4 +129,4 @@ class TestTournoiCommand(commands.Cog):
 # ──────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     await bot.add_cog(TestTournoiCommand(bot))
-    print("✅ Cog chargé : TestTournoiCommand (catégorie = VAACT)")
+    print("✅ Cog chargé : TestTournoiCommand (catégorie = "VAACT")")
