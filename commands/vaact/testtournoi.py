@@ -1,47 +1,31 @@
-# ──────────────────────────────────────────────────────────────
-# 📁 testtournoi.py
-# ──────────────────────────────────────────────────────────────
-
-# ───────────────────────────────────────────────────────────────────────────────
-# 📦 Cog principal — Commande !testtournoi
-# ───────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
+# 📁 tournoi.py — Commande !tournoi
+# ────────────────────────────────────────────────────────────────────────────────
 import discord
 from discord.ext import commands
 import pandas as pd
 import aiohttp
-import io
-import ssl
-import os
-import traceback
+import io, ssl, os, traceback
 from aiohttp import TCPConnector, ClientConnectionError
 from supabase import create_client, Client
 
-# ──────────────────────────────────────────────────────────────
-# 🔧 Variables d'environnement
-# ──────────────────────────────────────────────────────────────
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# ──────────────────────────────────────────────────────────────
-# 🔧 COG : TestTournoiCommand
-# ──────────────────────────────────────────────────────────────
-class TestTournoiCommand(commands.Cog):
+class TournoiCommand(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    # ──────────────────────────────────────────────────────────
-    # 🔹 COMMANDE : !testtournoi
-    # ──────────────────────────────────────────────────────────
     @commands.command(
-        name="testtournoi",
-        aliases=[],
-        help="📅 Affiche la date du tournoi et la liste des decks disponibles/pris."
+        name="tournoi",
+        aliases=["decks", "tournoivaact"],
+        help="📅 Affiche la date du tournoi et la liste des decks disponibles/pris par difficulté."
     )
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
-    async def testtournoi(self, ctx: commands.Context):
+    async def tournoi(self, ctx: commands.Context):
         try:
             if not SHEET_CSV_URL:
                 await ctx.send("🚨 L'URL du fichier CSV est manquante.")
@@ -67,10 +51,11 @@ class TestTournoiCommand(commands.Cog):
                 df = pd.read_csv(io.StringIO(text), skiprows=1)
                 df["PRIS ?"] = df["PRIS ?"].fillna("").astype(str).str.strip()
                 df["PERSONNAGE"] = df["PERSONNAGE"].fillna("Inconnu")
-                df["ARCHETYPE(S)"] = df.get("ARCHETYPE(S)", "—").fillna("—")
+                df["ARCHETYPE(S)"] = df.get("ARCHETYPE(S)", pd.Series()).fillna("—")
 
                 pris = df[df["PRIS ?"].str.lower().isin(["true", "✅"])]
                 libres = df[~df["PRIS ?"].str.lower().isin(["true", "✅"])]
+
             except Exception as e:
                 print(f"[ERREUR CSV] {e}")
                 traceback.print_exc()
@@ -78,60 +63,90 @@ class TestTournoiCommand(commands.Cog):
                 return
 
             try:
-                tournoi_data = await supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
+                tournoi_data = supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
                 date_tournoi = tournoi_data.data[0]["prochaine_date"] if tournoi_data.data and "prochaine_date" in tournoi_data.data[0] else "🗓️ à venir !"
             except Exception as e:
                 print(f"[ERREUR SUPABASE] {e}")
                 date_tournoi = "🗓️ à venir !"
 
-            texte_libres = ""
-            if "SAISON" in libres.columns:
-                groupes_libres = libres.groupby("SAISON")
-                for saison, decks in groupes_libres:
-                    bloc = f"▸ **{saison}**\n"
-                    for _, row in decks.iterrows():
-                        bloc += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
-                    texte_libres += f"> {bloc}\n"
-            else:
-                texte_libres = "⚠️ Colonne 'SAISON' manquante dans le fichier."
-
-            texte_pris = ""
-            if "SAISON" in pris.columns:
-                groupes_pris = pris.groupby("SAISON")
-                for saison, decks in groupes_pris:
-                    bloc = f"▸ **{saison}**\n"
-                    for _, row in decks.iterrows():
-                        bloc += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
-                    texte_pris += f"> {bloc}\n"
-            else:
-                texte_pris = "⚠️ Colonne 'SAISON' manquante dans le fichier."
-
             embed = discord.Embed(
                 title="🎴 Prochain Tournoi Yu-Gi-Oh VAACT",
-                description=f"📅 **Le prochain tournoi aura lieu :**\n🎯 __**{date_tournoi}**__",
-                color=discord.Color.dark_orange()
+                description=f"📅 **{date_tournoi}**",
+                color=discord.Color.purple()
             )
-            embed.add_field(name="🆓 Decks disponibles", value=texte_libres or "Aucun deck libre.", inline=False)
-            embed.add_field(name="🔒 Decks pris", value=texte_pris or "Aucun deck pris.", inline=False)
+
+            # Texte classique (optionnel, affichage rapide)
+            texte_libres = ""
+            for _, row in libres.iterrows():
+                ligne = f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+                if len(texte_libres) + len(ligne) < 1000:
+                    texte_libres += ligne
+                else:
+                    texte_libres += "\n... *(liste coupée)*"
+                    break
+            embed.add_field(name="🆓 Decks disponibles", value=texte_libres or "Aucun deck disponible.", inline=False)
+
+            texte_pris = ""
+            for _, row in pris.iterrows():
+                ligne = f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+                if len(texte_pris) + len(ligne) < 1000:
+                    texte_pris += ligne
+                else:
+                    texte_pris += "\n... *(liste coupée)*"
+                    break
+            embed.add_field(name="🔒 Decks déjà pris", value=texte_pris or "Aucun deck réservé.", inline=False)
+
             embed.set_footer(text="Decks fournis par l'organisation du tournoi.")
 
-            await ctx.send(embed=embed)
+            # ────────────── VUE avec Select menus regroupés par difficulté ──────────────
+
+            # Fonction pour créer options Select à partir d'un DataFrame
+            def make_options(df):
+                return [
+                    discord.SelectOption(label=row["PERSONNAGE"], description=row["ARCHETYPE(S)"][:100])
+                    for _, row in df.iterrows()
+                ] or [discord.SelectOption(label="Aucun deck", value="none", default=True)]
+
+            view = discord.ui.View(timeout=None)  # Pas de timeout ou adapte à ton besoin
+
+            # Groupement par difficulté
+            grouped_libres = {diff: grp for diff, grp in libres.groupby("DIFFICULTE")}
+            grouped_pris = {diff: grp for diff, grp in pris.groupby("DIFFICULTE")}
+
+            # Ajout selects pour decks libres
+            for diff, df_diff in grouped_libres.items():
+                options = make_options(df_diff)
+                select = discord.ui.Select(
+                    placeholder=f"🆓 Decks libres - Difficulté {diff}",
+                    options=options,
+                    min_values=0,
+                    max_values=len(options),
+                    custom_id=f"libres_{diff}"
+                )
+                view.add_item(select)
+
+            # Ajout selects pour decks pris
+            for diff, df_diff in grouped_pris.items():
+                options = make_options(df_diff)
+                select = discord.ui.Select(
+                    placeholder=f"🔒 Decks pris - Difficulté {diff}",
+                    options=options,
+                    min_values=0,
+                    max_values=len(options),
+                    custom_id=f"pris_{diff}"
+                )
+                view.add_item(select)
+
+            await ctx.send(embed=embed, view=view)
 
         except Exception as e:
             print(f"[ERREUR GLOBALE] {e}")
             traceback.print_exc()
             await ctx.send("🚨 Une erreur inattendue est survenue.")
 
-    # 🏷️ Catégorisation pour affichage personnalisé dans !help
     def cog_load(self):
-        self.testtournoi.category = "VAACT"
+        self.tournoi.category = "VAACT"
 
-# ──────────────────────────────────────────────────────────────
-# 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
-# ──────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    cog = TestTournoiCommand(bot)
-    for command in cog.get_commands():
-        command.category = "VAACT"
-    await bot.add_cog(cog)
-    print("✅ Cog chargé : TestTournoiCommand (catégorie = VAACT)")
+    await bot.add_cog(TournoiCommand(bot))
+    print("✅ Cog chargé : TournoiCommand (catégorie = VAACT)")
