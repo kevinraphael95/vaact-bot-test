@@ -12,28 +12,57 @@ SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+difficulte_order = ["1/3", "2/3", "3/3"]
+
+# La vue avec Select + boutons de pagination
 class TournoiView(discord.ui.View):
-    def __init__(self, pages, titre, timeout=180):
+    def __init__(self, data_dict, titre, timeout=180):
+        """
+        data_dict = {
+            "Libre 1/3": [embed, embed, ...],
+            "Libre 2/3": [...],
+            "Pris 1/3": [...],
+            ...
+        }
+        """
         super().__init__(timeout=timeout)
-        self.pages = pages
-        self.page = 0
+        self.data = data_dict
         self.titre = titre
+        self.page = 0
+        self.current_key = list(self.data.keys())[0]
+
+        # Ajouter le select
+        options = [discord.SelectOption(label=k, value=k) for k in self.data.keys()]
+        self.select = discord.ui.Select(placeholder="Choisissez catégorie + difficulté", options=options, row=0)
+        self.select.callback = self.select_callback
+        self.add_item(self.select)
+
+        # Boutons pagination (row=1 pour les boutons)
+        self.prev_button = discord.ui.Button(label="⬅️", style=discord.ButtonStyle.secondary, row=1)
+        self.next_button = discord.ui.Button(label="➡️", style=discord.ButtonStyle.secondary, row=1)
+        self.prev_button.callback = self.prev_page
+        self.next_button.callback = self.next_page
+        self.add_item(self.prev_button)
+        self.add_item(self.next_button)
+
+    async def select_callback(self, interaction: discord.Interaction):
+        self.current_key = self.select.values[0]
+        self.page = 0
+        await self.update_embed(interaction)
+
+    async def prev_page(self, interaction: discord.Interaction):
+        self.page = (self.page - 1) % len(self.data[self.current_key])
+        await self.update_embed(interaction)
+
+    async def next_page(self, interaction: discord.Interaction):
+        self.page = (self.page + 1) % len(self.data[self.current_key])
+        await self.update_embed(interaction)
 
     async def update_embed(self, interaction: discord.Interaction):
-        embed = self.pages[self.page]
-        embed.title = self.titre
-        embed.set_footer(text=f"Page {self.page + 1}/{len(self.pages)} • Decks triés par difficulté")
+        embed = self.data[self.current_key][self.page]
+        embed.title = f"{self.titre}\n📂 {self.current_key}"
+        embed.set_footer(text=f"Page {self.page+1}/{len(self.data[self.current_key])} • Decks triés par difficulté")
         await interaction.response.edit_message(embed=embed, view=self)
-
-    @discord.ui.button(label="⬅️", style=discord.ButtonStyle.secondary)
-    async def prev_page(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.page = (self.page - 1) % len(self.pages)
-        await self.update_embed(interaction)
-
-    @discord.ui.button(label="➡️", style=discord.ButtonStyle.secondary)
-    async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.page = (self.page + 1) % len(self.pages)
-        await self.update_embed(interaction)
 
 class TournoiCommand(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -77,41 +106,46 @@ class TournoiCommand(commands.Cog):
             except Exception:
                 date_tournoi = "🗓️ à venir !"
 
-            difficulte_order = ["1/3", "2/3", "3/3"]
-
             def make_pages(df_cat, couleur):
-                # Trier par difficulté et créer des pages de 15 decks max par difficulté
                 df_cat["DIFFICULTÉ"] = pd.Categorical(df_cat["DIFFICULTÉ"], categories=difficulte_order, ordered=True)
                 df_cat = df_cat.sort_values("DIFFICULTÉ")
                 pages = []
-
-                for diff in difficulte_order:
-                    df_diff = df_cat[df_cat["DIFFICULTÉ"] == diff]
-                    # Chunk de 15 decks max par page
-                    for i in range(0, len(df_diff), 15):
-                        chunk = df_diff.iloc[i:i+15]
-                        texte = ""
-                        for _, row in chunk.iterrows():
-                            texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}* ({row['DIFFICULTÉ']})\n"
-                        if not texte:
-                            texte = "Aucun deck."
-                        embed = discord.Embed(description=texte, color=couleur)
-                        pages.append(embed)
-
+                for i in range(0, len(df_cat), 15):
+                    chunk = df_cat.iloc[i:i+15]
+                    texte = ""
+                    for _, row in chunk.iterrows():
+                        texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}* ({row['DIFFICULTÉ']})\n"
+                    if not texte:
+                        texte = "Aucun deck."
+                    embed = discord.Embed(description=texte, color=couleur)
+                    pages.append(embed)
                 return pages
 
-            pages_libres = make_pages(libres, discord.Color.green())
-            pages_pris = make_pages(pris, discord.Color.red())
-            pages = pages_libres + pages_pris
+            # Construire le dictionnaire des pages pour chaque catégorie + difficulté
+            data_dict = {}
 
-            if not pages:
+            for cat_name, df_cat in [("Libre", libres), ("Pris", pris)]:
+                for diff in difficulte_order:
+                    df_diff = df_cat[df_cat["DIFFICULTÉ"] == diff]
+                    key = f"{cat_name} {diff}"
+                    pages = make_pages(df_diff, discord.Color.green() if cat_name=="Libre" else discord.Color.red())
+                    if pages:
+                        data_dict[key] = pages
+
+            if not data_dict:
                 await ctx.send("Aucun deck trouvé.")
                 return
 
             titre_embed = f"🎴 Prochain Tournoi Yu-Gi-Oh VAACT\n📅 **{date_tournoi}**"
-            view = TournoiView(pages, titre_embed)
+            view = TournoiView(data_dict, titre_embed)
 
-            await ctx.send(embed=pages[0], view=view)
+            # Envoie le premier embed correspondant à la première clé
+            first_key = list(data_dict.keys())[0]
+            first_embed = data_dict[first_key][0]
+            first_embed.title = f"{titre_embed}\n📂 {first_key}"
+            first_embed.set_footer(text=f"Page 1/{len(data_dict[first_key])} • Decks triés par difficulté")
+
+            await ctx.send(embed=first_embed, view=view)
 
         except Exception:
             traceback.print_exc()
