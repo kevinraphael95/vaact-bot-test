@@ -76,7 +76,7 @@ class TestTournoiCommand(commands.Cog):
                 return
 
             try:
-                tournoi_data = supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
+                tournoi_data = await supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
                 date_tournoi = tournoi_data.data[0]["prochaine_date"] if tournoi_data.data and "prochaine_date" in tournoi_data.data[0] else "🗓️ à venir !"
             except Exception as e:
                 print(f"[ERREUR SUPABASE] {e}")
