@@ -66,6 +66,7 @@ class TournoiCommand(commands.Cog):
     # ──────────────────────────────────────────────────────────
     # 🔹 COMMANDE : !tournoi
     # ──────────────────────────────────────────────────────────
+
     @commands.command(
         name="tournoi",
         aliases=["decks", "tournoivaact"],
@@ -73,12 +74,10 @@ class TournoiCommand(commands.Cog):
     )
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
     async def tournoi(self, ctx: commands.Context):
-
         try:
             libres_grouped, pris_grouped = await self.load_decks()
             date_tournoi = await self.get_date_tournoi()
 
-            # Embed avec la date
             embed = discord.Embed(
                 title="🎴 Prochain Tournoi Yu-Gi-Oh VAACT",
                 description=f"📅 **{date_tournoi}**",
@@ -86,70 +85,71 @@ class TournoiCommand(commands.Cog):
             )
             embed.set_footer(text="Decks fournis par l'organisation du tournoi.")
 
-            # Components : 2 menus déroulants, un pour libres, un pour pris
-            view = discord.ui.View(timeout=180)  # 3 minutes de timeout
+            view = discord.ui.View(timeout=180)
 
-            # Menu déroulant pour decks libres
+            # Options et menu déroulant pour decks libres
             options_libres = [
                 discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
                 for diff, df in libres_grouped.items()
             ]
-            select_libres = discord.ui.Select(
-                placeholder="Sélectionnez la difficulté des decks libres",
-                options=options_libres,
-                custom_id="select_libres"
-            )
-            # Callback menu libres
-            async def callback_libres(interaction: discord.Interaction):
-                diff = interaction.data["values"][0]
-                decks = libres_grouped.get(diff)
-                if decks is None:
-                    await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
-                    return
+            if options_libres:
+                select_libres = discord.ui.Select(
+                    placeholder="Sélectionnez la difficulté des decks libres",
+                    options=options_libres,
+                    custom_id="select_libres"
+                )
+                async def callback_libres(interaction: discord.Interaction):
+                    diff = interaction.data["values"][0]
+                    decks = libres_grouped.get(diff)
+                    if decks is None:
+                        await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
+                        return
 
-                texte = f"**Decks libres — Difficulté {diff} :**\n"
-                for _, row in decks.iterrows():
-                    texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+                    texte = f"**Decks libres — Difficulté {diff} :**\n"
+                    for _, row in decks.iterrows():
+                        texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+                    await interaction.response.send_message(texte, ephemeral=True)
 
-                # Envoyer une réponse éphémère
-                await interaction.response.send_message(texte, ephemeral=True)
+                select_libres.callback = callback_libres
+                view.add_item(select_libres)
 
-            select_libres.callback = callback_libres
-            view.add_item(select_libres)
-
-            # Menu déroulant pour decks pris
+            # Options et menu déroulant pour decks pris
             options_pris = [
                 discord.SelectOption(label=diff, description=f"{len(df)} deck(s)")
                 for diff, df in pris_grouped.items()
             ]
-            select_pris = discord.ui.Select(
-                placeholder="Sélectionnez la difficulté des decks pris",
-                options=options_pris,
-                custom_id="select_pris"
-            )
-            # Callback menu pris
-            async def callback_pris(interaction: discord.Interaction):
-                diff = interaction.data["values"][0]
-                decks = pris_grouped.get(diff)
-                if decks is None:
-                    await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
-                    return
+            if options_pris:
+                select_pris = discord.ui.Select(
+                    placeholder="Sélectionnez la difficulté des decks pris",
+                    options=options_pris,
+                    custom_id="select_pris"
+                )
+                async def callback_pris(interaction: discord.Interaction):
+                    diff = interaction.data["values"][0]
+                    decks = pris_grouped.get(diff)
+                    if decks is None:
+                        await interaction.response.send_message("❌ Difficulté inconnue.", ephemeral=True)
+                        return
 
-                texte = f"**Decks pris — Difficulté {diff} :**\n"
-                for _, row in decks.iterrows():
-                    texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+                    texte = f"**Decks pris — Difficulté {diff} :**\n"
+                    for _, row in decks.iterrows():
+                        texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
+                    await interaction.response.send_message(texte, ephemeral=True)
 
-                await interaction.response.send_message(texte, ephemeral=True)
+                select_pris.callback = callback_pris
+                view.add_item(select_pris)
 
-            select_pris.callback = callback_pris
-            view.add_item(select_pris)
-
-            await ctx.send(embed=embed, view=view)
+            # Si aucun menu à afficher (aucun deck libre ni pris)
+            if len(view.children) == 0:
+                await ctx.send(embed=embed, content="Aucun deck libre ou pris disponible.")
+            else:
+                await ctx.send(embed=embed, view=view)
 
         except Exception as e:
             print(f"[ERREUR GLOBALE] {e}")
             traceback.print_exc()
             await ctx.send("🚨 Une erreur inattendue est survenue.")
+
 
     # ──────────────────────────────────────────────────────────
     # 🏷️ Catégorisation pour !help
