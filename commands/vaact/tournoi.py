@@ -65,11 +65,11 @@ class TournoiCommand(commands.Cog):
 
     # 🏷️ Catégorisation pour affichage personnalisé dans !help
     def cog_load(self):
-        self.tournoi.category = "Tournoi"
+        self.tournoi.category = "VAACT"
 
 # ──────────────────────────────────────────────────────────────
 # 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
 # ──────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     await bot.add_cog(TournoiCommand(bot))
-    print("✅ Cog chargé : TournoiCommand (catégorie = Tournoi)")
+    print("✅ Cog chargé : TournoiCommand (catégorie = VAACT)")
