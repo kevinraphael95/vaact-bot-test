@@ -97,7 +97,7 @@ async def setup(bot: commands.Bot):
     # Avant d'ajouter le cog, on s'assure que TOUTES les commandes ont une catégorie
     for command in bot.commands:
         if not hasattr(command, "category"):
-            command.category = "Général"
+            command.category = "VAACT"
 
     await bot.add_cog(HelpCommand(bot))
-    print("✅ Cog chargé : HelpCommand (catégorie = Général)")
+    print("✅ Cog chargé : HelpCommand (catégorie = VAACT)")
