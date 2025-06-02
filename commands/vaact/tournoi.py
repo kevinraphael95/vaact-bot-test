@@ -62,14 +62,16 @@ class TournoiCommand(commands.Cog):
         embed.add_field(name="📤 Decks pris", value="- Aucune info disponible", inline=False)
 
         await ctx.send(embed=embed)
-
-    # 🏷️ Catégorisation pour affichage personnalisé dans !help
-    def cog_load(self):
-        self.tournoi.category = "VAACT"
-
+        
 # ──────────────────────────────────────────────────────────────
 # 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
 # ──────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    await bot.add_cog(TournoiCommand(bot))
+    cog = TournoiCommand(bot)
+    await bot.add_cog(cog)
+
+    for command in cog.get_commands():
+        command.category = "VAACT"  # ✅ Assignation correcte ici
+
     print("✅ Cog chargé : TournoiCommand (catégorie = VAACT)")
+
