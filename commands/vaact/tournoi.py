@@ -2,18 +2,17 @@
 # 📁 tournoi.py
 # ──────────────────────────────────────────────────────────────
 
-# ───────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────
 # 📦 Cog principal — Commande !tournoi
-# ───────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────
 import discord
 from discord.ext import commands
 import pandas as pd
-import aiohttp
-import io, ssl, os, traceback
-from aiohttp import TCPConnector, ClientConnectionError
+import aiohttp, os, io, ssl, traceback
+from aiohttp import TCPConnector
 from supabase import create_client, Client
 
-# 🔐 Variables d'environnement
+# 🔐 Variables d’environnement
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
@@ -21,36 +20,32 @@ SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
 # 🔌 Connexion Supabase
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# 🔧 View pour pagination
+# 🔧 View pagination
 class TournoiView(discord.ui.View):
-    def __init__(self, pages, titre, timeout=180):
+    def __init__(self, pages, timeout=180):
         super().__init__(timeout=timeout)
         self.pages = pages
         self.page = 0
-        self.titre = titre
 
-    async def update_embed(self, interaction: discord.Interaction):
-        embed = self.pages[self.page]
-        embed.title = self.titre
-        embed.set_footer(text=f"Page {self.page + 1}/{len(self.pages)} • Decks triés par difficulté")
-        await interaction.response.edit_message(embed=embed, view=self)
+    async def update(self, interaction: discord.Interaction):
+        await interaction.response.edit_message(embed=self.pages[self.page], view=self)
 
     @discord.ui.button(label="⬅️", style=discord.ButtonStyle.secondary)
-    async def prev_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def previous(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.page = (self.page - 1) % len(self.pages)
-        await self.update_embed(interaction)
+        await self.update(interaction)
 
     @discord.ui.button(label="➡️", style=discord.ButtonStyle.secondary)
-    async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.page = (self.page + 1) % len(self.pages)
-        await self.update_embed(interaction)
+        await self.update(interaction)
 
 # ──────────────────────────────────────────────────────────────
 # 🔧 COG : TournoiCommand
 # ──────────────────────────────────────────────────────────────
 class TournoiCommand(commands.Cog):
     def __init__(self, bot: commands.Bot):
-        self.bot = bot  # 🔌 Stocke l'instance du bot
+        self.bot = bot
 
     # ──────────────────────────────────────────────────────────
     # 🔹 COMMANDE : !tournoi
@@ -58,91 +53,56 @@ class TournoiCommand(commands.Cog):
     @commands.command(
         name="tournoi",
         aliases=["decks", "tournoivaact"],
-        help="📅 Affiche la date du tournoi et les decks disponibles/pris."
+        help="📅 Affiche la date du tournoi et les decks libres/pris par difficulté"
     )
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
     async def tournoi(self, ctx: commands.Context):
         try:
-            if not SHEET_CSV_URL:
-                await ctx.send("🚨 L'URL du fichier CSV est manquante.")
-                return
-
+            # Récupération CSV
             sslcontext = ssl.create_default_context()
             sslcontext.set_ciphers('DEFAULT:@SECLEVEL=1')
             connector = TCPConnector(ssl=sslcontext)
 
-            try:
-                async with aiohttp.ClientSession(connector=connector) as session:
-                    async with session.get(SHEET_CSV_URL) as resp:
-                        if resp.status != 200:
-                            await ctx.send("❌ Erreur lors du téléchargement du fichier CSV.")
-                            return
-                        text = (await resp.read()).decode("utf-8")
-            except ClientConnectionError:
-                await ctx.send("🚨 Erreur réseau lors de la récupération du fichier.")
-                return
+            async with aiohttp.ClientSession(connector=connector) as session:
+                async with session.get(SHEET_CSV_URL) as resp:
+                    text = (await resp.read()).decode("utf-8")
+            df = pd.read_csv(io.StringIO(text), skiprows=1)
 
-            try:
-                # On saute la 1ère ligne (titre) et on nettoie les noms de colonnes
-                df = pd.read_csv(io.StringIO(text), skiprows=1)
-                df.columns = [col.strip() for col in df.columns]
+            df["PRIS ?"] = df["PRIS ?"].fillna("").astype(str).str.lower()
+            df["DIFFICULTE"] = df["DIFFICULTE"].fillna("—")
+            df["PERSONNAGE"] = df["PERSONNAGE"].fillna("Inconnu")
 
-                df["PRIS ?"] = df["PRIS ?"].fillna("").astype(str).str.strip()
-                pris = df[df["PRIS ?"].str.lower().isin(["true", "✅"])]
-                libres = df[~df["PRIS ?"].str.lower().isin(["true", "✅"])]
+            pris = df[df["PRIS ?"].isin(["true", "✅"])]
+            libres = df[~df["PRIS ?"].isin(["true", "✅"])]
 
-                difficulte_order = ["1/3", "2/3", "3/3"]
-                libres["DIFFICULTE"] = pd.Categorical(libres["DIFFICULTE"], categories=difficulte_order, ordered=True)
-                libres_sorted = libres.sort_values("DIFFICULTE")
+            difficulte_order = ["1", "2", "3"]
 
-            except Exception:
-                traceback.print_exc()
-                await ctx.send("📉 Fichier CSV invalide ou mal formaté.")
-                return
-
-            try:
-                tournoi_data = supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
-                date_tournoi = tournoi_data.data[0]["prochaine_date"] if tournoi_data.data and "prochaine_date" in tournoi_data.data[0] else "🗓️ à venir !"
-            except Exception:
-                date_tournoi = "🗓️ à venir !"
-
-            # Pagination : morceaux de 15 decks
-            chunks = [libres_sorted[i:i+15] for i in range(0, len(libres_sorted), 15)]
+            def embed_decks(df_filtré, pris, difficulté):
+                noms = df_filtré[df_filtré["DIFFICULTE"] == difficulté]["PERSONNAGE"].tolist()
+                if not noms:
+                    texte = "Aucun deck trouvé."
+                else:
+                    texte = "\n".join(f"• {nom}" for nom in noms)
+                titre = f"{'🔒' if pris else '🟢'} {'Pris' if pris else 'Libres'} — Difficulté {difficulté}/3"
+                couleur = discord.Color.red() if pris else discord.Color.green()
+                return discord.Embed(title=titre, description=texte, color=couleur)
 
             pages = []
-            for chunk in chunks:
-                texte = ""
-                for _, row in chunk.iterrows():
-                    texte += f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}* ({row['DIFFICULTE']})\n"
-                embed = discord.Embed(description=texte, color=discord.Color.green())
-                pages.append(embed)
+            for d in difficulte_order:
+                pages.append(embed_decks(libres, False, d))
+            for d in difficulte_order:
+                pages.append(embed_decks(pris, True, d))
 
-            titre_embed = f"🎴 Prochain Tournoi Yu-Gi-Oh VAACT\n📅 **{date_tournoi}**"
-            view = TournoiView(pages, titre_embed)
+            tournoi_data = supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
+            date_tournoi = tournoi_data.data[0]["prochaine_date"] if tournoi_data.data else "🗓️ à venir"
 
-            # Embed des decks pris (sans pagination, coupe si trop long)
-            texte_pris = ""
-            for _, row in pris.iterrows():
-                ligne = f"• {row['PERSONNAGE']} — *{row['ARCHETYPE(S)']}*\n"
-                if len(texte_pris) + len(ligne) < 1000:
-                    texte_pris += ligne
-                else:
-                    texte_pris += "\n... *(liste coupée)*"
-                    break
+            pages[0].insert_field_at(0, name="📅 Prochain Tournoi Yu-Gi-Oh VAACT", value=f"**{date_tournoi}**", inline=False)
 
-            if texte_pris:
-                embed_pris = discord.Embed(
-                    title="🔒 Decks déjà pris",
-                    description=texte_pris,
-                    color=discord.Color.red()
-                )
-                await ctx.send(embed=embed_pris)
+            await ctx.send(embed=pages[0], view=TournoiView(pages))
 
-            await ctx.send(embed=pages[0], view=view)
-
-        except Exception:
+        except Exception as e:
             traceback.print_exc()
-            await ctx.send("🚨 Une erreur inattendue est survenue.")
+            await ctx.send("❌ Une erreur est survenue.")
 
     def cog_load(self):
         self.tournoi.category = "VAACT"
