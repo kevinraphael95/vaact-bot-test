@@ -40,4 +40,4 @@ async def setup(bot: commands.Bot):
     cog.commande.category = "Nom de Catégorie"
     
     await bot.add_cog(cog)
-    print("✅ Cog chargé : NomDuCogCommand (catégorie = Nom de Catégorie)")
+    print("✅ Cog chargé : NomDuCogCommand (catégorie = "Nom de Catégorie")")
