@@ -30,13 +30,14 @@ class NomDuCogCommand(commands.Cog):
         # 💡 Exemple de logique interne
         await ctx.send("📤 Réponse de la commande ici.")
 
-    # 🏷️ Catégorisation pour affichage personnalisé dans !help
-    def cog_load(self):
-        self.commande.category = "Nom de Catégorie"
-
 # ──────────────────────────────────────────────────────────────
 # 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
 # ──────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    await bot.add_cog(NomDuCogCommand(bot))
+    cog = NomDuCogCommand(bot)
+    
+    # 🏷️ Catégorisation pour affichage personnalisé dans !help
+    cog.commande.category = "Nom de Catégorie"
+    
+    await bot.add_cog(cog)
     print("✅ Cog chargé : NomDuCogCommand (catégorie = Nom de Catégorie)")
