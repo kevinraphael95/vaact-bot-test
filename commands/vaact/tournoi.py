@@ -17,7 +17,7 @@ from datetime import datetime
 class TournoiCommand(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot  # 🔌 Stocke l'instance du bot
-        print("🔧 TournoiCommand initialisé")  # Debug : cog créé
+        print("🔧 TournoiCommand initialisé")
 
     # ──────────────────────────────────────────────────────────
     # 🔹 COMMANDE : !tournoi
@@ -29,6 +29,7 @@ class TournoiCommand(commands.Cog):
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)  # 🧊 Anti-spam
     async def tournoi(self, ctx: commands.Context):
         print(f"➡️ Commande !tournoi appelée par {ctx.author} (ID {ctx.author.id})")
+
         SUPABASE_URL = os.getenv("SUPABASE_URL")
         SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
@@ -89,9 +90,9 @@ class TournoiCommand(commands.Cog):
 # ──────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     cog = TournoiCommand(bot)
+
+    # 🏷️ Catégorisation pour affichage personnalisé dans !help
+    cog.tournoi.category = "VAACT"
+
     await bot.add_cog(cog)
-
-    for command in cog.get_commands():
-        command.category = "VAACT"  # ✅ Assignation correcte ici
-
     print("✅ Cog chargé : TournoiCommand (catégorie = VAACT)")
