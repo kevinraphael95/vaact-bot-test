@@ -88,7 +88,7 @@ class HelpCommand(commands.Cog):
 
     # 🏷️ Catégorisation pour affichage personnalisé dans !help
     def cog_load(self):
-        self.help_func.category = "Général"
+        self.help_func.category = "VAACT"
 
 # ──────────────────────────────────────────────────────────────
 # 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
