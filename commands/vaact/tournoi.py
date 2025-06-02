@@ -63,4 +63,4 @@ async def setup(bot: commands.Bot):
     cog = TournoiCommand(bot)
     cog.tournoi.category = "VAACT"  # 🏷️ Catégorie affichée dans !help
     await bot.add_cog(cog)
-    print("✅ Cog chargé : TournoiCommand (catégorie = VAACT)")
+    print("✅ Cog chargé : TournoiCommand (catégorie = "VAACT")")
