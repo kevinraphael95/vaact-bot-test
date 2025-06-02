@@ -1,115 +1,87 @@
-# ──────────────────────────────────────────────────────────────
-# 📁 tournoi.py
-# ──────────────────────────────────────────────────────────────
-
-# ──────────────────────────────────────────────────────────────
-# 📦 Cog principal — Commande !tournoi
-# ──────────────────────────────────────────────────────────────
 import discord
 from discord.ext import commands
+from discord.ui import View, Button
 import pandas as pd
-import aiohttp, os, io, ssl, traceback
-from aiohttp import TCPConnector
-from supabase import create_client, Client
+import os
+import aiohttp
 
-# 🔐 Variables d’environnement
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
-
-# 🔌 Connexion Supabase
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# 🔧 View pagination
-class TournoiView(discord.ui.View):
-    def __init__(self, pages, timeout=180):
-        super().__init__(timeout=timeout)
+class PaginatorView(View):
+    def __init__(self, pages):
+        super().__init__(timeout=None)
         self.pages = pages
-        self.page = 0
+        self.current_page = 0
+        self.message = None
 
-    async def update(self, interaction: discord.Interaction):
-        await interaction.response.edit_message(embed=self.pages[self.page], view=self)
+        self.prev_button = Button(label="⬅️", style=discord.ButtonStyle.secondary)
+        self.next_button = Button(label="➡️", style=discord.ButtonStyle.secondary)
+        self.prev_button.callback = self.prev_page
+        self.next_button.callback = self.next_page
 
-    @discord.ui.button(label="⬅️", style=discord.ButtonStyle.secondary)
-    async def previous(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.page = (self.page - 1) % len(self.pages)
-        await self.update(interaction)
+        self.add_item(self.prev_button)
+        self.add_item(self.next_button)
 
-    @discord.ui.button(label="➡️", style=discord.ButtonStyle.secondary)
-    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.page = (self.page + 1) % len(self.pages)
-        await self.update(interaction)
+    async def prev_page(self, interaction: discord.Interaction):
+        self.current_page = (self.current_page - 1) % len(self.pages)
+        await interaction.response.edit_message(embed=self.pages[self.current_page], view=self)
 
-# ──────────────────────────────────────────────────────────────
-# 🔧 COG : TournoiCommand
-# ──────────────────────────────────────────────────────────────
-class TournoiCommand(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    async def next_page(self, interaction: discord.Interaction):
+        self.current_page = (self.current_page + 1) % len(self.pages)
+        await interaction.response.edit_message(embed=self.pages[self.current_page], view=self)
+
+
+class Tournoi(commands.Cog):
+    def __init__(self, bot):
         self.bot = bot
 
-    # ──────────────────────────────────────────────────────────
-    # 🔹 COMMANDE : !tournoi
-    # ──────────────────────────────────────────────────────────
-    @commands.command(
-        name="tournoi",
-        aliases=["decks", "tournoivaact"],
-        help="📅 Affiche la date du tournoi et les decks libres/pris par difficulté"
-    )
-    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
-    async def tournoi(self, ctx: commands.Context):
-        try:
-            # Récupération CSV
-            sslcontext = ssl.create_default_context()
-            sslcontext.set_ciphers('DEFAULT:@SECLEVEL=1')
-            connector = TCPConnector(ssl=sslcontext)
+    @commands.command()
+    async def tournoi(self, ctx):
+        url = os.getenv("SHEET_CSV_URL")
 
-            async with aiohttp.ClientSession(connector=connector) as session:
-                async with session.get(SHEET_CSV_URL) as resp:
-                    text = (await resp.read()).decode("utf-8")
-            df = pd.read_csv(io.StringIO(text), skiprows=1)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                content = await resp.read()
 
-            df["PRIS ?"] = df["PRIS ?"].fillna("").astype(str).str.lower()
-            df["DIFFICULTE"] = df["DIFFICULTE"].fillna("—")
-            df["PERSONNAGE"] = df["PERSONNAGE"].fillna("Inconnu")
+        df = pd.read_csv(pd.compat.StringIO(content.decode("utf-8")))
 
-            pris = df[df["PRIS ?"].isin(["true", "✅"])]
-            libres = df[~df["PRIS ?"].isin(["true", "✅"])]
+        # Nettoyage des colonnes
+        df.columns = df.columns.str.strip().str.replace('\xa0', ' ', regex=False).str.upper()
+        pris_col = [col for col in df.columns if "PRIS" in col][0]
 
-            difficulte_order = ["1", "2", "3"]
+        df[pris_col] = df[pris_col].fillna("").astype(str).str.lower()
+        df["DIFFICULTE"] = df["DIFFICULTE"].astype(str).str.strip()
 
-            def embed_decks(df_filtré, pris, difficulté):
-                noms = df_filtré[df_filtré["DIFFICULTE"] == difficulté]["PERSONNAGE"].tolist()
-                if not noms:
-                    texte = "Aucun deck trouvé."
-                else:
-                    texte = "\n".join(f"• {nom}" for nom in noms)
-                titre = f"{'🔒' if pris else '🟢'} {'Pris' if pris else 'Libres'} — Difficulté {difficulté}/3"
-                couleur = discord.Color.red() if pris else discord.Color.green()
-                return discord.Embed(title=titre, description=texte, color=couleur)
+        # Séparer les decks libres et pris
+        libres = df[df[pris_col].isin(["false", "", "non", "❌"])]
+        pris = df[df[pris_col].isin(["true", "oui", "✅"])]
 
-            pages = []
-            for d in difficulte_order:
-                pages.append(embed_decks(libres, False, d))
-            for d in difficulte_order:
-                pages.append(embed_decks(pris, True, d))
+        # Fonction pour grouper les personnages par difficulté
+        def decks_par_difficulte(dataframe):
+            groupes = {}
+            for niveau in ["1/3", "2/3", "3/3"]:
+                persos = dataframe[dataframe["DIFFICULTE"] == niveau]["PERSONNAGE"].dropna().tolist()
+                groupes[niveau] = persos
+            return groupes
 
-            tournoi_data = supabase.table("tournoi_info").select("prochaine_date").eq("id", 1).execute()
-            date_tournoi = tournoi_data.data[0]["prochaine_date"] if tournoi_data.data else "🗓️ à venir"
+        pages = []
 
-            pages[0].insert_field_at(0, name="📅 Prochain Tournoi Yu-Gi-Oh VAACT", value=f"**{date_tournoi}**", inline=False)
+        # Pages pour decks libres
+        libres_groupes = decks_par_difficulte(libres)
+        for niveau in ["1/3", "2/3", "3/3"]:
+            description = "\n".join(libres_groupes[niveau]) or "Aucun"
+            embed = discord.Embed(title=f"Decks disponibles - Difficulté {niveau}", description=description, color=0x00ff00)
+            pages.append(embed)
 
-            await ctx.send(embed=pages[0], view=TournoiView(pages))
+        # Pages pour decks pris
+        pris_groupes = decks_par_difficulte(pris)
+        for niveau in ["1/3", "2/3", "3/3"]:
+            description = "\n".join(pris_groupes[niveau]) or "Aucun"
+            embed = discord.Embed(title=f"Decks pris - Difficulté {niveau}", description=description, color=0xff0000)
+            pages.append(embed)
 
-        except Exception as e:
-            traceback.print_exc()
-            await ctx.send("❌ Une erreur est survenue.")
+        view = PaginatorView(pages)
+        message = await ctx.send(embed=pages[0], view=view)
+        view.message = message
 
-    def cog_load(self):
-        self.tournoi.category = "VAACT"
 
-# ──────────────────────────────────────────────────────────────
-# 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
-# ──────────────────────────────────────────────────────────────
-async def setup(bot: commands.Bot):
-    await bot.add_cog(TournoiCommand(bot))
-    print("✅ Cog chargé : TournoiCommand (catégorie = VAACT)")
+async def setup(bot):
+    await bot.add_cog(Tournoi(bot))
