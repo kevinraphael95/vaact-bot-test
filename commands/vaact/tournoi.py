@@ -91,8 +91,10 @@ class TournoiCommand(commands.Cog):
 async def setup(bot: commands.Bot):
     cog = TournoiCommand(bot)
 
-    # 🏷️ Catégorisation pour affichage personnalisé dans !help
-    cog.tournoi.category = "VAACT"
+    # Correction ici : récupérer la commande par son nom pour assigner la catégorie
+    cmd = cog.get_command("tournoi")
+    if cmd:
+        cmd.category = "VAACT"
 
     await bot.add_cog(cog)
     print("✅ Cog chargé : TournoiCommand (catégorie = VAACT)")
