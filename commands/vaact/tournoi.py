@@ -1,12 +1,20 @@
+# ──────────────────────────────────────────────────────────────
+# 📁 tournoi.py
+# ──────────────────────────────────────────────────────────────
+
+# ───────────────────────────────────────────────────────────────────────────────
+# 📦 Cog principal — Commande !tournoi (pagination des decks par difficulté et statut)
+# ───────────────────────────────────────────────────────────────────────────────
 import os
+import math
 import discord
 from discord.ext import commands
 from discord.ui import View, Button
 import pandas as pd
-import math
 
-SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
-
+# ──────────────────────────────────────────────────────────────
+# 🔧 COG : TournoiCommand
+# ──────────────────────────────────────────────────────────────
 class PaginationView(View):
     def __init__(self, pages, initial_page=0):
         super().__init__(timeout=180)
@@ -32,7 +40,7 @@ class PaginationView(View):
             self.current_page += 1
             await self.update_message(interaction)
 
-    async def update_message(self, interaction):
+    async def update_message(self, interaction: discord.Interaction):
         embed = self.pages[self.current_page]
         self.update_buttons()
         await interaction.response.edit_message(embed=embed, view=self)
@@ -41,29 +49,44 @@ class PaginationView(View):
         self.prev_button.disabled = self.current_page == 0
         self.next_button.disabled = self.current_page == len(self.pages) - 1
 
-class Tournoi(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+class TournoiCommand(commands.Cog):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot  # 🔌 Stocke l'instance du bot
+        self.SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
 
-    @commands.command(name="tournoi")
-    async def tournoi(self, ctx):
+    @commands.command(
+        name="tournoi",
+        aliases=["tourney", "tournois"],
+        help="📅 Affiche la date du tournoi et liste paginée des decks libres et pris par difficulté."
+    )
+    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)  # anti-spam
+    async def tournoi(self, ctx: commands.Context):
+        print("Commande !tournoi appelée")
+        if not self.SHEET_CSV_URL:
+            await ctx.send("❌ L'URL du CSV des decks n'est pas configurée.")
+            print("Erreur : SHEET_CSV_URL non défini")
+            return
+
         try:
-            df = pd.read_csv(SHEET_CSV_URL)
+            df = pd.read_csv(self.SHEET_CSV_URL)
+            print(f"CSV chargé, shape={df.shape}")
 
-            # Supposons que la date du tournoi est dans la colonne DateTournoi au format "YYYY-MM-DD"
-            if "DateTournoi" in df.columns:
-                date_tournoi = df["DateTournoi"].iloc[0]
-            else:
-                date_tournoi = "Date inconnue"
+            expected_cols = {"DateTournoi", "Deck", "Status", "Difficulté"}
+            if not expected_cols.issubset(df.columns):
+                await ctx.send(f"❌ Colonnes manquantes dans le CSV. Attendu : {expected_cols}")
+                print(f"Colonnes dans CSV : {df.columns}")
+                return
 
-            # Trier les decks par difficulté (1, 2, 3)
+            date_tournoi = df["DateTournoi"].iloc[0] if not df["DateTournoi"].isna().all() else "Date inconnue"
+
             pages = []
-            decks_per_page = 10  # nombre de decks par page pour ne pas saturer
+            decks_per_page = 10
 
-            for diff in sorted(df["Difficulté"].unique()):
-                # Filtrer decks libres par difficulté
+            for diff in sorted(df["Difficulté"].dropna().unique()):
                 libres = df[(df["Status"] == "Libre") & (df["Difficulté"] == diff)]["Deck"].tolist()
-                # Découpage en pages
+                pris = df[(df["Status"] == "Pris") & (df["Difficulté"] == diff)]["Deck"].tolist()
+
+                # Pages decks libres
                 for i in range(math.ceil(len(libres) / decks_per_page)):
                     chunk = libres[i*decks_per_page:(i+1)*decks_per_page]
                     embed = discord.Embed(
@@ -74,8 +97,7 @@ class Tournoi(commands.Cog):
                     embed.set_footer(text=f"Page {i+1} / {math.ceil(len(libres) / decks_per_page)}")
                     pages.append(embed)
 
-                # Même chose pour les decks pris
-                pris = df[(df["Status"] == "Pris") & (df["Difficulté"] == diff)]["Deck"].tolist()
+                # Pages decks pris
                 for i in range(math.ceil(len(pris) / decks_per_page)):
                     chunk = pris[i*decks_per_page:(i+1)*decks_per_page]
                     embed = discord.Embed(
@@ -87,15 +109,24 @@ class Tournoi(commands.Cog):
                     pages.append(embed)
 
             if not pages:
-                await ctx.send("Aucun deck trouvé dans le CSV.")
+                await ctx.send("⚠️ Aucun deck trouvé dans le CSV.")
                 return
 
             view = PaginationView(pages)
             await ctx.send(embed=pages[0], view=view)
+            print("Message envoyé avec pagination.")
 
         except Exception as e:
             print("[ERREUR TOURNOI]", e)
             await ctx.send("❌ Une erreur est survenue lors de la récupération des données du tournoi.")
 
-async def setup(bot):
-    await bot.add_cog(Tournoi(bot))
+    # 🏷️ Catégorisation pour affichage personnalisé dans !help
+    def cog_load(self):
+        self.tournoi.category = "Tournois"
+
+# ──────────────────────────────────────────────────────────────
+# 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
+# ──────────────────────────────────────────────────────────────
+async def setup(bot: commands.Bot):
+    await bot.add_cog(TournoiCommand(bot))
+    print("✅ Cog chargé : TournoiCommand (catégorie = Tournois)")
