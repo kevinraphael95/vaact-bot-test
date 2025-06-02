@@ -1,132 +1,103 @@
 # ──────────────────────────────────────────────────────────────
-# 📁 tournoi.py
+# 📁 help.py
 # ──────────────────────────────────────────────────────────────
 
-# ───────────────────────────────────────────────────────────────────────────────
-# 📦 Cog principal — Commande !tournoi (pagination des decks par difficulté et statut)
-# ───────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────
+# 📦 Cog principal — Commande !help
+# ──────────────────────────────────────────────────────────────
 import os
-import math
 import discord
 from discord.ext import commands
-from discord.ui import View, Button
-import pandas as pd
 
 # ──────────────────────────────────────────────────────────────
-# 🔧 COG : TournoiCommand
+# 🔧 COG : HelpCommand
 # ──────────────────────────────────────────────────────────────
-class PaginationView(View):
-    def __init__(self, pages, initial_page=0):
-        super().__init__(timeout=180)
-        self.pages = pages
-        self.current_page = initial_page
-
-        self.prev_button = Button(label="⬅️ Précédent", style=discord.ButtonStyle.secondary)
-        self.next_button = Button(label="➡️ Suivant", style=discord.ButtonStyle.secondary)
-        self.prev_button.callback = self.prev_page
-        self.next_button.callback = self.next_page
-
-        self.add_item(self.prev_button)
-        self.add_item(self.next_button)
-        self.update_buttons()
-
-    async def prev_page(self, interaction: discord.Interaction):
-        if self.current_page > 0:
-            self.current_page -= 1
-            await self.update_message(interaction)
-
-    async def next_page(self, interaction: discord.Interaction):
-        if self.current_page < len(self.pages) - 1:
-            self.current_page += 1
-            await self.update_message(interaction)
-
-    async def update_message(self, interaction: discord.Interaction):
-        embed = self.pages[self.current_page]
-        self.update_buttons()
-        await interaction.response.edit_message(embed=embed, view=self)
-
-    def update_buttons(self):
-        self.prev_button.disabled = self.current_page == 0
-        self.next_button.disabled = self.current_page == len(self.pages) - 1
-
-class TournoiCommand(commands.Cog):
+class HelpCommand(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot  # 🔌 Stocke l'instance du bot
-        self.SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
 
+    # ──────────────────────────────────────────────────────────
+    # 🔹 COMMANDE : !help
+    # ──────────────────────────────────────────────────────────
     @commands.command(
-        name="tournoi",
-        aliases=["tourney", "tournois"],
-        help="📅 Affiche la date du tournoi et liste paginée des decks libres et pris par difficulté."
+        name="help",
+        aliases=["aide", "h"],
+        help="Affiche la liste des commandes ou les infos d’une commande spécifique.",
+        description=(
+            "📌 Utilisation : `!help` ou `!help <commande>`\n"
+            "- Sans argument : liste complète des commandes\n"
+            "- Avec un nom : détails complets de la commande"
+        )
     )
-    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)  # anti-spam
-    async def tournoi(self, ctx: commands.Context):
-        print("Commande !tournoi appelée")
-        if not self.SHEET_CSV_URL:
-            await ctx.send("❌ L'URL du CSV des decks n'est pas configurée.")
-            print("Erreur : SHEET_CSV_URL non défini")
-            return
+    @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)
+    async def help_func(self, ctx: commands.Context, commande: str = None):
+        prefix = os.getenv("COMMAND_PREFIX", "!")
 
         try:
-            df = pd.read_csv(self.SHEET_CSV_URL)
-            print(f"CSV chargé, shape={df.shape}")
+            if commande is None:
+                categories = {}
 
-            expected_cols = {"DateTournoi", "Deck", "Status", "Difficulté"}
-            if not expected_cols.issubset(df.columns):
-                await ctx.send(f"❌ Colonnes manquantes dans le CSV. Attendu : {expected_cols}")
-                print(f"Colonnes dans CSV : {df.columns}")
-                return
+                for cmd in self.bot.commands:
+                    if cmd.hidden:
+                        continue
+                    cat = getattr(cmd, "category", "Autres")
+                    categories.setdefault(cat, []).append(cmd)
 
-            date_tournoi = df["DateTournoi"].iloc[0] if not df["DateTournoi"].isna().all() else "Date inconnue"
+                embed = discord.Embed(
+                    title="📜 Liste des commandes disponibles",
+                    description="Voici les commandes regroupées par catégorie :",
+                    color=discord.Color.green()
+                )
 
-            pages = []
-            decks_per_page = 10
+                for cat, cmds in sorted(categories.items()):
+                    cmds.sort(key=lambda c: c.name)
+                    lignes = [f"`{prefix}{c.name}` : {c.help or 'Pas de description.'}" for c in cmds]
+                    embed.add_field(name=f"📂 {cat}", value="\n".join(lignes), inline=False)
 
-            for diff in sorted(df["Difficulté"].dropna().unique()):
-                libres = df[(df["Status"] == "Libre") & (df["Difficulté"] == diff)]["Deck"].tolist()
-                pris = df[(df["Status"] == "Pris") & (df["Difficulté"] == diff)]["Deck"].tolist()
+                embed.set_footer(text=f"💡 Utilise {prefix}help <commande> pour plus de détails.")
+                await ctx.send(embed=embed)
 
-                # Pages decks libres
-                for i in range(math.ceil(len(libres) / decks_per_page)):
-                    chunk = libres[i*decks_per_page:(i+1)*decks_per_page]
-                    embed = discord.Embed(
-                        title=f"Tournoi du {date_tournoi} — Decks Libres (Difficulté {diff})",
-                        description="\n".join(f"• {deck}" for deck in chunk),
-                        color=discord.Color.green()
-                    )
-                    embed.set_footer(text=f"Page {i+1} / {math.ceil(len(libres) / decks_per_page)}")
-                    pages.append(embed)
+            else:
+                cmd = self.bot.get_command(commande)
 
-                # Pages decks pris
-                for i in range(math.ceil(len(pris) / decks_per_page)):
-                    chunk = pris[i*decks_per_page:(i+1)*decks_per_page]
-                    embed = discord.Embed(
-                        title=f"Tournoi du {date_tournoi} — Decks Pris (Difficulté {diff})",
-                        description="\n".join(f"• {deck}" for deck in chunk),
-                        color=discord.Color.red()
-                    )
-                    embed.set_footer(text=f"Page {i+1} / {math.ceil(len(pris) / decks_per_page)}")
-                    pages.append(embed)
+                if cmd is None:
+                    await ctx.send(f"❌ La commande `{commande}` n’existe pas.")
+                    return
 
-            if not pages:
-                await ctx.send("⚠️ Aucun deck trouvé dans le CSV.")
-                return
+                embed = discord.Embed(
+                    title=f"ℹ️ Aide pour : `{prefix}{cmd.name}`",
+                    color=discord.Color.blue()
+                )
 
-            view = PaginationView(pages)
-            await ctx.send(embed=pages[0], view=view)
-            print("Message envoyé avec pagination.")
+                embed.add_field(
+                    name="📝 Description",
+                    value=cmd.help or "Pas de description disponible.",
+                    inline=False
+                )
+
+                if cmd.aliases:
+                    aliases = ", ".join(f"`{a}`" for a in cmd.aliases)
+                    embed.add_field(name="🔁 Alias", value=aliases, inline=False)
+
+                embed.set_footer(text="📌 <obligatoire> — [optionnel]")
+                await ctx.send(embed=embed)
 
         except Exception as e:
-            print("[ERREUR TOURNOI]", e)
-            await ctx.send("❌ Une erreur est survenue lors de la récupération des données du tournoi.")
+            print("[ERREUR HELP]", e)
+            await ctx.send("🚨 Une erreur est survenue lors de l'exécution de la commande d’aide.")
 
     # 🏷️ Catégorisation pour affichage personnalisé dans !help
     def cog_load(self):
-        self.tournoi.category = "Tournois"
+        self.help_func.category = "Général"
 
 # ──────────────────────────────────────────────────────────────
 # 🔌 SETUP POUR CHARGEMENT AUTOMATIQUE DU COG
 # ──────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    await bot.add_cog(TournoiCommand(bot))
-    print("✅ Cog chargé : TournoiCommand (catégorie = Tournois)")
+    # Avant d'ajouter le cog, on s'assure que TOUTES les commandes ont une catégorie
+    for command in bot.commands:
+        if not hasattr(command, "category"):
+            command.category = "Général"
+
+    await bot.add_cog(HelpCommand(bot))
+    print("✅ Cog chargé : HelpCommand (catégorie = Général)")
