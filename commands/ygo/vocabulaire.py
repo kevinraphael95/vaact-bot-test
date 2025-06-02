@@ -1,21 +1,30 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# 📁 vocabulaire.py — Commande !vocabulaire
-# ────────────────────────────────────────────────────────────────────────────────
-# Description : Affiche des définitions de termes du jeu (depuis un fichier JSON)
-# Format : Pagination par réactions (multi-page)
-# Données : 📂 data/vocabulaire.json
+# 📘 vocabulaire.py — Commande interactive !vocabulaire
+# Objectif : Affiche les définitions des termes du jeu depuis un fichier JSON
+# Catégorie : 🃏 Yu-Gi-Oh!
+# Accès : Public
 # ────────────────────────────────────────────────────────────────────────────────
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 📦 Imports nécessaires
 # ────────────────────────────────────────────────────────────────────────────────
-import discord                                 # 🎨 Embeds, interactions et couleurs Discord
-from discord.ext import commands              # 🧩 Système de commandes modulaire via Cogs
-import json                                   # 📄 Lecture du fichier JSON
-import os                                     # 🗂️ Gestion des chemins de fichiers
+import discord
+from discord.ext import commands
+import json
+import os
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 🧠 Classe principale du Cog — VocabulaireCommand
+# 📂 Chargement des données JSON
+# ────────────────────────────────────────────────────────────────────────────────
+VOCAB_PATH = os.path.join("data", "vocabulaire.json")
+
+def load_vocab():
+    """Charge le vocabulaire depuis le fichier JSON."""
+    with open(VOCAB_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+# ────────────────────────────────────────────────────────────────────────────────
+# 🧠 Cog principal
 # ────────────────────────────────────────────────────────────────────────────────
 class VocabulaireCommand(commands.Cog):
     """
@@ -24,32 +33,23 @@ class VocabulaireCommand(commands.Cog):
     """
 
     def __init__(self, bot: commands.Bot):
-        self.bot = bot  # 🔗 Référence au bot principal pour interagir avec Discord
-        self.vocab_path = os.path.join("data", "vocabulaire.json")  # 📂 Fichier de données
+        self.bot = bot
 
-    # ────────────────────────────────────────────────────────────────────────────
-    # 🎯 Commande principale — !vocabulaire | !voc
-    # ────────────────────────────────────────────────────────────────────────────
     @commands.command(
         name="vocabulaire",
         aliases=["voc"],
-        help="📘 Affiche la définition des termes du jeu, par mot-clé ou catégorie."
+        help="📘 Affiche la définition des termes du jeu, par mot-clé ou catégorie.",
+        description="Affiche les définitions des termes du lexique, avec ou sans filtre par mot-clé."
     )
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
     async def vocabulaire(self, ctx: commands.Context, *, mot_cle: str = None):
-        """
-        📚 Affiche les définitions des termes du jeu.
-        Si un mot-clé est fourni, filtre les résultats. Sinon, affiche tout le lexique.
-        """
-
+        """Commande principale !vocabulaire avec système de pagination par réactions."""
         try:
-            with open(self.vocab_path, "r", encoding="utf-8") as f:
-                vocabulaire = json.load(f)
+            vocabulaire = load_vocab()
         except Exception as e:
             await ctx.send(f"❌ Erreur lors du chargement du fichier : {e}")
             return
 
-        # 🔎 Recherche et filtrage
         definitions = []
         for categorie, termes in vocabulaire.items():
             for terme, data in termes.items():
@@ -67,7 +67,7 @@ class VocabulaireCommand(commands.Cog):
             await ctx.send("❌ Aucun terme trouvé correspondant à ta recherche.")
             return
 
-        # 🗂️ Pagination des résultats
+        # Pagination
         definitions.sort(key=lambda x: x[1].lower())
         pages = []
         max_par_page = 5
@@ -83,12 +83,9 @@ class VocabulaireCommand(commands.Cog):
                     value=defi,
                     inline=False
                 )
-            embed.set_footer(
-                text=f"📄 Page {len(pages) + 1}/{(len(definitions) - 1) // max_par_page + 1}"
-            )
+            embed.set_footer(text=f"📄 Page {len(pages) + 1}/{(len(definitions) - 1) // max_par_page + 1}")
             pages.append(embed)
 
-        # ▶️ Envoi du premier embed
         message = await ctx.send(embed=pages[0])
         if len(pages) <= 1:
             return
@@ -117,19 +114,14 @@ class VocabulaireCommand(commands.Cog):
                 await message.edit(embed=pages[index])
 
             except:
-                break  # ⏱️ Timeout ou erreur → fin navigation
+                break  # Timeout
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 🔌 Fonction de setup du Cog
+# 🔌 Setup du Cog
 # ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    """
-    🔧 Setup du Cog : ajoute le cog au bot et attribue une catégorie personnalisée.
-    """
     cog = VocabulaireCommand(bot)
-
     for command in cog.get_commands():
         if not hasattr(command, "category"):
             command.category = "🃏 Yu-Gi-Oh!"
-
     await bot.add_cog(cog)
