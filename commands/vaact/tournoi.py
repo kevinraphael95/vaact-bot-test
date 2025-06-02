@@ -76,7 +76,7 @@ class TournoiCommand(commands.Cog):
 # 🔌 Setup du Cog
 # ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    cog = Tournoi(bot)
+    cog = TournoiCommand(bot)
     for command in cog.get_commands():
         if not hasattr(command, "category"):
             command.category = "VAACT"
