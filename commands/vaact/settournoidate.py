@@ -61,9 +61,10 @@ class DateSelectView(View):
         )
 
         # Menu jour, vide au départ, sera rempli selon la plage
+
         self.day_select = Select(
             placeholder="Jour",
-            options=[],
+            options=[discord.SelectOption(label="—", value="0")],
             custom_id="day"
         )
 
