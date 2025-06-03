@@ -51,17 +51,17 @@ class VocabulaireCommand(commands.Cog):
             return
 
         definitions = []
-        for categorie, termes in vocabulaire.items():
-            for terme, data in termes.items():
+            for terme, data in vocabulaire.items():
                 definition = data.get("definition") if isinstance(data, dict) else data
                 synonymes = data.get("synonymes", []) if isinstance(data, dict) else []
                 noms_possibles = [terme] + synonymes
 
                 if mot_cle:
                     if any(mot_cle.lower() in mot.lower() for mot in noms_possibles) or mot_cle.lower() in definition.lower():
-                        definitions.append((categorie, terme, definition))
+                        definitions.append((terme, definition))
                 else:
-                    definitions.append((categorie, terme, definition))
+                    definitions.append((terme, definition))
+
 
         if not definitions:
             await ctx.send("❌ Aucun terme trouvé correspondant à ta recherche.")
@@ -77,12 +77,14 @@ class VocabulaireCommand(commands.Cog):
                 title="📘 Lexique des termes",
                 color=discord.Color.dark_blue()
             )
-            for cat, terme, defi in definitions[i:i + max_par_page]:
+
+            for terme, defi in definitions[i:i + max_par_page]:
                 embed.add_field(
-                    name=f"🔹 {terme} ({cat})",
+                    name=f"🔹 {terme}",
                     value=defi,
                     inline=False
                 )
+
             embed.set_footer(text=f"📄 Page {len(pages) + 1}/{(len(definitions) - 1) // max_par_page + 1}")
             pages.append(embed)
 
