@@ -1,286 +1,109 @@
 {
-  "Combat": {
-    "attaque": {
-      "definition": "Action d'un monstre pour infliger des dégâts à un adversaire ou à un autre monstre.",
-      "synonymes": ["atk", "attaquer"]
-    },
-    "défense": {
-      "definition": "Mode dans lequel un monstre protège les LP du joueur et ne peut pas attaquer.",
-      "synonymes": ["def"]
-    },
-    "dommages de combat": {
-      "definition": "Dommages infligés lors d'une attaque entre monstres ou directe.",
-      "synonymes": ["battle damage"]
-    },
-    "dommages d'effet": {
-      "definition": "Dommages infligés par l'effet d'une carte.",
-      "synonymes": ["effect damage"]
-    },
-    "percer": {
-      "definition": "Capacité à infliger des dommages même si le monstre attaqué est en défense.",
-      "synonymes": ["perforation", "piercing"]
-    },
-    "cible": {
-      "definition": "Choix d'une carte ou d'un joueur comme but d’un effet.",
-      "synonymes": ["target"]
-    },
-    "chaîne": {
-      "definition": "Système de résolution où les effets s’empilent dans l’ordre inverse.",
-      "synonymes": ["chain", "pile"]
-    }
-  },
 
-  "Cartes": {
-    "monstre à effet": {
-      "definition": "Monstre ayant un effet spécifique.",
-      "synonymes": ["effet", "effect monster"]
-    },
-    "monstre normal": {
-      "definition": "Monstre sans effet.",
-      "synonymes": ["vanilla"]
-    },
-    "monstre fusion": {
-      "definition": "Monstre invoqué via Polymérisation ou équivalent.",
-      "synonymes": ["fusion monster"]
-    },
-    "monstre synchro": {
-      "definition": "Monstre invoqué avec un syntoniseur et des non-syntoniseurs.",
-      "synonymes": ["synchro"]
-    },
-    "monstre xyz": {
-      "definition": "Monstre invoqué en superposant des monstres de même niveau.",
-      "synonymes": ["exceed", "xyz monster"]
-    },
-    "monstre rituel": {
-      "definition": "Monstre invoqué via une carte magie de rituel.",
-      "synonymes": ["rituel"]
-    },
-    "monstre lien": {
-      "definition": "Monstre sans DEF, avec un nombre de flèches de lien déterminant.",
-      "synonymes": ["link monster"]
-    },
-    "magie": {
-      "definition": "Carte jouée pendant votre tour, sauf indication contraire.",
-      "synonymes": ["spell"]
-    },
-    "piège": {
-      "definition": "Carte activable généralement durant le tour adverse.",
-      "synonymes": ["trap"]
-    },
-    "magie rapide": {
-      "definition": "Carte Magie activable durant n'importe quelle phase, même pendant le tour adverse.",
-      "synonymes": ["quick-play"]
-    },
-    "magie continue": {
-      "definition": "Carte Magie qui reste sur le terrain après activation.",
-      "synonymes": ["continuous spell"]
-    },
-    "piège continu": {
-      "definition": "Carte Piège qui reste sur le terrain avec un effet continu.",
-      "synonymes": ["continuous trap"]
-    },
-    "contre-piège": {
-      "definition": "Piège qui peut contrer directement des activations et effets.",
-      "synonymes": ["counter trap"]
-    }
-  },
 
-  "Mécaniques d'invocation": {
-    "invocation normale": {
-      "definition": "Pose d’un monstre une fois par tour sans condition.",
-      "synonymes": ["normal summon"]
-    },
-    "invocation spéciale": {
-      "definition": "Pose via effet de carte ou mécanique spéciale.",
-      "synonymes": ["special summon"]
-    },
-    "invocation flip": {
-      "definition": "Invocation quand un monstre face verso est retourné face recto.",
-      "synonymes": ["flip summon"]
-    },
-    "invocation par sacrifice": {
-      "definition": "Sacrifice d’un ou plusieurs monstres pour invoquer un monstre de niveau 5 ou plus.",
-      "synonymes": ["tribute summon"]
-    },
-    "invocation pendule": {
-      "definition": "Invocation massive entre les échelles de Pendule.",
-      "synonymes": ["pendulum summon"]
-    },
-    "invocation fusion": {
-      "definition": "Utilisation de cartes pour fusionner deux monstres.",
-      "synonymes": []
-    },
-    "invocation lien": {
-      "definition": "Utilisation de monstres pour invoquer un monstre lien.",
-      "synonymes": ["link summon"]
-    },
-    "syntoniseur": {
-      "definition": "Monstre requis pour invoquer un monstre Synchro.",
-      "synonymes": ["tuner"]
-    },
-    "matériel xyz": {
-      "definition": "Monstres sous un Xyz servant à ses effets.",
-      "synonymes": ["xyz material"]
-    }
+  # TERMES GENERIQUES
+  
+  "Invocation": {
+    "definition": "Action de faire apparaître une carte sur le terrain.",
+    "synonymes": ["Summon"]
   },
-
-  "Zones de jeu": {
-    "zone monstre": {
-      "definition": "Emplacement pour invoquer des monstres.",
-      "synonymes": ["monster zone"]
-    },
-    "zone magie/piège": {
-      "definition": "Zone pour placer des Magies ou Pièges.",
-      "synonymes": ["spell/trap zone"]
-    },
-    "zone pendule": {
-      "definition": "Zone dédiée aux cartes Pendule.",
-      "synonymes": ["pendulum zone"]
-    },
-    "main": {
-      "definition": "Cartes que le joueur a en main.",
-      "synonymes": ["hand"]
-    },
-    "deck": {
-      "definition": "Pioche principale d’un joueur.",
-      "synonymes": ["main deck"]
-    },
-    "extra deck": {
-      "definition": "Deck spécial pour les cartes Fusion, Synchro, Xyz, Lien.",
-      "synonymes": ["ED"]
-    },
-    "cimetière": {
-      "definition": "Zone pour les cartes détruites ou utilisées.",
-      "synonymes": ["gy", "grave"]
-    },
-    "bannie": {
-      "definition": "Zone pour les cartes retirées du jeu.",
-      "synonymes": ["banished", "removed from play"]
-    },
-    "zone terrain": {
-      "definition": "Zone spécifique pour les cartes Terrain.",
-      "synonymes": ["field zone"]
-    }
+  "Deck": "Le paquet de cartes que le joueur utilise pour jouer.",
+  "Cimetière": {
+    "definition": "Zone où vont les cartes une fois utilisées ou détruites.",
+    "synonymes": ["Graveyard"]
   },
-
-  "Phases du tour": {
-    "draw phase": {
-      "definition": "Phase de pioche d'une carte.",
-      "synonymes": ["pioche"]
-    },
-    "standby phase": {
-      "definition": "Phase où certains effets s’activent après la pioche.",
-      "synonymes": []
-    },
-    "main phase 1": {
-      "definition": "Première phase principale pour jouer cartes et effets.",
-      "synonymes": ["MP1"]
-    },
-    "battle phase": {
-      "definition": "Phase où les monstres peuvent attaquer.",
-      "synonymes": ["BP"]
-    },
-    "main phase 2": {
-      "definition": "Phase après le combat pour poser d’autres cartes.",
-      "synonymes": ["MP2"]
-    },
-    "end phase": {
-      "definition": "Phase de fin du tour.",
-      "synonymes": []
-    }
+  "Effet": "Capacité spéciale d'une carte qui peut influencer la partie.",
+  "Tour": "Unité de jeu comprenant la phase de pioche, de main, de bataille, etc.",
+  "Monstre": {
+    "definition": "Carte utilisée pour attaquer ou défendre.",
+    "synonymes": ["Créature"]
   },
-
-  "Effets et interactions": {
-    "résolution": {
-      "definition": "Application du résultat d’un effet activé.",
-      "synonymes": ["resolve"]
-    },
-    "annuler": {
-      "definition": "Empêcher l’effet d’une carte.",
-      "synonymes": ["negate"]
-    },
-    "détruire": {
-      "definition": "Envoyer une carte au cimetière par effet ou combat.",
-      "synonymes": ["destroy"]
-    },
-    "cibler": {
-      "definition": "Choisir une carte spécifique pour un effet.",
-      "synonymes": ["target"]
-    },
-    "renvoyer": {
-      "definition": "Retourner une carte en main ou deck sans la détruire.",
-      "synonymes": ["bounce", "shuffle"]
-    },
-    "envoyer au cimetière": {
-      "definition": "Faire passer une carte directement au cimetière.",
-      "synonymes": ["send to grave"]
-    },
-    "retourner": {
-      "definition": "Changer une carte face cachée en face visible.",
-      "synonymes": ["flip"]
-    },
-    "chaînage": {
-      "definition": "Ajout d’effets dans une chaîne déjà en cours.",
-      "synonymes": ["chaining"]
-    },
-    "priorité": {
-      "definition": "Droit d’activer une carte avant l’adversaire.",
-      "synonymes": []
-    }
+  "Magie": {
+    "definition": "Carte jouable depuis la main ou posée, ayant un effet spécifique.",
+    "synonymes": ["Sort", "Spell"]
   },
-
-  "Tactiques & Métagame": {
-    "otk": {
-      "definition": "Gagner en un seul tour avec une combinaison puissante.",
-      "synonymes": ["one turn kill"]
-    },
-    "ftk": {
-      "definition": "Gagner avant que l’adversaire ne joue.",
-      "synonymes": ["first turn kill"]
-    },
-    "brick": {
-      "definition": "Main de départ inutilisable.",
-      "synonymes": []
-    },
-    "bricker": {
-      "definition": "Commencer avec une main inutilisable.",
-      "synonymes": []
-    },
-    "meta": {
-      "definition": "Cartes ou decks dominants à un moment donné.",
-      "synonymes": []
-    },
-    "anti-meta": {
-      "definition": "Decks visant à contrer le meta.",
-      "synonymes": []
-    },
-    "archetype": {
-      "definition": "Famille de cartes liées par nom ou effet.",
-      "synonymes": ["archétype"]
-    },
-    "tech": {
-      "definition": "Carte spécifique incluse pour contrer une menace précise.",
-      "synonymes": []
-    },
-    "side deck": {
-      "definition": "15 cartes utilisables entre les manches.",
-      "synonymes": ["side"]
-    },
-    "combo": {
-      "definition": "Suite de cartes qui se combinent pour produire un effet fort.",
-      "synonymes": []
-    },
-    "tutoriser": {
-      "definition": "Aller chercher une carte précise depuis le deck.",
-      "synonymes": ["tutor", "search"]
-    },
-    "top deck": {
-      "definition": "Piocher exactement la bonne carte au bon moment.",
-      "synonymes": []
-    },
-    "draw": {
-      "definition": "Action de piocher une carte.",
-      "synonymes": ["pioche"]
-    }
+  "Piège": {
+    "definition": "Carte activable en réponse à des actions adverses.",
+    "synonymes": ["Trap"]
+  },
+  "Points de vie": {
+    "definition": "Total de vie d’un joueur. Atteindre 0 entraîne la défaite.",
+    "synonymes": ["LP", "Life Points"]
+  },
+  "Invocation Normale": {
+    "definition": "Invocation de base autorisée une fois par tour.",
+    "synonymes": ["Normal Summon"]
+  },
+  "Invocation Spéciale": {
+    "definition": "Invocation via un effet ou condition spéciale, sans limite de nombre.",
+    "synonymes": ["Special Summon"]
+  },
+  "Fusion": {
+    "definition": "Type d'invocation spéciale en utilisant des matériaux via Polymérisation.",
+    "synonymes": ["Fusion Summon"]
+  },
+  "Synchro": {
+    "definition": "Invocation spéciale utilisant un Syntoniseur et d'autres monstres.",
+    "synonymes": ["Synchro Summon"]
+  },
+  "XYZ": {
+    "definition": "Invocation utilisant deux monstres de même niveau comme matériaux.",
+    "synonymes": ["Exceed", "Xyz Summon"]
+  },
+  "Lien": {
+    "definition": "Invocation utilisant un ou plusieurs monstres pour invoquer un monstre Lien.",
+    "synonymes": ["Link Summon"]
+  },
+  "Main": "Cartes que le joueur tient et peut utiliser selon les règles.",
+  "Phase de Pioche": "Début du tour où le joueur pioche une carte.",
+  "Phase de Bataille": "Phase où le joueur peut attaquer avec ses monstres.",
+  "Carte continue": "Carte Magie ou Piège dont l'effet reste actif sur le terrain.",
+  "Carte rapide": {
+    "definition": "Carte qui peut être activée durant le tour de l'adversaire.",
+    "synonymes": ["Quick-Play"]
+  },
+  "Counter Trap": {
+    "definition": "Carte Piège capable d'annuler des effets ou actions, la plus rapide.",
+    "synonymes": ["Contre-piège"]
+  },
+  "Banish": {
+    "definition": "Action de retirer une carte du jeu.",
+    "synonymes": ["Retirer du jeu", "Remove from play"]
+  },
+  "OTK": {
+    "definition": "Acronyme de One Turn Kill. Gagner en un seul tour.",
+    "synonymes": ["One Turn Kill"]
+  },
+  "FTK": {
+    "definition": "Acronyme de First Turn Kill. Gagner avant que l'adversaire ne joue.",
+    "synonymes": ["First Turn Kill"]
+  },
+  "Deck de contrôle": {
+    "definition": "Stratégie visant à ralentir l'adversaire et gérer le terrain.",
+    "synonymes": ["Contrôle"]
+  },
+  "Deck combo": {
+    "definition": "Deck basé sur des enchaînements de cartes puissants.",
+    "synonymes": ["Combo"]
+  },
+  "Deck aggro": {
+    "definition": "Deck orienté sur des attaques rapides et agressives.",
+    "synonymes": ["Aggressif"]
+  },
+  "Tutor": {
+    "definition": "Carte ou effet permettant de chercher une carte spécifique dans le deck.",
+    "synonymes": ["Chercheur"]
+  },
+  "Brick": {
+    "definition": "Main de départ injouable ou très mauvaise.",
+    "synonymes": ["Main morte"]
+  },
+  "Handtrap": {
+    "definition": "Carte jouable depuis la main pendant le tour adverse.",
+    "synonymes": ["Interruption"]
   }
+
+
+
+  
 }
