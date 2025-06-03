@@ -110,14 +110,15 @@ class DateSelectView(View):
         # Mise à jour dans Supabase (id = 1 pour le tournoi unique)
         try:
             response = supabase.table("tournoi_info").update({"prochaine_date": dt.isoformat()}).eq("id", 1).execute()
-            if response.status_code in (200, 204):
+            # response est un dict, pas un objet HTTP
+            if response.get("status_code") in (200, 204):
                 await interaction.response.edit_message(
                     content=f"✅ Date du tournoi mise à jour avec succès : {dt.strftime('%d/%m/%Y %Hh')}",
                     view=None
                 )
             else:
                 await interaction.response.edit_message(
-                    content=f"❌ Erreur lors de la mise à jour en base (code {response.status_code})",
+                    content=f"❌ Erreur lors de la mise à jour en base (code {response.get('status_code')})",
                     view=self
                 )
         except Exception as e:
@@ -151,7 +152,7 @@ class SetTournoiDate(commands.Cog):
             await ctx.send("🗓️ Choisis la date du prochain tournoi :", view=view)
         except Exception as e:
             print(f"[ERREUR settournoidate] {e}")
-            await ctx.send("❌ Une erreur est survenue.")
+            await ctx.send(f"❌ Une erreur est survenue : `{e}`")
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔌 Setup du Cog
