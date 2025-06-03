@@ -33,30 +33,44 @@ class Carte(commands.Cog):
     async def carte(self, ctx: commands.Context, *, nom: str):
         """Commande principale pour chercher une carte Yu-Gi-Oh!"""
 
-        # 🧭 Langues testées par ordre de priorité
         lang_codes = ["fr", "en", "de", "it", "pt"]
         nom_encode = urllib.parse.quote(nom)
 
         carte = None
         langue_detectee = "?"
+        nom_corrige = nom
 
-        # 🔁 Tente chaque langue jusqu'à trouver une carte
-        async with aiohttp.ClientSession() as session:
-            for code in lang_codes:
-                url = f"https://db.ygoprodeck.com/api/v7/cardinfo.php?name={nom_encode}&language={code}"
-                async with session.get(url) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        if "data" in data:
-                            carte = data["data"][0]
-                            langue_detectee = code
-                            break
-
-        if not carte:
-            await ctx.send("❌ Carte introuvable dans toutes les langues. Vérifie l’orthographe exacte.")
+        try:
+            async with aiohttp.ClientSession() as session:
+                for code in lang_codes:
+                    url = f"https://db.ygoprodeck.com/api/v7/cardinfo.php?name={nom_encode}&language={code}"
+                    async with session.get(url) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            if "data" in data:
+                                carte = data["data"][0]
+                                langue_detectee = code
+                                nom_corrige = carte.get("name", nom)
+                                break
+                        elif resp.status == 400:
+                            # Carte non trouvée dans cette langue, on continue
+                            continue
+                        else:
+                            # Autre erreur API
+                            await ctx.send("🚨 Erreur : Impossible de récupérer les données depuis l’API.")
+                            return
+        except Exception as e:
+            print(f"[ERREUR commande !carte] {e}")
+            await ctx.send("🚨 Erreur inattendue lors de la récupération des données.")
             return
 
-        # 🎨 Création de l'embed
+        if not carte:
+            await ctx.send(f"❌ Carte introuvable dans toutes les langues. Vérifie l’orthographe exacte : `{nom}`.")
+            return
+
+        if nom_corrige.lower() != nom.lower():
+            await ctx.send(f"🔍 Résultat trouvé pour **{nom_corrige}** ({langue_detectee.upper()})")
+
         embed = discord.Embed(
             title=f"{carte.get('name', 'Carte inconnue')} ({langue_detectee.upper()})",
             description=carte.get("desc", "Pas de description disponible."),
