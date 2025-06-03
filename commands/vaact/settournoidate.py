@@ -17,9 +17,9 @@ from datetime import datetime
 # 🎛️ UI — Vue interactive pour choisir la date du tournoi
 # ────────────────────────────────────────────────────────────────────────────────
 class DateSelectView(View):
-    def __init__(self, ctx):
-        super().__init__(timeout=120)
-        self.ctx = ctx
+    def __init__(self, bot):
+        super().__init__(timeout=180)
+        self.bot = bot
         self.selected = {
             "year": None,
             "month": None,
@@ -34,19 +34,23 @@ class DateSelectView(View):
 
         self.year_select = Select(
             placeholder="Année",
-            options=[discord.SelectOption(label=y, value=y) for y in years]
+            options=[discord.SelectOption(label=y, value=y) for y in years],
+            custom_id="year_select"
         )
         self.month_select = Select(
             placeholder="Mois",
-            options=[discord.SelectOption(label=m, value=m) for m in months]
+            options=[discord.SelectOption(label=m, value=m) for m in months],
+            custom_id="month_select"
         )
         self.day_select = Select(
             placeholder="Jour",
-            options=[discord.SelectOption(label=d, value=d) for d in days]
+            options=[discord.SelectOption(label=d, value=d) for d in days],
+            custom_id="day_select"
         )
         self.hour_select = Select(
             placeholder="Heure (24h)",
-            options=[discord.SelectOption(label=h, value=h) for h in hours]
+            options=[discord.SelectOption(label=h, value=h) for h in hours],
+            custom_id="hour_select"
         )
 
         self.year_select.callback = self.select_year
@@ -75,7 +79,7 @@ class DateSelectView(View):
         self.selected["hour"] = int(self.hour_select.values[0])
         await self.update_message(interaction)
 
-    async def update_message(self, interaction):
+    async def update_message(self, interaction: discord.Interaction):
         y = self.selected["year"]
         m = self.selected["month"]
         d = self.selected["day"]
@@ -87,6 +91,7 @@ class DateSelectView(View):
             try:
                 dt = datetime(y, m, d, h)
                 content = f"Date sélectionnée complète : {dt.strftime('%d/%m/%Y %Hh')}"
+                # Ici tu peux enregistrer la date en base ou fichier si besoin
             except ValueError:
                 content = "Date invalide, merci de corriger."
 
@@ -112,7 +117,7 @@ class SetTournoiDate(commands.Cog):
     async def settournoidate(self, ctx: commands.Context):
         """Commande principale avec menus déroulants pour la date."""
         try:
-            view = DateSelectView(ctx)
+            view = DateSelectView(self.bot)
             await ctx.send("🗓️ Choisis la date du prochain tournoi :", view=view)
         except Exception as e:
             print(f"[ERREUR settournoidate] {e}")
