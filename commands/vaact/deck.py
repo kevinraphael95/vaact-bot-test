@@ -27,23 +27,29 @@ def load_deck_data():
 # 🎛️ UI — Sélection de saison et duelliste
 # ────────────────────────────────────────────────────────────────────────────────
 class DeckSelectView(View):
-    def __init__(self, bot, deck_data, saison=None):
+    def __init__(self, bot, deck_data, saison=None, duelliste=None):
         super().__init__(timeout=300)
         self.bot = bot
         self.deck_data = deck_data
         self.saison = saison or list(deck_data.keys())[0]
+        self.duelliste = duelliste
         self.add_item(SaisonSelect(self))
         self.add_item(DuellisteSelect(self))
 
 class SaisonSelect(Select):
     def __init__(self, parent_view: DeckSelectView):
         self.parent_view = parent_view
-        options = [discord.SelectOption(label=s, value=s) for s in self.parent_view.deck_data]
+        options = [
+            discord.SelectOption(label=s, value=s, default=(s == self.parent_view.saison))
+            for s in self.parent_view.deck_data
+        ]
         super().__init__(placeholder="📅 Choisis une saison", options=options)
 
     async def callback(self, interaction: discord.Interaction):
         saison = self.values[0]
-        self.parent_view.saison = saison
+        if saison == self.parent_view.saison:
+            await interaction.response.defer()
+            return
         new_view = DeckSelectView(self.parent_view.bot, self.parent_view.deck_data, saison)
         await interaction.response.edit_message(
             content=f"🎴 Saison choisie : **{saison}**\nSélectionne un duelliste :",
@@ -55,12 +61,19 @@ class DuellisteSelect(Select):
     def __init__(self, parent_view: DeckSelectView):
         self.parent_view = parent_view
         duellistes = list(self.parent_view.deck_data[self.parent_view.saison].keys())
-        options = [discord.SelectOption(label=d, value=d) for d in duellistes]
+        options = [
+            discord.SelectOption(label=d, value=d, default=(d == self.parent_view.duelliste))
+            for d in duellistes
+        ]
         super().__init__(placeholder="👤 Choisis un duelliste", options=options)
 
     async def callback(self, interaction: discord.Interaction):
         saison = self.parent_view.saison
         duelliste = self.values[0]
+        if duelliste == self.parent_view.duelliste:
+            await interaction.response.defer()
+            return
+
         infos = self.parent_view.deck_data[saison][duelliste]
 
         deck_data = infos.get("deck", "❌ Aucun deck trouvé.")
@@ -79,7 +92,7 @@ class DuellisteSelect(Select):
         await interaction.response.edit_message(
             content=f"🎴 Saison choisie : **{saison}**\nSélectionne un duelliste :",
             embed=embed,
-            view=DeckSelectView(self.parent_view.bot, self.parent_view.deck_data, saison)
+            view=DeckSelectView(self.parent_view.bot, self.parent_view.deck_data, saison, duelliste)
         )
 
 # ────────────────────────────────────────────────────────────────────────────────
