@@ -1,17 +1,39 @@
 # ────────────────────────────────────────────────────────────────────────────────
 # 📁 ygo/carte.py — Commande !carte
-# ────────────────────────────────────────────────────────────────────────────────
-# Ce module permet de rechercher et afficher les détails d’une carte Yu-Gi-Oh!
-# en utilisant l’API YGOPRODeck (en français).
+# Objectif : Rechercher une carte Yu-Gi-Oh! dans plusieurs langues via l'API YGOPRODeck
+# Catégorie : 🃏 Yu-Gi-Oh!
+# Accès : Public
 # ────────────────────────────────────────────────────────────────────────────────
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 📦 IMPORTS
 # ────────────────────────────────────────────────────────────────────────────────
-import discord                            # 📦 Outils de création d'embeds pour Discord
-from discord.ext import commands          # 🧩 Pour les commandes du bot
-import aiohttp                            # 🌐 Requêtes HTTP asynchrones
-import urllib.parse                       # 🔠 Encodage URL pour les noms de cartes
+import discord
+from discord.ext import commands
+import aiohttp
+import urllib.parse
+
+# ────────────────────────────────────────────────────────────────────────────────
+# 🔧 Fonction utilitaire pour suggestions si carte non trouvée
+# ────────────────────────────────────────────────────────────────────────────────
+async def chercher_suggestions(nom: str):
+    """Recherche jusqu'à 5 cartes proches en multilingue si la carte exacte est introuvable."""
+    suggestions = []
+    langues = {"fr": "🇫🇷", "en": "🇬🇧", "de": "🇩🇪", "it": "🇮🇹", "pt": "🇵🇹"}
+    nom_encode = urllib.parse.quote(nom)
+
+    async with aiohttp.ClientSession() as session:
+        for code, flag in langues.items():
+            url = f"https://db.ygoprodeck.com/api/v7/cardinfo.php?fname={nom_encode}&language={code}&num=5"
+            async with session.get(url) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    if "data" in data:
+                        for carte in data["data"]:
+                            suggestions.append((carte["name"], flag))
+                if len(suggestions) >= 5:
+                    break
+    return suggestions[:5]
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🧠 COG : Carte
@@ -19,11 +41,11 @@ import urllib.parse                       # 🔠 Encodage URL pour les noms de c
 class Carte(commands.Cog):
     """
     🔎 Cog contenant la commande !carte permettant de chercher une carte
-    Yu-Gi-Oh! en langue française via l'API YGOPRODeck.
+    Yu-Gi-Oh! dans plusieurs langues via l'API YGOPRODeck.
     """
 
     def __init__(self, bot: commands.Bot):
-        self.bot = bot  # 🔌 Stocke l’instance du bot
+        self.bot = bot
 
     # ────────────────────────────────────────────────────────────────────────────
     # 🔹 COMMANDE : !carte / !card
@@ -31,7 +53,7 @@ class Carte(commands.Cog):
     @commands.command(
         name="carte",
         aliases=["card"],
-        help="📄 Affiche les infos d’une carte Yu-Gi-Oh! en français."
+        help="📄 Affiche les infos d’une carte Yu-Gi-Oh! (FR, EN, DE, IT, PT)."
     )
     async def carte(self, ctx: commands.Context, *, nom: str):
         """
@@ -39,45 +61,37 @@ class Carte(commands.Cog):
         Recherche une carte Yu-Gi-Oh! par son nom (exact), et affiche ses infos.
         """
 
-        # 1️⃣ Encodage du nom de la carte pour l’URL (ex : "Dragon Blanc" → "Dragon%20Blanc")
         nom_encode = urllib.parse.quote(nom)
-
-        # 2️⃣ Construction de l’URL vers l’API YGOPRODeck (langue = fr)
         url = f"https://db.ygoprodeck.com/api/v7/cardinfo.php?name={nom_encode}&language=fr"
 
         try:
-            # 3️⃣ Envoi de la requête asynchrone à l’API
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as resp:
-                    # ❌ Si l’API ne répond pas correctement
                     if resp.status != 200:
-                        await ctx.send("🚨 Erreur : Impossible de récupérer les données depuis l’API.")
+                        await ctx.send("🚨 Impossible de contacter l’API.")
                         return
                     data = await resp.json()
 
-            # 4️⃣ Vérifie si la carte existe dans les données retournées
             if "data" not in data:
-                await ctx.send("❌ Carte introuvable. Vérifie l’orthographe exacte.")
+                suggestions = await chercher_suggestions(nom)
+                if suggestions:
+                    suggestion_txt = "\n".join(f"{flag} **{name}**" for name, flag in suggestions)
+                    await ctx.send(
+                        f"❌ Carte introuvable en français. Voici quelques suggestions proches :\n{suggestion_txt}"
+                    )
+                else:
+                    await ctx.send("❌ Aucune carte trouvée. Vérifie l’orthographe ou essaie un autre nom.")
                 return
 
-            # 5️⃣ Récupère la première carte trouvée dans le résultat
             carte = data["data"][0]
-
-            # ────────────────────────────────────────────────────────────────────
-            # 🎨 CRÉATION DE L'EMBED — Informations de la carte
-            # ────────────────────────────────────────────────────────────────────
             embed = discord.Embed(
-                title=carte.get("name", "Carte inconnue"),  # 🔠 Nom de la carte
-                description=carte.get("desc", "Pas de description disponible."),  # 📜 Texte d'effet
-                color=discord.Color.red()  # 🎨 Couleur thématique Yu-Gi-Oh!
+                title=carte.get("name", "Carte inconnue"),
+                description=carte.get("desc", "Pas de description disponible."),
+                color=discord.Color.red()
             )
 
-            # 🔬 Type général (Magie, Monstre, Piège, etc.)
             embed.add_field(name="🧪 Type", value=carte.get("type", "?"), inline=True)
 
-            # ────────────────────────────────────────────────────────────────────
-            # 🧟 SI C’EST UN MONSTRE : Ajouter ATK/DEF/Niveau/Attribut/Race
-            # ────────────────────────────────────────────────────────────────────
             if carte.get("type", "").lower().startswith("monstre"):
                 atk = carte.get("atk", "?")
                 defe = carte.get("def", "?")
@@ -90,19 +104,13 @@ class Carte(commands.Cog):
                 embed.add_field(name="🌪️ Attribut", value=attr, inline=True)
                 embed.add_field(name="👹 Race", value=race, inline=True)
 
-            # 🖼️ Image de la carte
             embed.set_thumbnail(url=carte["card_images"][0]["image_url"])
-
-            # 📤 Envoi du message embed dans le salon
             await ctx.send(embed=embed)
 
         except Exception as e:
             print(f"[ERREUR CARTE] {e}")
             await ctx.send("💥 Une erreur est survenue lors de la recherche de la carte.")
 
-    # ────────────────────────────────────────────────────────────────────────────
-    # 🏷️ CATÉGORIE personnalisée pour !help
-    # ────────────────────────────────────────────────────────────────────────────
     def cog_load(self):
         self.carte.category = "🃏 Yu-Gi-Oh!"
 
@@ -110,15 +118,8 @@ class Carte(commands.Cog):
 # ⚙️ SETUP DU COG
 # ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    """
-    🔁 Fonction appelée lors du chargement du cog.
-    Elle ajoute le cog et définit une catégorie visible dans !help.
-    """
     cog = Carte(bot)
-
-    # 🗂️ Ajout d'une catégorie à toutes les commandes du cog
     for command in cog.get_commands():
         command.category = "🃏 Yu-Gi-Oh!"
-
     await bot.add_cog(cog)
     print("✅ Cog chargé : Carte (catégorie = 🃏 Yu-Gi-Oh!)")
