@@ -1,109 +1,258 @@
 {
-
-
-  ### TERMES GENERIQUES
-  
-  "Invocation": {
-    "definition": "Action de faire apparaître une carte sur le terrain.",
-    "synonymes": ["Summon"]
+  "ADVANTAGE": {
+    "definition": "Terme générique désignant une ressource ou une position supérieure à l'adversaire (main, terrain, cimetière).",
+    "synonymes": ["Card Advantage", "Field Advantage", "Quality Advantage"]
   },
-  "Deck": "Le paquet de cartes que le joueur utilise pour jouer.",
-  "Cimetière": {
-    "definition": "Zone où vont les cartes une fois utilisées ou détruites.",
-    "synonymes": ["Graveyard"]
+  "AGGRO": {
+    "definition": "Style de deck agressif visant à infliger des dégâts rapidement en submergeant l'adversaire.",
+    "synonymes": ["Deck agressif"]
   },
-  "Effet": "Capacité spéciale d'une carte qui peut influencer la partie.",
-  "Tour": "Unité de jeu comprenant la phase de pioche, de main, de bataille, etc.",
-  "Monstre": {
-    "definition": "Carte utilisée pour attaquer ou défendre.",
-    "synonymes": ["Créature"]
+  "ANTI-MÉTA": {
+    "definition": "Deck conçu pour contrer les decks les plus populaires du métagame.",
+    "synonymes": ["Anti-meta"]
   },
-  "Magie": {
-    "definition": "Carte jouable depuis la main ou posée, ayant un effet spécifique.",
-    "synonymes": ["Sort", "Spell"]
+  "ARCHÉTYPE": {
+    "definition": "Ensemble de cartes partageant un nom, une mécanique ou un style de jeu spécifique.",
+    "synonymes": []
   },
-  "Piège": {
-    "definition": "Carte activable en réponse à des actions adverses.",
-    "synonymes": ["Trap"]
+  "AUTO-PILOT": {
+    "definition": "Deck dont les lignes de jeu sont simples et peu flexibles, souvent linéaires.",
+    "synonymes": []
   },
-  "Points de vie": {
-    "definition": "Total de vie d’un joueur. Atteindre 0 entraîne la défaite.",
-    "synonymes": ["LP", "Life Points"]
+  "BACKROW": {
+    "definition": "Cartes posées face verso dans la zone magie/piège.",
+    "synonymes": ["Zone arrière", "Magies/Pièges"]
   },
-  "Invocation Normale": {
-    "definition": "Invocation de base autorisée une fois par tour.",
-    "synonymes": ["Normal Summon"]
+  "BAN-LIST": {
+    "definition": "Liste officielle des cartes limitées ou interdites en tournoi.",
+    "synonymes": ["Forbidden & Limited List"]
   },
-  "Invocation Spéciale": {
-    "definition": "Invocation via un effet ou condition spéciale, sans limite de nombre.",
-    "synonymes": ["Special Summon"]
+  "BEATSTICK": {
+    "definition": "Monstre avec une haute ATK utilisé principalement pour attaquer.",
+    "synonymes": []
   },
-  "Fusion": {
-    "definition": "Type d'invocation spéciale en utilisant des matériaux via Polymérisation.",
-    "synonymes": ["Fusion Summon"]
+  "BKSS": {
+    "definition": "Abréviation de 'Because Konami Said So', utilisée quand une interaction semble illogique.",
+    "synonymes": []
   },
-  "Synchro": {
-    "definition": "Invocation spéciale utilisant un Syntoniseur et d'autres monstres.",
-    "synonymes": ["Synchro Summon"]
+  "BROKEN": {
+    "definition": "Carte ou combo jugé trop puissant, souvent considéré comme déséquilibré.",
+    "synonymes": ["OP", "Abusé"]
   },
-  "XYZ": {
-    "definition": "Invocation utilisant deux monstres de même niveau comme matériaux.",
-    "synonymes": ["Exceed", "Xyz Summon"]
+  "CA (CARD ADVANTAGE)": {
+    "definition": "Mesure le nombre de cartes nettes qu’un joueur gagne ou perd.",
+    "synonymes": ["Avantage de carte"]
   },
-  "Lien": {
-    "definition": "Invocation utilisant un ou plusieurs monstres pour invoquer un monstre Lien.",
-    "synonymes": ["Link Summon"]
+  "CHAIN LINK": {
+    "definition": "Ordre dans lequel les effets en chaîne sont résolus.",
+    "synonymes": ["Maillon de chaîne"]
   },
-  "Main": "Cartes que le joueur tient et peut utiliser selon les règles.",
-  "Phase de Pioche": "Début du tour où le joueur pioche une carte.",
-  "Phase de Bataille": "Phase où le joueur peut attaquer avec ses monstres.",
-  "Carte continue": "Carte Magie ou Piège dont l'effet reste actif sur le terrain.",
-  "Carte rapide": {
-    "definition": "Carte qui peut être activée durant le tour de l'adversaire.",
-    "synonymes": ["Quick-Play"]
+  "CHAÎNER": {
+    "definition": "Répondre à un effet par une activation ou un effet à vitesse appropriée.",
+    "synonymes": ["Activer en chaîne"]
   },
-  "Counter Trap": {
-    "definition": "Carte Piège capable d'annuler des effets ou actions, la plus rapide.",
-    "synonymes": ["Contre-piège"]
+  "CIBLER/TARGET": {
+    "definition": "Choisir une carte précise pour un effet.",
+    "synonymes": ["Target"]
   },
-  "Banish": {
-    "definition": "Action de retirer une carte du jeu.",
-    "synonymes": ["Retirer du jeu", "Remove from play"]
+  "CONTRÔLE (DECK)": {
+    "definition": "Deck visant à ralentir ou bloquer l’adversaire pour prendre le dessus.",
+    "synonymes": ["Deck contrôle"]
   },
-  "OTK": {
-    "definition": "Acronyme de One Turn Kill. Gagner en un seul tour.",
-    "synonymes": ["One Turn Kill"]
+  "CONTRÔLE/CONTROL": {
+    "definition": "Possession d'une carte sur le terrain.",
+    "synonymes": ["Avoir le contrôle"]
   },
-  "FTK": {
-    "definition": "Acronyme de First Turn Kill. Gagner avant que l'adversaire ne joue.",
-    "synonymes": ["First Turn Kill"]
+  "COÛT (D’ACTIVATION)/COST": {
+    "definition": "Ce qu’il faut payer ou faire pour activer un effet (ex: sacrifier, défausser).",
+    "synonymes": ["Cost"]
   },
-  "Deck de contrôle": {
-    "definition": "Stratégie visant à ralentir l'adversaire et gérer le terrain.",
-    "synonymes": ["Contrôle"]
+  "DÉFAUSSER/DISCARD": {
+    "definition": "Envoyer une carte de la main au cimetière.",
+    "synonymes": ["Discard"]
   },
-  "Deck combo": {
-    "definition": "Deck basé sur des enchaînements de cartes puissants.",
-    "synonymes": ["Combo"]
+  "DÉTACHER/DETACH": {
+    "definition": "Retirer un matériel XYZ pour activer un effet.",
+    "synonymes": ["Detach"]
   },
-  "Deck aggro": {
-    "definition": "Deck orienté sur des attaques rapides et agressives.",
-    "synonymes": ["Aggressif"]
+  "DÉTRUIRE/DESTROY": {
+    "definition": "Envoyer une carte au cimetière via un effet ou combat.",
+    "synonymes": ["Destroy"]
   },
-  "Tutor": {
-    "definition": "Carte ou effet permettant de chercher une carte spécifique dans le deck.",
-    "synonymes": ["Chercheur"]
+  "DÉVOILER/EXCAVATE": {
+    "definition": "Regarder les cartes du dessus du deck sans les piocher.",
+    "synonymes": ["Excaver"]
   },
-  "Brick": {
-    "definition": "Main de départ injouable ou très mauvaise.",
-    "synonymes": ["Main morte"]
+  "DRAFT": {
+    "definition": "Mode de jeu où les joueurs construisent un deck à partir de cartes tirées au hasard (souvent limitées).",
+    "synonymes": []
   },
-  "Handtrap": {
-    "definition": "Carte jouable depuis la main pendant le tour adverse.",
-    "synonymes": ["Interruption"]
+  "DROP": {
+    "definition": "Perdre un match ou se retirer du tournoi.",
+    "synonymes": []
+  },
+  "ENGINE": {
+    "definition": "Petit ensemble de cartes jouées pour apporter de la consistance ou des effets utiles.",
+    "synonymes": ["Moteur"]
+  },
+  "ERRATA": {
+    "definition": "Révision officielle du texte d'une carte.",
+    "synonymes": []
+  },
+  "FIELD ADVANTAGE": {
+    "definition": "Supériorité sur le terrain (plus de cartes, meilleures positions).",
+    "synonymes": []
+  },
+  "FLOODGATES": {
+    "definition": "Cartes qui empêchent certaines actions ou stratégies de l’adversaire.",
+    "synonymes": []
+  },
+  "HANDTRAP": {
+    "definition": "Effet pouvant être activé depuis la main en réponse à une action adverse.",
+    "synonymes": []
+  },
+  "IGNITION/TRIGGER": {
+    "definition": "Types d'effets : Ignition (activables pendant ton tour), Trigger (déclenchés automatiquement).",
+    "synonymes": []
+  },
+  "INVOCATION INHÉRENTE": {
+    "definition": "Invocation qui ne passe pas par un effet (ex: Invocation Spéciale par règle).",
+    "synonymes": []
+  },
+  "INVOCATION NON INHÉRENTE": {
+    "definition": "Invocation qui passe par l’activation d’un effet.",
+    "synonymes": []
+  },
+  "LINGERING/EFFET PERSISTANT": {
+    "definition": "Effet qui continue d’agir même après la résolution, souvent jusqu’à la fin du tour.",
+    "synonymes": ["Effet persistant"]
+  },
+  "LIMBO": {
+    "definition": "État temporaire d'une carte en attente de résolution (ex: carte bannie temporairement).",
+    "synonymes": []
+  },
+  "MATCH-UP": {
+    "definition": "Opposition entre deux types de decks, leurs interactions et forces/faiblesses respectives.",
+    "synonymes": []
+  },
+  "MÉTAGAME": {
+    "definition": "Ensemble des decks dominants à un moment donné dans un format.",
+    "synonymes": ["Meta"]
+  },
+  "MEULER (MILL)": {
+    "definition": "Envoyer des cartes du deck au cimetière sans les piocher.",
+    "synonymes": ["Mill"]
+  },
+  "MIRROR MATCH": {
+    "definition": "Duel entre deux joueurs utilisant le même deck ou archétype.",
+    "synonymes": []
+  },
+  "MISSPLAY": {
+    "definition": "Erreur de jeu ou décision sous-optimale.",
+    "synonymes": []
+  },
+  "NOMI": {
+    "definition": "Monstre ne pouvant être invoqué que par des conditions spécifiques.",
+    "synonymes": []
+  },
+  "OUTSIDER / ROGUE DECK": {
+    "definition": "Decks peu joués mais capables de battre les decks du méta.",
+    "synonymes": ["Rogue deck"]
+  },
+  "PENDULUM (CARTES MONSTRE & INVOCATION)": {
+    "definition": "Mécanique spécifique permettant d’invoquer plusieurs monstres depuis la main ou l’extra deck.",
+    "synonymes": ["Pendule"]
+  },
+  "PILE SHUFFLE/PICK SHUFFLE": {
+    "definition": "Méthode de mélange du deck en piles, utilisée pour bien brasser.",
+    "synonymes": []
+  },
+  "POSSESSION": {
+    "definition": "Carte contrôlée par un joueur, même si elle appartient à l’adversaire.",
+    "synonymes": []
+  },
+  "QUALITY ADVANTAGE (QA)": {
+    "definition": "Avoir de meilleures cartes en main ou sur le terrain que l’adversaire.",
+    "synonymes": ["QA"]
+  },
+  "QUITTER LE TERRAIN": {
+    "definition": "Moment où une carte part du terrain, activant potentiellement des effets.",
+    "synonymes": ["Leave the field"]
+  },
+  "REPLAY": {
+    "definition": "Situation où une attaque est annulée et peut être relancée après une modification d’état.",
+    "synonymes": []
+  },
+  "SEMI-NOMI": {
+    "definition": "Monstre Spécial invoqué uniquement par une méthode précisée, mais pouvant être réinvoqué ensuite.",
+    "synonymes": []
+  },
+  "SLOWPLAY": {
+    "definition": "Jouer lentement de manière excessive, volontairement ou non.",
+    "synonymes": []
+  },
+  "SMOKESCREEN": {
+    "definition": "Changer radicalement de stratégie entre les manches via la side deck.",
+    "synonymes": []
+  },
+  "SNEAK PEEK": {
+    "definition": "Événement promotionnel où de nouveaux boosters sont ouverts avant la sortie officielle.",
+    "synonymes": []
+  },
+  "SPELL SPEED": {
+    "definition": "Mesure de priorité entre les effets (1 = normal, 2 = rapide, 3 = contre).",
+    "synonymes": []
+  },
+  "SPLASH": {
+    "definition": "Insérer un petit moteur ou carte d’un autre deck dans le sien.",
+    "synonymes": []
+  },
+  "STACK": {
+    "definition": "Ordre dans lequel les effets se résolvent (chaîne).",
+    "synonymes": ["Pile"]
+  },
+  "STALLING": {
+    "definition": "Tactique visant à ralentir le jeu pour gagner du temps ou attendre une bonne main.",
+    "synonymes": []
+  },
+  "STAPLE": {
+    "definition": "Carte générique puissante jouée dans de nombreux decks.",
+    "synonymes": []
+  },
+  "STUN": {
+    "definition": "Stratégie visant à empêcher l’adversaire de jouer.",
+    "synonymes": []
+  },
+  "SWARM/SPAM": {
+    "definition": "Invoquer un grand nombre de monstres rapidement.",
+    "synonymes": ["Spam"]
+  },
+  "TECH(CARD)": {
+    "definition": "Carte jouée pour contrer un deck précis ou surprise dans le méta.",
+    "synonymes": ["Tech"]
+  },
+  "THINNING / DECK THINNER": {
+    "definition": "Réduire le nombre de cartes dans le deck pour augmenter les chances de piocher ce qu’on veut.",
+    "synonymes": []
+  },
+  "TIERS": {
+    "definition": "Classement des decks selon leur puissance et leur représentation.",
+    "synonymes": ["Tier list"]
+  },
+  "TOOLBOX": {
+    "definition": "Deck ayant accès à un grand nombre d’options selon la situation.",
+    "synonymes": []
+  },
+  "TOP DECK": {
+    "definition": "Carte piochée au bon moment, souvent cruciale.",
+    "synonymes": []
+  },
+  "TURBO": {
+    "definition": "Deck orienté vers la rapidité d’invocation ou d’accès à une combo.",
+    "synonymes": []
+  },
+  "TUTO/TUTORISER": {
+    "definition": "Aller chercher une carte spécifique depuis le deck.",
+    "synonymes": ["Tutor", "Tutorer"]
   }
-
-
-
-  
 }
