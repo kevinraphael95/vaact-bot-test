@@ -16,7 +16,7 @@ import os
 from supabase import create_client, Client  # pip install supabase
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 📂 Configuration Supabase (à configurer en variables d'environnement)
+# 📂 Configuration Supabase
 # ────────────────────────────────────────────────────────────────────────────────
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -26,6 +26,8 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # 🎛️ UI — Vue interactive pour sélectionner la date
 # ────────────────────────────────────────────────────────────────────────────────
 class DateSelectView(View):
+    """Vue pour sélectionner année, mois, jour et heure via menus déroulants."""
+
     def __init__(self, bot, ctx):
         super().__init__(timeout=180)
         self.bot = bot
@@ -38,10 +40,26 @@ class DateSelectView(View):
         days = [str(d) for d in range(1, 32)]
         hours = [str(h) for h in range(0, 24)]
 
-        self.year_select = Select(placeholder="Année", options=[discord.SelectOption(label=y, value=y) for y in years], custom_id="year")
-        self.month_select = Select(placeholder="Mois", options=[discord.SelectOption(label=m, value=m) for m in months], custom_id="month")
-        self.day_select = Select(placeholder="Jour", options=[discord.SelectOption(label=d, value=d) for d in days], custom_id="day")
-        self.hour_select = Select(placeholder="Heure (24h)", options=[discord.SelectOption(label=h, value=h) for h in hours], custom_id="hour")
+        self.year_select = Select(
+            placeholder="Année",
+            options=[discord.SelectOption(label=y, value=y) for y in years],
+            custom_id="year"
+        )
+        self.month_select = Select(
+            placeholder="Mois",
+            options=[discord.SelectOption(label=m, value=m) for m in months],
+            custom_id="month"
+        )
+        self.day_select = Select(
+            placeholder="Jour",
+            options=[discord.SelectOption(label=d, value=d) for d in days],
+            custom_id="day"
+        )
+        self.hour_select = Select(
+            placeholder="Heure (24h)",
+            options=[discord.SelectOption(label=h, value=h) for h in hours],
+            custom_id="hour"
+        )
 
         self.year_select.callback = self.select_year
         self.month_select.callback = self.select_month
