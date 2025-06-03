@@ -51,26 +51,27 @@ class VocabulaireCommand(commands.Cog):
             return
 
         definitions = []
-            for terme, data in vocabulaire.items():
-                definition = data.get("definition") if isinstance(data, dict) else data
-                synonymes = data.get("synonymes", []) if isinstance(data, dict) else []
-                noms_possibles = [terme] + synonymes
+        for terme, data in vocabulaire.items():
+            definition = data.get("definition") if isinstance(data, dict) else data
+            synonymes = data.get("synonymes", []) if isinstance(data, dict) else []
+            noms_possibles = [terme] + synonymes
 
-                if mot_cle:
-                    if any(mot_cle.lower() in mot.lower() for mot in noms_possibles) or mot_cle.lower() in definition.lower():
-                        definitions.append((terme, definition))
-                else:
+            if mot_cle:
+                if any(mot_cle.lower() in mot.lower() for mot in noms_possibles) or (definition and mot_cle.lower() in definition.lower()):
                     definitions.append((terme, definition))
-
+            else:
+                definitions.append((terme, definition))
 
         if not definitions:
             await ctx.send("❌ Aucun terme trouvé correspondant à ta recherche.")
             return
 
-        # Pagination
-        definitions.sort(key=lambda x: x[1].lower())
+        # Tri alphabétique sur les termes
+        definitions.sort(key=lambda x: x[0].lower())
+
         pages = []
         max_par_page = 5
+        total_pages = (len(definitions) - 1) // max_par_page + 1
 
         for i in range(0, len(definitions), max_par_page):
             embed = discord.Embed(
@@ -81,11 +82,11 @@ class VocabulaireCommand(commands.Cog):
             for terme, defi in definitions[i:i + max_par_page]:
                 embed.add_field(
                     name=f"🔹 {terme}",
-                    value=defi,
+                    value=defi or "Aucune définition disponible.",
                     inline=False
                 )
 
-            embed.set_footer(text=f"📄 Page {len(pages) + 1}/{(len(definitions) - 1) // max_par_page + 1}")
+            embed.set_footer(text=f"📄 Page {len(pages) + 1}/{total_pages}")
             pages.append(embed)
 
         message = await ctx.send(embed=pages[0])
@@ -115,8 +116,8 @@ class VocabulaireCommand(commands.Cog):
 
                 await message.edit(embed=pages[index])
 
-            except:
-                break  # Timeout
+            except Exception:
+                break  # Timeout ou erreur
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔌 Setup du Cog
