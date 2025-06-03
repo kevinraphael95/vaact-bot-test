@@ -18,6 +18,7 @@ import os
 # ────────────────────────────────────────────────────────────────────────────────
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SHEET_CSV_URL = os.getenv("SHEET_CSV_URL")
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔔 Emoji de rappel
@@ -73,7 +74,16 @@ class TournoiCommand(commands.Cog):
 
         embed = discord.Embed(
             title="📅 Prochain tournoi",
-            description=f"Le prochain tournoi aura lieu le **{prochaine_date}**.",
+
+            description=(
+                f"📆 **Date du prochain tournoi** :\n"
+                f"➡️ **{prochaine_date}**\n\n"
+                f"📋 **Decks libres et pris** :\n"
+                f"[Clique ici pour voir la liste]({SHEET_CSV_URL})"
+            ),
+
+
+            
             color=discord.Color.gold()
         )
         embed.set_footer(text=f"Réagis à ce message avec {EMOJI_RAPPEL} pour recevoir un rappel 3 jours avant.")
