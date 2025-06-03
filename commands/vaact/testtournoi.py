@@ -12,9 +12,9 @@ import pytz
 from supabase_client import supabase
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 🧠 Cog principal
+# 🧠 Cog secondaire pour testtournoi
 # ────────────────────────────────────────────────────────────────────────────────
-class TournoiAdmin(commands.Cog):
+class TestTournoiAdmin(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -120,4 +120,4 @@ async def setup(bot: commands.Bot):
         if not hasattr(command, "category"):
             command.category = "VAACT"
     await bot.add_cog(cog)
-    print("✅ Cog chargé : TournoiAdmin (catégorie = VAACT)")
+    print("✅ Cog chargé : TestTournoiAdmin (catégorie = VAACT)")
