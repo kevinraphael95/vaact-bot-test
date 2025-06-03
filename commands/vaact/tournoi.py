@@ -52,7 +52,7 @@ class TournoiCommand(commands.Cog):
 
     @commands.command(
         name="tournoi",
-        help="📅 Affiche la date du prochain tournoi.",
+        help="📅 Affiche la date du prochain tournoi VAACT.",
         description="Récupère la date du tournoi depuis Supabase et permet de s’inscrire au rappel."
     )
     async def tournoi(self, ctx: commands.Context):
@@ -95,7 +95,7 @@ class TournoiCommand(commands.Cog):
         embed = discord.Embed(
             title="📅 Prochain tournoi",
             description=(
-                f"📆 **Date du prochain tournoi** :\n"
+                f"📆 **Date du prochain tournoi VAACT** :\n"
                 f"➡️ **{date_formatee}**\n\n"
                 f"📋 **Decks libres et pris** :\n"
                 f"[Clique ici pour voir la liste]({SHEET_CSV_URL})"
