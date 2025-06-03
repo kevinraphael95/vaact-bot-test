@@ -12,6 +12,19 @@ import discord
 from discord.ext import commands
 import aiohttp
 import os
+from datetime import datetime
+import locale
+
+# ────────────────────────────────────────────────────────────────────────────────
+# 🌍 Configuration régionale
+# ────────────────────────────────────────────────────────────────────────────────
+try:
+    locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')  # Unix/Linux/Mac
+except locale.Error:
+    try:
+        locale.setlocale(locale.LC_TIME, 'fr_FR')  # Windows
+    except locale.Error:
+        pass  # fallback manuel plus bas
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔐 Configuration Supabase
@@ -70,20 +83,23 @@ class TournoiCommand(commands.Cog):
             await ctx.send("📭 Aucun tournoi prévu pour le moment.")
             return
 
-        prochaine_date = data[0]["prochaine_date"]
+        # ─── Formatage de la date ────────────────────────────────────────────────
+        iso_date = data[0]["prochaine_date"]
+        try:
+            dt_obj = datetime.fromisoformat(iso_date)
+            date_formatee = dt_obj.strftime('%d %B %Y à %Hh%M')
+        except Exception:
+            date_formatee = iso_date  # fallback brut si parsing échoue
 
+        # ─── Construction de l'embed ─────────────────────────────────────────────
         embed = discord.Embed(
             title="📅 Prochain tournoi",
-
             description=(
                 f"📆 **Date du prochain tournoi** :\n"
-                f"➡️ **{prochaine_date}**\n\n"
+                f"➡️ **{date_formatee}**\n\n"
                 f"📋 **Decks libres et pris** :\n"
                 f"[Clique ici pour voir la liste]({SHEET_CSV_URL})"
             ),
-
-
-            
             color=discord.Color.gold()
         )
         embed.set_footer(text=f"Réagis à ce message avec {EMOJI_RAPPEL} pour recevoir un rappel 3 jours avant.")
@@ -98,7 +114,7 @@ class TournoiCommand(commands.Cog):
                 and not user.bot
             )
 
-        # Écoute d'une réaction pendant 15 minutes
+        # ─── Attente de réactions pendant 15 minutes ─────────────────────────────
         while True:
             try:
                 reaction, user = await self.bot.wait_for("reaction_add", timeout=900.0, check=check)
