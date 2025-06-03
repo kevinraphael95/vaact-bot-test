@@ -115,7 +115,7 @@ class ValiderButton(discord.ui.Button):
 # 🔌 Setup du Cog
 # ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    cog = TournoiAdmin(bot)
+    cog = TestTournoiAdmin(bot)
     for command in cog.get_commands():
         if not hasattr(command, "category"):
             command.category = "VAACT"
