@@ -73,7 +73,7 @@ class Question(commands.Cog):
     # ────────────────────────────────────────────────────────────────
     @commands.command(
         name="question",
-        aliases=["q", "qcm"],
+        aliases=["q"],
         help="🧠 Devine une carte Yu-Gi-Oh à partir de sa description."
     )
     @commands.cooldown(rate=1, per=8, type=commands.BucketType.user)
