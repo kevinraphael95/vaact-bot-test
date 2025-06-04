@@ -187,7 +187,7 @@ class Question(commands.Cog):
                 value="\n".join(f"{REACTIONS[i]} {name}" for i, name in enumerate(all_choices)),
                 inline=False
             )
-            embed.set_footer(text="Réagis avec l'emoji correspondant à ta réponse 👇. Fais questionscore pour voir ton score et questiontopscore pour voir les meilleurs score de tous les joueurs.")
+            embed.set_footer(text="Réagis avec l'emoji correspondant à ta réponse 👇\n Fais questionscore pour voir ton score et questiontopscore pour voir les meilleurs score de tous les joueurs.")
 
             # Envoi de l'embed + réactions
             msg = await ctx.send(embed=embed)
