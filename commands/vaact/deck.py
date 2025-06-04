@@ -43,7 +43,7 @@ class SaisonSelect(Select):
             discord.SelectOption(label=s, value=s, default=(s == self.parent_view.saison))
             for s in self.parent_view.deck_data
         ]
-        super().__init__(placeholder="📅 Choisis une saison", options=options)
+        super().__init__(placeholder="📅 Choisis une saison du tournoi VAACT", options=options)
 
     async def callback(self, interaction: discord.Interaction):
         saison = self.values[0]
@@ -52,7 +52,7 @@ class SaisonSelect(Select):
             return
         new_view = DeckSelectView(self.parent_view.bot, self.parent_view.deck_data, saison)
         await interaction.response.edit_message(
-            content=f"🎴 Saison choisie : **{saison}**\nSélectionne un duelliste :",
+            content=f"🎴 Saison choisie : **{saison}**\nSélectionne un deck :",
             view=new_view,
             embed=None
         )
@@ -65,7 +65,7 @@ class DuellisteSelect(Select):
             discord.SelectOption(label=d, value=d, default=(d == self.parent_view.duelliste))
             for d in duellistes
         ]
-        super().__init__(placeholder="👤 Choisis un duelliste", options=options)
+        super().__init__(placeholder="👤 Choisis un deck", options=options)
 
     async def callback(self, interaction: discord.Interaction):
         saison = self.parent_view.saison
