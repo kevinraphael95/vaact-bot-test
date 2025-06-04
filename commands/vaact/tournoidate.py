@@ -180,7 +180,8 @@ class SetTournoiDate(commands.Cog):
         self.bot = bot
 
     @commands.command(
-        name="settournoidate",
+        name="tournoidate",
+        aliases=["settournoi"],
         help="Définir la date du tournoi (admin).",
         description="Affiche un menu interactif pour choisir la date du prochain tournoi."
     )
