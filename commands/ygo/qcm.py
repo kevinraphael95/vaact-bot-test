@@ -72,8 +72,8 @@ class Question(commands.Cog):
     # Deviner une carte à partir de sa description censurée
     # ────────────────────────────────────────────────────────────────
     @commands.command(
-        name="question",
-        aliases=["q"],
+        name="qcm",
+        aliases=["q", "question"],
         help="🧠 Devine une carte Yu-Gi-Oh à partir de sa description."
     )
     @commands.cooldown(rate=1, per=8, type=commands.BucketType.user)
