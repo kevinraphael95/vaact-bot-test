@@ -28,7 +28,7 @@ class Streak(commands.Cog):
     # 📈 Commande !streak — Affiche la progression de l'utilisateur
     # ────────────────────────────────────────────────────────────────────────────
     @commands.command(
-        name="qcmbest",                           # 🔤 Nom principal de la commande
+        name="questionbest",                           # 🔤 Nom principal de la commande
         aliases=["qs", "streak", "questionstreak"],      # 🪪 Alias secondaires : !qs fonctionne aussi
         help="Affiche ta série de bonnes réponses."      # 📚 Aide courte
     )
