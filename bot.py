@@ -83,7 +83,7 @@ async def load_commands():
 @bot.event
 async def on_ready():
     print(f"✅ Connecté en tant que {bot.user.name}")
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="YuGiOh!!!!"))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="Duel Monsters"))
 
     try:
         # Forcer le verrou avec la nouvelle instance à chaque redémarrage
