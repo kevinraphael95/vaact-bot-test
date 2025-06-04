@@ -30,7 +30,6 @@ class Carte(commands.Cog):
         help="🔍 Rechercher une carte Yu-Gi-Oh! dans plusieurs langues.",
         description="Affiche les infos d’une carte Yu-Gi-Oh! à partir de son nom (FR, EN, DE, IT, PT)."
     )
-    @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)
     async def carte(self, ctx: commands.Context, *, nom: str):
         """Commande principale pour chercher une carte Yu-Gi-Oh!"""
 
@@ -43,29 +42,30 @@ class Carte(commands.Cog):
 
         try:
             async with aiohttp.ClientSession() as session:
-                url = f"https://db.ygoprodeck.com/api/v7/cardinfo.php?fname={nom_encode}"
-                async with session.get(url) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        if "data" in data:
-                            for card in data["data"]:
-                                if nom.lower() in card.get("name", "").lower():
-                                    langue_detectee = card.get("language", "?")
-                                    if langue_detectee not in lang_codes:
-                                        langue_detectee = "en"
-                                    carte = card
-                                    nom_corrige = card.get("name", nom)
-                                    break
-                    else:
-                        # Pas de message en cas d'erreur HTTP, on ignore
-                        return
+                for code in lang_codes:
+                    url = f"https://db.ygoprodeck.com/api/v7/cardinfo.php?name={nom_encode}&language={code}"
+                    async with session.get(url) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            if "data" in data:
+                                carte = data["data"][0]
+                                langue_detectee = code
+                                nom_corrige = carte.get("name", nom)
+                                break
+                        elif resp.status == 400:
+                            # Carte non trouvée dans cette langue, on continue
+                            continue
+                        else:
+                            # Autre erreur API
+                            await ctx.send("🚨 Erreur : Impossible de récupérer les données depuis l’API.")
+                            return
         except Exception as e:
             print(f"[ERREUR commande !carte] {e}")
-            # Pas de message pour éviter spam, on log seulement
+            await ctx.send("🚨 Erreur inattendue lors de la récupération des données.")
             return
 
         if not carte:
-            # Aucune carte trouvée => on ne répond pas
+            await ctx.send(f"❌ Carte introuvable dans toutes les langues. Vérifie l’orthographe exacte : `{nom}`.")
             return
 
         if nom_corrige.lower() != nom.lower():
