@@ -1,5 +1,5 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# 📌 settournoidate.py — Commande interactive !settournoidate
+# 📌 TournoiDate.py — Commande interactive !TournoiDate
 # Objectif : Modifier la date du tournoi enregistrée sur Supabase via menus déroulants
 # Catégorie : VAACT
 # Accès : Modérateur
@@ -171,9 +171,9 @@ class DateSelectView(View):
 # ────────────────────────────────────────────────────────────────────────────────
 # 🧠 Cog principal
 # ────────────────────────────────────────────────────────────────────────────────
-class SetTournoiDate(commands.Cog):
+class TournoiDate(commands.Cog):
     """
-    Commande !settournoidate — Permet à un modérateur de définir la date du tournoi via menus déroulants
+    Commande !TournoiDate — Permet à un modérateur de définir la date du tournoi via menus déroulants
     """
 
     def __init__(self, bot: commands.Bot):
@@ -186,20 +186,20 @@ class SetTournoiDate(commands.Cog):
         description="Affiche un menu interactif pour choisir la date du prochain tournoi."
     )
     @commands.has_permissions(administrator=True)
-    async def settournoidate(self, ctx: commands.Context):
+    async def TournoiDate(self, ctx: commands.Context):
         """Commande principale avec menus déroulants pour la date."""
         try:
             view = DateSelectView(self.bot, ctx)
             await ctx.send("🗓️ Choisis la date du prochain tournoi :", view=view)
         except Exception as e:
-            print(f"[ERREUR settournoidate] {e}")
+            print(f"[ERREUR TournoiDate] {e}")
             await ctx.send(f"❌ Une erreur est survenue : `{e}`")
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔌 Setup du Cog
 # ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    cog = SetTournoiDate(bot)
+    cog = TournoiDate(bot)
     for command in cog.get_commands():
         if not hasattr(command, "category"):
             command.category = "VAACT"
