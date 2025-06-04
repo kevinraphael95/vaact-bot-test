@@ -28,7 +28,7 @@ class TopQS(commands.Cog):
     # ────────────────────────────────────────────────────────────────────────────
     @commands.command(
         name="questiontopscore",                                     # Nom principal de la commande
-        aliases=["qts", "topqs", "topquestionstreak", "topquestionscore"],                    # Alias utilisables
+        aliases=["qst", "qstop"],                    # Alias utilisables
         help="Affiche le classement des meilleures séries de bonnes réponses."  # Aide courte
     )
     async def topqs(self, ctx: commands.Context):
