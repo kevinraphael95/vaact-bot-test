@@ -33,7 +33,7 @@ class Code(commands.Cog):
         try:
             embed = discord.Embed(
                 title="💻 Code source du bot",
-                description="[📂 Voir le dépôt GitHub](https://github.com/kevinraphael95/ygotest)",
+                description="[📂 Voir le dépôt GitHub](https://github.com/kevinraphael95/atem_discord_bot)",
                 color=discord.Color.blurple()
             )
             embed.set_footer(text="✨ Open-source, baby ! | Projet Yu Gi Oooooh !")
