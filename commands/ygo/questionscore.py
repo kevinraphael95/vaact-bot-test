@@ -29,7 +29,7 @@ class Streak(commands.Cog):
     # ────────────────────────────────────────────────────────────────────────────
     @commands.command(
         name="questionscore",                           # 🔤 Nom principal de la commande
-        aliases=["qs", "streak", "questionstreak"],      # 🪪 Alias secondaires : !qs fonctionne aussi
+        aliases=["qs", "questionstreak"],      # 🪪 Alias secondaires : !qs fonctionne aussi
         help="Affiche ta série de bonnes réponses."      # 📚 Aide courte
     )
     async def streak(self, ctx: commands.Context):
