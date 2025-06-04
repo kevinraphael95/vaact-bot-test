@@ -104,7 +104,7 @@ class Deck(commands.Cog):
 
     @commands.command(
         name="deck",
-        help="Affiche les decks d’un duelliste par saison.",
+        help="Affiche les decks du tournoi VAACT, organisés par saison.",
         description="Affiche une interface interactive pour choisir une saison et un duelliste."
     )
     async def deck(self, ctx: commands.Context):
