@@ -27,7 +27,7 @@ class TopQS(commands.Cog):
     # 📈 Commande !topqs — Top 10 meilleurs streaks
     # ────────────────────────────────────────────────────────────────────────────
     @commands.command(
-        name="questiontopscore",                                     # Nom principal de la commande
+        name="questionscoretop",                                     # Nom principal de la commande
         aliases=["qst", "qstop"],                    # Alias utilisables
         help="Affiche le classement des meilleures séries de bonnes réponses."  # Aide courte
     )
