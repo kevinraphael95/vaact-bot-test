@@ -1,0 +1,582 @@
+[
+  {
+    "question": "Quelle est la carte la plus puissante selon l'anime Yu-Gi-Oh! ?",
+    "choices": [
+      "Dragon Blanc aux Yeux Bleus",
+      "Exodia",
+      "Obelisk le Tourmenteur",
+      "Le Magicien Sombre"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Quel type de carte est un 'Piège' ?",
+    "choices": [
+      "Carte Monstre",
+      "Carte Magie",
+      "Carte piège activable",
+      "Carte Terrain"
+    ],
+    "answer": 2
+  },
+  {
+    "question": "Quelle est la couleur du cadre des cartes Magie ?",
+    "choices": [
+      "Vert",
+      "Rouge",
+      "Bleu",
+      "Jaune"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quel est le nom de l'arme de Yugi Muto dans l'anime ?",
+    "choices": [
+      "Excalibur",
+      "Le Magicien Sombre",
+      "Dragon Blanc aux Yeux Bleus",
+      "Puzzle du Millénium"
+    ],
+    "answer": 3
+  },
+  {
+    "question": "Quel monstre est la fusion du Magicien Sombre et de la Dame Harpie ?",
+    "choices": [
+      "Magicien des Ténèbres",
+      "Magicien du Chaos",
+      "Magicien du Chaos Suprême",
+      "Magicien Suprême"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Quel est le type de la carte 'Dragon Blanc aux Yeux Bleus' ?",
+    "choices": [
+      "Dragon",
+      "Guerrier",
+      "Magicien",
+      "Bête"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quelle est la rareté la plus élevée dans Yu-Gi-Oh! ?",
+    "choices": [
+      "Commun",
+      "Super Rare",
+      "Ultra Rare",
+      "Secret Rare"
+    ],
+    "answer": 3
+  },
+  {
+    "question": "Combien de cartes peut-on avoir dans un deck principal au minimum ?",
+    "choices": [
+      "30",
+      "40",
+      "50",
+      "60"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Quelle est la couleur du cadre des cartes Monstre ?",
+    "choices": [
+      "Bleu",
+      "Vert",
+      "Jaune",
+      "Rouge"
+    ],
+    "answer": 2
+  },
+  {
+    "question": "Qu’est-ce qu’un 'Effet' dans une carte monstre ?",
+    "choices": [
+      "Un pouvoir spécial activable",
+      "Le niveau du monstre",
+      "Sa puissance d’attaque",
+      "Son type"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Combien de cartes maximum dans un side deck ?",
+    "choices": [
+      "10",
+      "15",
+      "20",
+      "25"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Quelle est la zone spéciale pour invoquer les monstres Xyz ?",
+    "choices": [
+      "Extra Deck",
+      "Main Deck",
+      "Side Deck",
+      "Cimetière"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quel est le nom du créateur de Yu-Gi-Oh! ?",
+    "choices": [
+      "Satoshi Tajiri",
+      "Kazuki Takahashi",
+      "Masashi Kishimoto",
+      "Tite Kubo"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Comment s’appelle le jeu de cartes dans Yu-Gi-Oh! ?",
+    "choices": [
+      "Duel Monsters",
+      "Magic The Gathering",
+      "Pokémon TCG",
+      "Cardfight Vanguard"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Combien de points de vie un joueur commence-t-il ?",
+    "choices": [
+      "3000",
+      "4000",
+      "5000",
+      "8000"
+    ],
+    "answer": 3
+  },
+  {
+    "question": "Quel est le coût pour invoquer un monstre de niveau 7 ou plus ?",
+    "choices": [
+      "1 sacrifice",
+      "2 sacrifices",
+      "3 sacrifices",
+      "Aucun"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Comment s’appelle la carte qui interdit les monstres de niveau 5 ou plus ?",
+    "choices": [
+      "Soleil Noir",
+      "Anneau de Magnétisme",
+      "Anneau des Interdits",
+      "Cercle Magique"
+    ],
+    "answer": 2
+  },
+  {
+    "question": "Quelle est la première carte du jeu à avoir été bannie ?",
+    "choices": [
+      "Pot de Cupidité",
+      "Chaos Emperor Dragon",
+      "Monde Interdit",
+      "Exodia"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quel est le type principal du monstre 'Cercle Magique' ?",
+    "choices": [
+      "Magicien",
+      "Guerrier",
+      "Bête",
+      "Dragon"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quelle est la carte magique qui permet de piocher 2 cartes ?",
+    "choices": [
+      "Pot de Cupidité",
+      "Pot de la Cupidité",
+      "Pot de Dualité",
+      "Pot de l’Avarice"
+    ],
+    "answer": 2
+  },
+  {
+    "question": "Quelle est la particularité du monstre 'Exodia' ?",
+    "choices": [
+      "Il gagne si toutes ses parties sont en main",
+      "Il est invincible en défense",
+      "Il attaque 3 fois par tour",
+      "Il se réinvoque automatiquement"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Qu'est-ce qu'un 'Monstre Synchro' ?",
+    "choices": [
+      "Monstre invoqué en sacrifiant un monstre de même niveau",
+      "Monstre invoqué en combinant un monstre Tuner et un ou plusieurs non-Tuner",
+      "Monstre invoqué uniquement depuis la main",
+      "Monstre invoqué en payant des points de vie"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Combien de cartes maximum dans un Extra Deck ?",
+    "choices": [
+      "10",
+      "15",
+      "20",
+      "25"
+    ],
+    "answer": 2
+  },
+  {
+    "question": "Quelle est la couleur du cadre des cartes Piège ?",
+    "choices": [
+      "Violet",
+      "Vert",
+      "Rouge",
+      "Jaune"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quel est l’effet principal de la carte 'Miroir de Force' ?",
+    "choices": [
+      "Annule une attaque et détruit le monstre attaquant",
+      "Augmente l’attaque d’un monstre",
+      "Permet de piocher une carte",
+      "Défense invincible pendant un tour"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quelle est la condition pour invoquer 'Obelisk le Tourmenteur' ?",
+    "choices": [
+      "Sacrifier 2 monstres",
+      "Sacrifier 3 monstres",
+      "Invoquer spécialement depuis l’Extra Deck",
+      "Payer des points de vie"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Combien de joueurs peuvent participer à un duel officiel Yu-Gi-Oh! ?",
+    "choices": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Quel est le nom de la série animée originale Yu-Gi-Oh! ?",
+    "choices": [
+      "Yu-Gi-Oh! GX",
+      "Yu-Gi-Oh! 5D's",
+      "Yu-Gi-Oh! Duel Monsters",
+      "Yu-Gi-Oh! Zexal"
+    ],
+    "answer": 2
+  },
+  {
+    "question": "Quel type de monstre est 'Le Magicien Sombre' ?",
+    "choices": [
+      "Dragon",
+      "Magicien",
+      "Guerrier",
+      "Bête"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Qu'est-ce qu'une 'Carte Terrain' ?",
+    "choices": [
+      "Une carte qui modifie les règles du terrain",
+      "Une carte qui augmente l’attaque",
+      "Une carte magique permanente",
+      "Une carte piège activée au combat"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quel est le niveau maximum d’un monstre normal ?",
+    "choices": [
+      "10",
+      "12",
+      "8",
+      "7"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Quelle est la carte la plus iconique de Seto Kaiba ?",
+    "choices": [
+      "Dragon Blanc aux Yeux Bleus",
+      "Dragon Noir aux Yeux Rouges",
+      "Magicien Sombre",
+      "Exodia"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quel type de carte peut être activée depuis la main à tout moment ?",
+    "choices": [
+      "Carte Monstre",
+      "Carte Magie Normale",
+      "Carte Magie Rapide",
+      "Carte Piège"
+    ],
+    "answer": 2
+  },
+  {
+    "question": "Que fait la carte 'Change de Cœur' ?",
+    "choices": [
+      "Change le contrôle d’un monstre",
+      "Augmente l’attaque d’un monstre",
+      "Défense invincible pour un tour",
+      "Permet de piocher deux cartes"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quelle est la couleur du cadre des cartes Monstre Xyz ?",
+    "choices": [
+      "Noir",
+      "Blanc",
+      "Bleu clair",
+      "Rouge"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quelle est la fonction du Cimetière ?",
+    "choices": [
+      "Zone pour les cartes détruites",
+      "Zone pour les cartes bannies",
+      "Zone de départ des cartes",
+      "Zone pour les cartes invoquées"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Combien de monstres peut-on contrôler au maximum ?",
+    "choices": [
+      "3",
+      "4",
+      "5",
+      "6"
+    ],
+    "answer": 2
+  },
+  {
+    "question": "Quelle est la fonction principale d’une carte piège ?",
+    "choices": [
+      "Défendre le joueur",
+      "Augmenter l’attaque",
+      "Attaquer directement",
+      "Invoquer des monstres"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quel est le nom du frère jumeau de Yami Yugi ?",
+    "choices": [
+      "Yami Bakura",
+      "Yugi Muto",
+      "Yami Marik",
+      "Yami Bakura"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Quel monstre possède le pouvoir de bloquer toutes les attaques ?",
+    "choices": [
+      "Obelisk le Tourmenteur",
+      "La Magicienne des Ténèbres",
+      "La Papillon de Lumière",
+      "Dragon à Trois Têtes"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quelle carte permet de piocher deux cartes ?",
+    "choices": [
+      "Pot de Cupidité",
+      "Pot de Dualité",
+      "Pot de l'Avarice",
+      "Tirage Miracle"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Quel est le nom du tournoi organisé dans l’anime original ?",
+    "choices": [
+      "Duelist Kingdom",
+      "Battle City",
+      "World Championship",
+      "Shadow Games"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Combien de cartes au minimum dans un side deck ?",
+    "choices": [
+      "5",
+      "10",
+      "15",
+      "20"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quelle est la carte emblématique de Joey Wheeler ?",
+    "choices": [
+      "Dragon Blanc aux Yeux Bleus",
+      "Chevalier Gaia",
+      "Cobra",
+      "Garçon Magicien"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Quelle est la couleur du cadre des cartes Synchro ?",
+    "choices": [
+      "Blanc",
+      "Noir",
+      "Bleu",
+      "Rouge"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quelle carte invoque les 'Dragons des Ténèbres' ?",
+    "choices": [
+      "Dragon aux Yeux Rouges",
+      "Dragon Noir aux Yeux Rouges",
+      "Dragon Blanc aux Yeux Bleus",
+      "Dragon Céleste"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Quel est l'effet principal de 'Trou Noir' ?",
+    "choices": [
+      "Détruit tous les monstres sur le terrain",
+      "Détruit un monstre ciblé",
+      "Empêche l'invocation de monstres",
+      "Augmente l'attaque d'un monstre"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quelle est la durée maximum d'un duel officiel ?",
+    "choices": [
+      "30 minutes",
+      "45 minutes",
+      "60 minutes",
+      "Il n'y a pas de limite"
+    ],
+    "answer": 3
+  },
+  {
+    "question": "Comment s'appelle la carte qui peut annuler l'effet d'une carte magie ou piège ?",
+    "choices": [
+      "Cylindre Magique",
+      "Anneau de Magie",
+      "Invocation Solennelle",
+      "Contre Sort"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quel est le nom de l’arme du personnage Marik ?",
+    "choices": [
+      "Le Sceptre du Millénium",
+      "L’Œil du Millénium",
+      "Le Puzzle du Millénium",
+      "La Main du Millénium"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Quel type de monstre est 'Cavaliere Gardien' ?",
+    "choices": [
+      "Guerrier",
+      "Bête",
+      "Dragon",
+      "Magicien"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Combien de cartes peut-on avoir dans un deck extra ?",
+    "choices": [
+      "10",
+      "15",
+      "20",
+      "25"
+    ],
+    "answer": 2
+  },
+  {
+    "question": "Quel est l’effet du monstre 'Magicien des Ténèbres' ?",
+    "choices": [
+      "Peut détruire un monstre sur le terrain",
+      "Peut annuler une attaque",
+      "Peut être invoqué sans sacrifice",
+      "Peut augmenter l'attaque d'autres monstres"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Qu'est-ce qu'une invocation spéciale ?",
+    "choices": [
+      "Invoquer un monstre sans utiliser la main",
+      "Invoquer un monstre depuis le cimetière, deck ou extra deck",
+      "Invoquer un monstre avec sacrifice",
+      "Invoquer un monstre pendant la phase de combat"
+    ],
+    "answer": 1
+  },
+  {
+    "question": "Quel monstre est connu pour être la clé de l’invocation Synchro ?",
+    "choices": [
+      "Monstre Tuner",
+      "Dragon Blanc aux Yeux Bleus",
+      "Magicien Sombre",
+      "Exodia"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quelle est la fonction d'une carte Magie rapide ?",
+    "choices": [
+      "Peut être activée à n'importe quel moment",
+      "Peut être activée uniquement durant la phase principale",
+      "Peut être activée uniquement durant la phase de combat",
+      "Ne peut être activée qu'une fois par duel"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Que signifie 'Tribut' dans Yu-Gi-Oh! ?",
+    "choices": [
+      "Sacrifier des monstres pour en invoquer un plus puissant",
+      "Donner une carte à l'adversaire",
+      "Piocher une carte supplémentaire",
+      "Annuler un effet de carte"
+    ],
+    "answer": 0
+  },
+  {
+    "question": "Quel est le nom du sort qui détruit toutes les cartes sur le terrain ?",
+    "choices": [
+      "La Foudre",
+      "Orage de Magie",
+      "Trou Noir",
+      "Explosion"
+    ],
+    "answer": 2
+  }
+]
