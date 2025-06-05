@@ -107,6 +107,7 @@ class Question(commands.Cog):
                     if c.get("name") != main_card["name"]
                     and "desc" in c
                     and c.get("type", "").lower() == main_type
+                    and not c.get("archetype") 
                 ]
             else:
                 # 🔁 Tentative de récupération par archétype
