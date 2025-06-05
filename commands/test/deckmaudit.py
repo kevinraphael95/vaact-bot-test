@@ -1,7 +1,7 @@
 # ────────────────────────────────────────────────────────────────────────────────
 # 📌 deckmaudit.py — Commande interactive !deckmaudit
-# Objectif : Générer un deck "maudit" absurde avec de vraies cartes YGODeckPro
-# Catégorie : Yu-Gi-Oh
+# Objectif : Générer un deck Yu-Gi-Oh! absurde, privilégiant vieilles cartes, avec Extra Deck
+# Catégorie : teest
 # Accès : Public
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -12,160 +12,169 @@ import discord
 from discord.ext import commands
 import aiohttp
 import random
+import re
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🧠 Cog principal
 # ────────────────────────────────────────────────────────────────────────────────
 class DeckMaudit(commands.Cog):
     """
-    Commande !deckmaudit — Génère un deck maudit absurde et injouable à partir de l'API YGODeckPro.
+    Commande !deckmaudit — Génère un deck Yu-Gi-Oh absurde avec vieilles cartes et Extra Deck.
     """
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    async def fetch_cards_by_popularity(self, view_threshold: int):
-        """
-        Récupère jusqu'à 300 cartes ayant un nombre de vues <= view_threshold.
-        Retourne une liste de cartes (dict) ou None si erreur.
-        """
-        url = f"https://ygodeckpro.fr/api/cards?limit=300&views[lte]={view_threshold}&random=true"
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as resp:
-                    if resp.status != 200:
-                        print(f"[fetch_cards_by_popularity] HTTP {resp.status} pour seuil {view_threshold}")
-                        return None
-                    data = await resp.json()
-                    return data.get("data", [])
-        except Exception as e:
-            print(f"[fetch_cards_by_popularity] Exception: {e}")
+    async def fetch_cards_sample(self):
+        url = "https://db.ygoprodeck.com/api/v7/cardinfo.php"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                if resp.status != 200:
+                    return []
+                data = await resp.json()
+                cards = data.get("data", [])
+                random.shuffle(cards)
+                sample = cards[:300]
+                return sample
+
+    def extract_year(self, card):
+        # Tente d'extraire l'année la plus ancienne dans les sets de la carte
+        sets = card.get("card_sets")
+        if not sets:
             return None
+        years = []
+        for s in sets:
+            set_name = s.get("set_name", "")
+            m = re.search(r"(19|20)\d{2}", set_name)
+            if m:
+                years.append(int(m.group()))
+        if years:
+            return min(years)
+        return None
 
-    def is_card_maudite(self, c: dict) -> bool:
-        """
-        Critères simples pour détecter une carte 'maudite' (inutile ou absurde).
-        """
-        try:
-            atk = c.get("atk") or 0
-            defn = c.get("def") or 0
-            card_type = c.get("type", "").lower()
-            desc = c.get("desc", "").lower()
+    def poids_carte(self, card):
+        # Double poids si carte sortie avant 2005
+        year = self.extract_year(card)
+        if year and year < 2005:
+            return 2
+        return 1
 
-            faible_monstre = (card_type == "monster" and atk <= 500 and defn <= 500)
-            piege_inutile = (card_type == "trap" and all(x not in desc for x in ["annuler", "contre", "effet"]))
-            magie_nulle = (card_type == "spell" and all(x not in desc for x in ["pioche", "récupérer", "recuperer", "search"]))
+    def filtrer_cartes_monstres_sorts_pièges(self, cards):
+        filtered = []
+        for c in cards:
+            typ = c.get("type", "").lower()
+            if any(t in typ for t in ["monster", "spell", "trap"]):
+                filtered.append(c)
+        return filtered
 
-            return faible_monstre or piege_inutile or magie_nulle
-        except Exception as e:
-            print(f"[is_card_maudite] Exception: {e}")
-            return False
+    def filtrer_extra_deck(self, cards, archetype=None):
+        extra_types = ["fusion", "synchro", "xyz", "link"]
+        filtered = []
+        for c in cards:
+            typ = c.get("type", "").lower()
+            if any(x in typ for x in extra_types):
+                if archetype:
+                    if c.get("archetype") == archetype:
+                        filtered.append(c)
+                else:
+                    filtered.append(c)
+        return filtered
 
-    def filtrer_cartes_maudites(self, cartes: list) -> list:
-        """
-        Filtre les cartes pour ne garder que les "maudites".
-        """
-        try:
-            return [c for c in cartes if self.is_card_maudite(c)]
-        except Exception as e:
-            print(f"[filtrer_cartes_maudites] Exception: {e}")
+    def composer_deck(self, cards, taille=40):
+        # Compose un deck de taille fixe en respectant max 3 exemplaires par carte,
+        # fallback pour garantir toujours la taille demandée
+        weighted_pool = []
+        for c in cards:
+            w = self.poids_carte(c)
+            weighted_pool.extend([c] * w)
+        if not weighted_pool:
             return []
 
-    def composer_deck(self, cartes: list) -> list:
-        """
-        Compose un deck aléatoire de 20 cartes (ou moins si pas assez).
-        """
-        try:
-            return random.sample(cartes, min(20, len(cartes)))
-        except Exception as e:
-            print(f"[composer_deck] Exception: {e}")
-            return []
+        deck = []
+        counts = {}
+        tries = 0
+        max_tries = taille * 10  # Pour éviter boucle infinie
+        while len(deck) < taille and tries < max_tries:
+            tries += 1
+            c = random.choice(weighted_pool)
+            name = c.get("name")
+            if counts.get(name, 0) >= 3:
+                continue
+            deck.append(c)
+            counts[name] = counts.get(name, 0) + 1
 
-    def generer_strategie(self, deck: list) -> str:
-        """
-        Génère une stratégie humoristique basée sur le deck.
-        """
-        try:
-            nb_piege = sum(1 for c in deck if c.get("type", "").lower() == "trap")
-            nb_monstre_faible = sum(1 for c in deck if c.get("type", "").lower() == "monster" and (c.get("atk") or 0) <= 500)
+        # Si pas assez, complète avec n'importe quoi au pif
+        while len(deck) < taille:
+            c = random.choice(cards)
+            name = c.get("name")
+            deck.append(c)
+            counts[name] = counts.get(name, 0) + 1
 
-            texte = "🃏 **Stratégie du deck maudit** 🃏\n"
-            if nb_piege > 5:
-                texte += "- Cache-toi derrière tes pièges inutiles et espère que ton adversaire s'endorme !\n"
-            if nb_monstre_faible > 5:
-                texte += "- Envoie tes monstres faibles en première ligne, comme chair à canon.\n"
-            if nb_piege <= 5 and nb_monstre_faible <= 5:
-                texte += "- C’est un chaos total, mais avec style. Peut-être.\n"
-            texte += "Joue lentement. Très lentement. L'abandon est ta victoire...\n"
-            return texte
-        except Exception as e:
-            print(f"[generer_strategie] Exception: {e}")
-            return "Stratégie impossible à déterminer."
+        return deck
+
+    def trouver_archetype_majoritaire(self, deck):
+        counts = {}
+        for c in deck:
+            arch = c.get("archetype")
+            if arch:
+                counts[arch] = counts.get(arch, 0) + 1
+        if not counts:
+            return None
+        return max(counts, key=counts.get)
 
     @commands.command(
         name="deckmaudit",
-        help="Génère un deck aléatoire avec des cartes YGODeckPro absurdes.",
-        description="Commande fun pour générer un deck injouable mais drôle."
+        help="Génère un deck Yu-Gi-Oh! maudit avec Extra Deck.",
+        description="Génère un deck absurde avec des vieilles cartes privilégiées et un Extra Deck cohérent."
     )
     async def deckmaudit(self, ctx: commands.Context):
-        """
-        Commande principale !deckmaudit.
-        """
+        await ctx.trigger_typing()
         try:
-            await ctx.trigger_typing()
+            sample_cards = await self.fetch_cards_sample()
+            if not sample_cards:
+                await ctx.send("❌ Impossible de récupérer les cartes.")
+                return
 
-            seuil_vues = 50
-            max_vues = 1000
-            deck = None
-            cartes = None
+            # Filtrer cartes pour le deck principal (monstres, sorts, pièges)
+            main_pool = self.filtrer_cartes_monstres_sorts_pièges(sample_cards)
+            deck_main = self.composer_deck(main_pool, taille=40)
 
-            while seuil_vues <= max_vues:
-                cartes = await self.fetch_cards_by_popularity(seuil_vues)
-                if not cartes:
-                    seuil_vues += 100
-                    continue
+            archetype = self.trouver_archetype_majoritaire(deck_main)
 
-                maudites = self.filtrer_cartes_maudites(cartes)
+            # Filtrer cartes Extra Deck selon archetype
+            extra_pool = self.filtrer_extra_deck(sample_cards, archetype)
+            if len(extra_pool) < 15:
+                # fallback au pif dans tout l'extra deck
+                extra_pool = self.filtrer_extra_deck(sample_cards)
 
-                if len(maudites) >= 10:
-                    deck = self.composer_deck(maudites)
-                    if deck:
-                        break
-                seuil_vues += 100
+            deck_extra = self.composer_deck(extra_pool, taille=15)
 
-            if not deck:
-                if cartes:
-                    deck = self.composer_deck(cartes)
-                else:
-                    await ctx.send("❌ Impossible de récupérer des cartes pour générer un deck.")
-                    return
-
+            # Préparer embed
             embed = discord.Embed(
-                title="💀 Deck Maudit généré par Atem 💀",
-                description="Voici un deck tellement nul que même Exodia s'en moquerait.",
+                title="💀 Deck Maudit par Atem 💀",
+                description=(
+                    f"Archétype majoritaire détecté : **{archetype or 'Aucun'}**\n"
+                    f"Deck principal : {len(deck_main)} cartes\n"
+                    f"Extra Deck : {len(deck_extra)} cartes"
+                ),
                 color=discord.Color.dark_red()
             )
 
-            for c in deck:
+            def format_carte(c):
                 name = c.get("name", "???")
-                type_ = c.get("type", "Inconnu")
-                desc = c.get("desc", "")
+                typ = c.get("type", "Inconnu")
                 atk = c.get("atk", "?")
-                defn = c.get("def", "?")
-                short_desc = (desc[:97] + "...") if len(desc) > 100 else desc
+                defe = c.get("def", "?")
+                desc = c.get("desc", "")
+                short_desc = (desc[:90] + "...") if len(desc) > 100 else desc
+                return f"**{name}** [{typ}] (ATK:{atk} DEF:{defe})\n{short_desc}"
 
-                embed.add_field(
-                    name=f"{name} [{type_}] (ATK:{atk} DEF:{defn})",
-                    value=short_desc,
-                    inline=False
-                )
+            # Pour éviter un embed trop lourd, on affiche juste les noms des cartes
+            main_names = "\n".join(f"• {c.get('name', '???')}" for c in deck_main)
+            extra_names = "\n".join(f"• {c.get('name', '???')}" for c in deck_extra)
 
-            embed.add_field(
-                name="Stratégie (très douteuse)",
-                value=self.generer_strategie(deck),
-                inline=False
-            )
-            embed.set_footer(text="Deck généré uniquement pour les duellistes suicidaires 🎲")
+            embed.add_field(name="Deck Principal (40 cartes)", value=main_names, inline=False)
+            embed.add_field(name="Extra Deck (15 cartes)", value=extra_names, inline=False)
 
             await ctx.send(embed=embed)
 
