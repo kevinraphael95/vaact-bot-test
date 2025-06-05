@@ -82,13 +82,14 @@ class DeckMaudit(commands.Cog):
 
     def composer_deck(self, cards, taille=40):
         # Compose un deck de taille fixe en respectant max 3 exemplaires par carte,
-        # fallback pour garantir toujours la taille demandée
+        # fallback pour garantir toujours la taille demandée même si weighted_pool vide
         weighted_pool = []
         for c in cards:
             w = self.poids_carte(c)
             weighted_pool.extend([c] * w)
+        # fallback si weighted_pool vide
         if not weighted_pool:
-            return []
+            weighted_pool = cards.copy()
 
         deck = []
         counts = {}
@@ -137,6 +138,9 @@ class DeckMaudit(commands.Cog):
 
             # Filtrer cartes pour le deck principal (monstres, sorts, pièges)
             main_pool = self.filtrer_cartes_monstres_sorts_pièges(sample_cards)
+            if not main_pool:
+                main_pool = sample_cards  # fallback si filtre vide
+
             deck_main = self.composer_deck(main_pool, taille=40)
 
             archetype = self.trouver_archetype_majoritaire(deck_main)
@@ -146,6 +150,8 @@ class DeckMaudit(commands.Cog):
             if len(extra_pool) < 15:
                 # fallback au pif dans tout l'extra deck
                 extra_pool = self.filtrer_extra_deck(sample_cards)
+            if not extra_pool:
+                extra_pool = sample_cards  # fallback ultime si vide
 
             deck_extra = self.composer_deck(extra_pool, taille=15)
 
@@ -160,16 +166,7 @@ class DeckMaudit(commands.Cog):
                 color=discord.Color.dark_red()
             )
 
-            def format_carte(c):
-                name = c.get("name", "???")
-                typ = c.get("type", "Inconnu")
-                atk = c.get("atk", "?")
-                defe = c.get("def", "?")
-                desc = c.get("desc", "")
-                short_desc = (desc[:90] + "...") if len(desc) > 100 else desc
-                return f"**{name}** [{typ}] (ATK:{atk} DEF:{defe})\n{short_desc}"
-
-            # Pour éviter un embed trop lourd, on affiche juste les noms des cartes
+            # Affichage juste noms pour éviter trop lourd
             main_names = "\n".join(f"• {c.get('name', '???')}" for c in deck_main)
             extra_names = "\n".join(f"• {c.get('name', '???')}" for c in deck_extra)
 
