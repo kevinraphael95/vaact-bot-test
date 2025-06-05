@@ -1,6 +1,6 @@
 # ────────────────────────────────────────────────────────────────────────────────
 # 📌 deckmaudit.py — Commande interactive !deckmaudit
-# Objectif : Générer un deck "maudit" avec des vraies cartes YGODeckPro absurdes
+# Objectif : Générer un deck "maudit" absurde avec de vraies cartes YGODeckPro
 # Catégorie : Yu-Gi-Oh
 # Accès : Public
 # ────────────────────────────────────────────────────────────────────────────────
@@ -18,14 +18,14 @@ import random
 # ────────────────────────────────────────────────────────────────────────────────
 class DeckMaudit(commands.Cog):
     """
-    Commande !deckmaudit — Génère un deck maudit absurde et perdant à coup sûr.
+    Commande !deckmaudit — Génère un deck maudit absurde et injouable à coup sûr.
     """
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     async def fetch_cards_by_popularity(self, view_threshold: int):
-        """Récupère jusqu'à 300 cartes ayant un nombre de vues <= threshold."""
+        """Récupère jusqu'à 300 cartes avec un nombre de vues <= view_threshold depuis YGODeckPro."""
         url = f"https://ygodeckpro.fr/api/cards?limit=300&views[lte]={view_threshold}&random=true"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
@@ -35,7 +35,7 @@ class DeckMaudit(commands.Cog):
                 return data.get("data", [])
 
     def is_card_maudite(self, c):
-        """Détermine si une carte est 'maudite' (inutilisable, absurde)."""
+        """Détermine si une carte est 'maudite' (inutile ou absurde)."""
         atk = c.get("atk", 0)
         defn = c.get("def", 0)
         card_type = c.get("type", "").lower()
@@ -43,17 +43,20 @@ class DeckMaudit(commands.Cog):
 
         faible_monstre = (card_type == "monster" and atk <= 500 and defn <= 500)
         piege_inutile = (card_type == "trap" and "annuler" not in desc and "contre" not in desc and "effet" not in desc)
-        magie_nulle = (card_type == "spell" and "pioche" not in desc and "recuperer" not in desc and "search" not in desc)
+        magie_nulle = (card_type == "spell" and "pioche" not in desc and "récupérer" not in desc and "search" not in desc)
 
         return faible_monstre or piege_inutile or magie_nulle
 
     def filtrer_cartes_maudites(self, cartes):
+        """Filtre les cartes pour ne garder que les maudites."""
         return [c for c in cartes if self.is_card_maudite(c)]
 
     def composer_deck(self, maudites):
+        """Compose un deck de 20 cartes aléatoires parmi les cartes maudites."""
         return random.sample(maudites, min(20, len(maudites)))
 
     def generer_strategie(self, deck):
+        """Génère un texte humoristique de stratégie selon la composition du deck."""
         nb_piege = sum(1 for c in deck if c.get("type", "").lower() == "trap")
         nb_monstre_faible = sum(1 for c in deck if c.get("type", "").lower() == "monster" and c.get("atk", 0) <= 500)
 
@@ -136,5 +139,5 @@ async def setup(bot: commands.Bot):
     cog = DeckMaudit(bot)
     for command in cog.get_commands():
         if not hasattr(command, "category"):
-            command.category = "Test"
+            command.category = "Yu-Gi-Oh"
     await bot.add_cog(cog)
