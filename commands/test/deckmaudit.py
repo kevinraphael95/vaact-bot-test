@@ -1,7 +1,7 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# 📌 nom_du_fichier.py — Commande interactive !nom_de_la_commande
-# Objectif : Afficher des infos interactives à partir d’un fichier JSON
-# Catégorie : VAACT
+# 📌 deckmaudit.py — Commande interactive !deckmaudit
+# Objectif : Générer un deck "maudit" absurde avec de vraies cartes YGODeckPro
+# Catégorie : Yu-Gi-Oh
 # Accès : Public
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -10,126 +10,174 @@
 # ────────────────────────────────────────────────────────────────────────────────
 import discord
 from discord.ext import commands
-from discord.ui import View, Select
-import json
-import os
-import traceback
-
-# ────────────────────────────────────────────────────────────────────────────────
-# 📂 Chargement des données JSON (exemple)
-# ────────────────────────────────────────────────────────────────────────────────
-DATA_JSON_PATH = os.path.join("data", "data_file.json")
-
-def load_data():
-    """Charge les données depuis le fichier JSON."""
-    with open(DATA_JSON_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-# ────────────────────────────────────────────────────────────────────────────────
-# 🎛️ UI — Premier menu interactif (exemple : sélection d'une catégorie)
-# ────────────────────────────────────────────────────────────────────────────────
-class FirstSelectView(View):
-    """Vue principale pour choisir une option."""
-    def __init__(self, bot, data):
-        super().__init__(timeout=120)
-        self.bot = bot
-        self.data = data
-        self.add_item(FirstSelect(self))
-
-class FirstSelect(Select):
-    """Menu déroulant pour sélectionner une option."""
-    def __init__(self, parent_view: FirstSelectView):
-        self.parent_view = parent_view
-        options = [discord.SelectOption(label=key, value=key) for key in self.parent_view.data.keys()]
-        super().__init__(placeholder="Sélectionne une option", options=options)
-
-    async def callback(self, interaction: discord.Interaction):
-        selected_key = self.values[0]
-        # Passage à la vue suivante, en envoyant les données nécessaires
-        new_view = SecondSelectView(self.parent_view.bot, self.parent_view.data, selected_key)
-        await interaction.response.edit_message(
-            content=f"Option sélectionnée : **{selected_key}**\nChoisis maintenant une sous-option :",
-            view=new_view,
-            embed=None
-        )
-
-# ────────────────────────────────────────────────────────────────────────────────
-# 🎛️ UI — Deuxième menu interactif (exemple : sélection d'une sous-option)
-# ────────────────────────────────────────────────────────────────────────────────
-class SecondSelectView(View):
-    """Vue secondaire pour choisir une sous-option."""
-    def __init__(self, bot, data, key):
-        super().__init__(timeout=120)
-        self.bot = bot
-        self.data = data
-        self.key = key
-        self.add_item(SecondSelect(self))
-
-class SecondSelect(Select):
-    """Menu déroulant pour sélectionner une sous-option."""
-    def __init__(self, parent_view: SecondSelectView):
-        self.parent_view = parent_view
-        sub_options = list(self.parent_view.data[self.parent_view.key].keys())
-        options = [discord.SelectOption(label=sub, value=sub) for sub in sub_options]
-        super().__init__(placeholder="Sélectionne une sous-option", options=options)
-
-    async def callback(self, interaction: discord.Interaction):
-        key = self.parent_view.key
-        sub_key = self.values[0]
-        # Récupération des informations liées
-        infos = self.parent_view.data[key][sub_key]
-
-        # Exemple d'affichage dans un embed
-        embed = discord.Embed(
-            title=f"Informations pour {sub_key} ({key})",
-            color=discord.Color.blue()
-        )
-        for field_name, field_value in infos.items():
-            if isinstance(field_value, list):
-                value = "\n".join(f"• {item}" for item in field_value)
-            else:
-                value = str(field_value)
-            embed.add_field(name=field_name.capitalize(), value=value, inline=False)
-
-        await interaction.response.edit_message(
-            content=None,
-            embed=embed,
-            view=None
-        )
+import aiohttp
+import random
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🧠 Cog principal
 # ────────────────────────────────────────────────────────────────────────────────
-class NomDeLaCommande(commands.Cog):
+class DeckMaudit(commands.Cog):
     """
-    Commande !nom_de_la_commande — Description courte
+    Commande !deckmaudit — Génère un deck maudit absurde et injouable à partir de l'API YGODeckPro.
     """
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(
-        name="nom_de_la_commande",
-        help="Description de la commande.",
-        description="Description détaillée de la commande."
-    )
-    async def nom_de_la_commande(self, ctx: commands.Context):
-        """Commande principale avec menu interactif."""
+    async def fetch_cards_by_popularity(self, view_threshold: int):
+        """
+        Récupère jusqu'à 300 cartes ayant un nombre de vues <= view_threshold.
+        Retourne une liste de cartes (dict) ou None si erreur.
+        """
+        url = f"https://ygodeckpro.fr/api/cards?limit=300&views[lte]={view_threshold}&random=true"
         try:
-            data = load_data()
-            view = FirstSelectView(self.bot, data)
-            await ctx.send("Choisis une option :", view=view)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as resp:
+                    if resp.status != 200:
+                        print(f"[fetch_cards_by_popularity] HTTP {resp.status} pour seuil {view_threshold}")
+                        return None
+                    data = await resp.json()
+                    return data.get("data", [])
         except Exception as e:
-            # Affichage complet dans la console pour debug détaillé
-            traceback_str = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
-            print(f"[ERREUR nom_de_la_commande] {traceback_str}")
-            await ctx.send("❌ Une erreur est survenue lors du chargement des données.")
+            print(f"[fetch_cards_by_popularity] Exception: {e}")
+            return None
+
+    def is_card_maudite(self, c: dict) -> bool:
+        """
+        Critères simples pour détecter une carte 'maudite' (inutile ou absurde).
+        """
+        try:
+            atk = c.get("atk") or 0
+            defn = c.get("def") or 0
+            card_type = c.get("type", "").lower()
+            desc = c.get("desc", "").lower()
+
+            faible_monstre = (card_type == "monster" and atk <= 500 and defn <= 500)
+            piege_inutile = (card_type == "trap" and all(x not in desc for x in ["annuler", "contre", "effet"]))
+            magie_nulle = (card_type == "spell" and all(x not in desc for x in ["pioche", "récupérer", "recuperer", "search"]))
+
+            return faible_monstre or piege_inutile or magie_nulle
+        except Exception as e:
+            print(f"[is_card_maudite] Exception: {e}")
+            return False
+
+    def filtrer_cartes_maudites(self, cartes: list) -> list:
+        """
+        Filtre les cartes pour ne garder que les "maudites".
+        """
+        try:
+            return [c for c in cartes if self.is_card_maudite(c)]
+        except Exception as e:
+            print(f"[filtrer_cartes_maudites] Exception: {e}")
+            return []
+
+    def composer_deck(self, cartes: list) -> list:
+        """
+        Compose un deck aléatoire de 20 cartes (ou moins si pas assez).
+        """
+        try:
+            return random.sample(cartes, min(20, len(cartes)))
+        except Exception as e:
+            print(f"[composer_deck] Exception: {e}")
+            return []
+
+    def generer_strategie(self, deck: list) -> str:
+        """
+        Génère une stratégie humoristique basée sur le deck.
+        """
+        try:
+            nb_piege = sum(1 for c in deck if c.get("type", "").lower() == "trap")
+            nb_monstre_faible = sum(1 for c in deck if c.get("type", "").lower() == "monster" and (c.get("atk") or 0) <= 500)
+
+            texte = "🃏 **Stratégie du deck maudit** 🃏\n"
+            if nb_piege > 5:
+                texte += "- Cache-toi derrière tes pièges inutiles et espère que ton adversaire s'endorme !\n"
+            if nb_monstre_faible > 5:
+                texte += "- Envoie tes monstres faibles en première ligne, comme chair à canon.\n"
+            if nb_piege <= 5 and nb_monstre_faible <= 5:
+                texte += "- C’est un chaos total, mais avec style. Peut-être.\n"
+            texte += "Joue lentement. Très lentement. L'abandon est ta victoire...\n"
+            return texte
+        except Exception as e:
+            print(f"[generer_strategie] Exception: {e}")
+            return "Stratégie impossible à déterminer."
+
+    @commands.command(
+        name="deckmaudit",
+        help="Génère un deck aléatoire avec des cartes YGODeckPro absurdes.",
+        description="Commande fun pour générer un deck injouable mais drôle."
+    )
+    async def deckmaudit(self, ctx: commands.Context):
+        """
+        Commande principale !deckmaudit.
+        """
+        try:
+            await ctx.trigger_typing()
+
+            seuil_vues = 50
+            max_vues = 1000
+            deck = None
+            cartes = None
+
+            while seuil_vues <= max_vues:
+                cartes = await self.fetch_cards_by_popularity(seuil_vues)
+                if not cartes:
+                    seuil_vues += 100
+                    continue
+
+                maudites = self.filtrer_cartes_maudites(cartes)
+
+                if len(maudites) >= 10:
+                    deck = self.composer_deck(maudites)
+                    if deck:
+                        break
+                seuil_vues += 100
+
+            if not deck:
+                if cartes:
+                    deck = self.composer_deck(cartes)
+                else:
+                    await ctx.send("❌ Impossible de récupérer des cartes pour générer un deck.")
+                    return
+
+            embed = discord.Embed(
+                title="💀 Deck Maudit généré par Atem 💀",
+                description="Voici un deck tellement nul que même Exodia s'en moquerait.",
+                color=discord.Color.dark_red()
+            )
+
+            for c in deck:
+                name = c.get("name", "???")
+                type_ = c.get("type", "Inconnu")
+                desc = c.get("desc", "")
+                atk = c.get("atk", "?")
+                defn = c.get("def", "?")
+                short_desc = (desc[:97] + "...") if len(desc) > 100 else desc
+
+                embed.add_field(
+                    name=f"{name} [{type_}] (ATK:{atk} DEF:{defn})",
+                    value=short_desc,
+                    inline=False
+                )
+
+            embed.add_field(
+                name="Stratégie (très douteuse)",
+                value=self.generer_strategie(deck),
+                inline=False
+            )
+            embed.set_footer(text="Deck généré uniquement pour les duellistes suicidaires 🎲")
+
+            await ctx.send(embed=embed)
+
+        except Exception as e:
+            print(f"[ERREUR deckmaudit] {e}")
+            await ctx.send("❌ Une erreur est survenue lors de la génération du deck maudit.")
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔌 Setup du Cog
 # ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    cog = NomDeLaCommande(bot)
+    cog = DeckMaudit(bot)
     for command in cog.get_commands():
         if not hasattr(command, "category"):
             command.category = "Test"
