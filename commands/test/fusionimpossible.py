@@ -17,8 +17,14 @@ import requests
 # ────────────────────────────────────────────────────────────────────────────────
 def generer_nom(nom1, nom2):
     """Fusionne deux noms de cartes."""
-    nom1_part = nom1.split()[0] if " " in nom1 else nom1[:len(nom1)//2]
-    nom2_part = nom2.split()[-1] if " " in nom2 else nom2[len(nom2)//2:]
+    if " " in nom1:
+        nom1_part = nom1.split()[0]
+    else:
+        nom1_part = nom1[:max(1, len(nom1)//2)]
+    if " " in nom2:
+        nom2_part = nom2.split()[-1]
+    else:
+        nom2_part = nom2[len(nom2)//2:]
     return f"{nom1_part} {nom2_part}"
 
 def fusionner_types(type1, type2):
@@ -30,7 +36,7 @@ def fusionner_effets(effet1, effet2):
     """Assemble les deux effets proprement."""
     if not effet1 and not effet2:
         return "Aucun effet."
-    elif effet1 and effet2:
+    if effet1 and effet2:
         return f"{effet1.strip()}\n\n{effet2.strip()}"
     return effet1 or effet2
 
@@ -47,6 +53,7 @@ class FusionImpossible(commands.Cog):
 
     @commands.command(
         name="fusionimpossible",
+        aliases=["fi"],
         help="Fusionne deux cartes Yu-Gi-Oh! et combine leurs effets.",
         description="Fusionne nom, type et effets de deux cartes Yu-Gi-Oh! aléatoires."
     )
