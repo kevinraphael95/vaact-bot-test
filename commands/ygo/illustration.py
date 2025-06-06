@@ -1,9 +1,9 @@
-# ────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 # 📌 illustration.py — Commande interactive !illustration
-# Objectif : Jeu pour deviner une carte Yu-Gi-Oh! à partir de son image croppée.
+# Objectif : Devine une carte Yu-Gi-Oh! à partir de son image croppée
 # Catégorie : 🃏 Yu-Gi-Oh!
 # Accès : Public
-# ────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 
 # 📦 Imports nécessaires
 import discord
@@ -14,16 +14,19 @@ import asyncio
 import os
 from supabase import create_client, Client
 
-# 🔤 CONSTANTES
-REACTIONS = ["🇦", "🇧", "🇨", "🇩"]
+# 🔐 Supabase
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# 📊 Constantes
+REACTIONS = ["🇦", "🇧", "🇨", "🇩"]
+MAITRE_ROLE_NAME = "Maître des cartes"
+
 # 🧠 Cog principal
-class IllustrationCommand(commands.Cog):
+class Illustration(commands.Cog):
     """
-    Commande !illustration — Jeu où tout le monde peut répondre à un quiz d’image Yu-Gi-Oh!
+    Commande !illustration — Devine une carte à partir de son illustration
     """
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -42,11 +45,30 @@ class IllustrationCommand(commands.Cog):
         group = [c for c in all_cards if (c.get("archetype") == archetype or c.get("type") == card_type) and c["name"] != true_card["name"]]
         return random.sample(group, k=min(3, len(group))) if group else []
 
+    async def update_maitre_role(self, guild: discord.Guild):
+        try:
+            data = supabase.table("ygo_streaks").select("user_id, best_illustreak").order("best_illustreak", desc=True).limit(1).execute().data
+            if not data:
+                return
+
+            top_user_id = int(data[0]["user_id"])
+            role = discord.utils.get(guild.roles, name=MAITRE_ROLE_NAME)
+            if not role:
+                role = await guild.create_role(name=MAITRE_ROLE_NAME, reason="Top joueur du quiz illustration")
+
+            for member in guild.members:
+                if role in member.roles and member.id != top_user_id:
+                    await member.remove_roles(role)
+                if member.id == top_user_id and role not in member.roles:
+                    await member.add_roles(role)
+        except Exception as e:
+            print("[ERREUR rôle maître]", e)
+
     @commands.command(
         name="illustration",
         aliases=["illu", "i"],
         help="🔼 Devine une carte Yu-Gi-Oh! à partir de son image croppée.",
-        description="Affiche une image de carte Yu-Gi-Oh! croppée et propose un quiz interactif avec réactions."
+        description="Quiz interactif avec image croppée de carte Yu-Gi-Oh! et réactions."
     )
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def illustration(self, ctx: commands.Context):
@@ -54,20 +76,19 @@ class IllustrationCommand(commands.Cog):
             all_cards = await self.fetch_all_cards()
             candidates = [c for c in all_cards if "image_url_cropped" in c.get("card_images", [{}])[0]]
             true_card = random.choice(candidates)
-            image_url = true_card["card_images"][0].get("image_url_cropped")
+            image_url = true_card["card_images"][0]["image_url_cropped"]
             similar_cards = await self.get_similar_cards(all_cards, true_card)
 
             if len(similar_cards) < 3:
-                await ctx.send("❌ Pas assez de cartes similaires.")
-                return
+                return await ctx.send("❌ Pas assez de cartes similaires pour ce tour.")
 
             all_choices = [true_card["name"]] + [c["name"] for c in similar_cards]
             random.shuffle(all_choices)
             correct_index = all_choices.index(true_card["name"])
 
-            countdown_msg = await ctx.send("⏳ Début dans 10 secondes...")
+            msg = await ctx.send("⏳ Préparation du quiz...")
             for i in range(10, 0, -1):
-                await countdown_msg.edit(content=f"⏳ Début dans {i} seconde{'s' if i > 1 else ''}...")
+                await msg.edit(content=f"⏳ Début dans {i} seconde{'s' if i > 1 else ''}...")
                 await asyncio.sleep(1)
 
             embed = discord.Embed(
@@ -77,13 +98,13 @@ class IllustrationCommand(commands.Cog):
             )
             embed.set_image(url=image_url)
             embed.set_footer(text=f"🔹 Archétype : ||{true_card.get('archetype', 'Aucun')}||")
-            await countdown_msg.edit(content=None, embed=embed)
+            await msg.edit(content=None, embed=embed)
 
             for emoji in REACTIONS[:len(all_choices)]:
-                await countdown_msg.add_reaction(emoji)
+                await msg.add_reaction(emoji)
 
             def check(reaction, user):
-                return reaction.message.id == countdown_msg.id and str(reaction.emoji) in REACTIONS and not user.bot
+                return reaction.message.id == msg.id and str(reaction.emoji) in REACTIONS and not user.bot
 
             users_answers = {}
             try:
@@ -98,34 +119,50 @@ class IllustrationCommand(commands.Cog):
             except asyncio.TimeoutError:
                 pass
 
-            await asyncio.sleep(1)
             await ctx.send(f"⏳ Temps écoulé ! La bonne réponse était **{true_card['name']}**.")
 
-            for user_id, choice_index in users_answers.items():
-                correct = (choice_index == correct_index)
-                response = supabase.table("ygo_streaks").select("illu_streak,best_illustreak").eq("user_id", user_id).execute()
+            winners = []
+            for user_id, idx in users_answers.items():
+                correct = (idx == correct_index)
+                response = supabase.table("ygo_streaks").select("illu_streak, best_illustreak").eq("user_id", user_id).execute()
                 data = response.data
-                current_streak = data[0].get("illu_streak", 0) if data else 0
-                best_streak = data[0].get("best_illustreak", 0) if data else 0
+                current = data[0]["illu_streak"] if data else 0
+                best = data[0]["best_illustreak"] if data else 0
 
                 if correct:
-                    current_streak += 1
-                    best_streak = max(best_streak, current_streak)
+                    current += 1
+                    best = max(best, current)
+                    winners.append(user_id)
                 else:
-                    current_streak = 0
+                    current = 0
 
                 supabase.table("ygo_streaks").upsert({
                     "user_id": user_id,
-                    "illu_streak": current_streak,
-                    "best_illustreak": best_streak
+                    "illu_streak": current,
+                    "best_illustreak": best
                 }).execute()
 
-            winners = [self.bot.get_user(uid) for uid, idx in users_answers.items() if idx == correct_index]
+            await self.update_maitre_role(ctx.guild)
+
             if winners:
-                mentions = ", ".join(user.mention for user in winners if user)
-                await ctx.send(f"🎉 Bravo à : {mentions} pour leur bonne réponse !")
+                mentions = ", ".join(self.bot.get_user(uid).mention for uid in winners if self.bot.get_user(uid))
+                await ctx.send(f"🎉 Bravo à {mentions} !")
             else:
-                await ctx.send("😞 Personne n'a trouvé la bonne réponse cette fois.")
+                await ctx.send("😞 Personne n'a trouvé la bonne réponse.")
+
+            # Afficher les scores
+            score_lines = []
+            for user_id in users_answers:
+                user = self.bot.get_user(user_id)
+                if not user:
+                    continue
+                record = supabase.table("ygo_streaks").select("illu_streak, best_illustreak").eq("user_id", user_id).execute().data
+                if record:
+                    streak = record[0]["illu_streak"]
+                    best = record[0]["best_illustreak"]
+                    score_lines.append(f"🏅 {user.mention} — Série actuelle : {streak} | Meilleure série : {best}")
+            if score_lines:
+                await ctx.send("\n".join(score_lines))
 
         except Exception as e:
             print("[ERREUR illustration]", e)
@@ -133,7 +170,7 @@ class IllustrationCommand(commands.Cog):
 
 # 🔌 Setup du Cog
 async def setup(bot: commands.Bot):
-    cog = IllustrationCommand(bot)
+    cog = Illustration(bot)
     for command in cog.get_commands():
         if not hasattr(command, "category"):
             command.category = "🃏 Yu-Gi-Oh!"
