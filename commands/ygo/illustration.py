@@ -1,177 +1,131 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# 📌 illustration.py — Commande interactive !illustration
-# Objectif : Devine une carte Yu-Gi-Oh! à partir de son image croppée
-# Catégorie : 🃏 Yu-Gi-Oh!
+# 📌 infos_vaact.py — Commande interactive !infosvaact
+# Objectif : Affiche des informations issues d'un fichier JSON structuré (type VAAct)
+# Catégorie : VAACT
 # Accès : Public
 # ────────────────────────────────────────────────────────────────────────────────
 
+# ────────────────────────────────────────────────────────────────────────────────
 # 📦 Imports nécessaires
+# ────────────────────────────────────────────────────────────────────────────────
 import discord
 from discord.ext import commands
-import aiohttp
-import random
-import asyncio
+from discord.ui import View, Select
+import json
 import os
-from supabase import create_client, Client
 
-# 🔐 Supabase
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# ────────────────────────────────────────────────────────────────────────────────
+# 📂 Chargement des données JSON
+# ────────────────────────────────────────────────────────────────────────────────
+DATA_JSON_PATH = os.path.join("data", "vaact_infos.json")
 
-# 📊 Constantes
-REACTIONS = ["🇦", "🇧", "🇨", "🇩"]
-MAITRE_ROLE_NAME = "Maître des cartes"
+def load_data():
+    """Charge les données depuis le fichier JSON."""
+    with open(DATA_JSON_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
 
+# ────────────────────────────────────────────────────────────────────────────────
+# 🎛️ UI — Menu principal de sélection
+# ────────────────────────────────────────────────────────────────────────────────
+class FirstSelectView(View):
+    """Vue principale pour choisir une catégorie."""
+    def __init__(self, bot, data):
+        super().__init__(timeout=120)
+        self.bot = bot
+        self.data = data
+        self.add_item(FirstSelect(self))
+
+class FirstSelect(Select):
+    """Menu déroulant pour sélectionner une catégorie."""
+    def __init__(self, parent_view: FirstSelectView):
+        self.parent_view = parent_view
+        options = [discord.SelectOption(label=key, value=key) for key in self.parent_view.data.keys()]
+        super().__init__(placeholder="Choisis une catégorie", options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        selected_key = self.values[0]
+        new_view = SecondSelectView(self.parent_view.bot, self.parent_view.data, selected_key)
+        await interaction.response.edit_message(
+            content=f"Catégorie sélectionnée : **{selected_key}**\nChoisis maintenant un élément :",
+            embed=None,
+            view=new_view
+        )
+
+# ────────────────────────────────────────────────────────────────────────────────
+# 🎛️ UI — Menu secondaire de sélection
+# ────────────────────────────────────────────────────────────────────────────────
+class SecondSelectView(View):
+    """Vue secondaire pour choisir un élément dans une catégorie."""
+    def __init__(self, bot, data, key):
+        super().__init__(timeout=120)
+        self.bot = bot
+        self.data = data
+        self.key = key
+        self.add_item(SecondSelect(self))
+
+class SecondSelect(Select):
+    """Menu déroulant pour sélectionner un élément."""
+    def __init__(self, parent_view: SecondSelectView):
+        self.parent_view = parent_view
+        sub_options = list(self.parent_view.data[self.parent_view.key].keys())
+        options = [discord.SelectOption(label=sub, value=sub) for sub in sub_options]
+        super().__init__(placeholder="Choisis un élément", options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        key = self.parent_view.key
+        sub_key = self.values[0]
+        infos = self.parent_view.data[key][sub_key]
+
+        embed = discord.Embed(
+            title=f"{sub_key} ({key})",
+            color=discord.Color.teal()
+        )
+        for field_name, field_value in infos.items():
+            if isinstance(field_value, list):
+                value = "\n".join(f"• {item}" for item in field_value)
+            else:
+                value = str(field_value)
+            embed.add_field(name=field_name.capitalize(), value=value, inline=False)
+
+        await interaction.response.edit_message(
+            content=None,
+            embed=embed,
+            view=None
+        )
+
+# ────────────────────────────────────────────────────────────────────────────────
 # 🧠 Cog principal
-class Illustration(commands.Cog):
+# ────────────────────────────────────────────────────────────────────────────────
+class InfosVaact(commands.Cog):
     """
-    Commande !illustration — Devine une carte à partir de son illustration
+    Commande !infosvaact — Affiche des infos interactives depuis un fichier structuré
     """
+
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    async def fetch_all_cards(self):
-        url = "https://db.ygoprodeck.com/api/v7/cardinfo.php?language=fr"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
-                if resp.status != 200:
-                    return []
-                return (await resp.json()).get("data", [])
-
-    async def get_similar_cards(self, all_cards, true_card):
-        archetype = true_card.get("archetype")
-        card_type = true_card.get("type", "")
-        group = [c for c in all_cards if (c.get("archetype") == archetype or c.get("type") == card_type) and c["name"] != true_card["name"]]
-        return random.sample(group, k=min(3, len(group))) if group else []
-
-    async def update_maitre_role(self, guild: discord.Guild):
-        try:
-            data = supabase.table("ygo_streaks").select("user_id, best_illustreak").order("best_illustreak", desc=True).limit(1).execute().data
-            if not data:
-                return
-
-            top_user_id = int(data[0]["user_id"])
-            role = discord.utils.get(guild.roles, name=MAITRE_ROLE_NAME)
-            if not role:
-                role = await guild.create_role(name=MAITRE_ROLE_NAME, reason="Top joueur du quiz illustration")
-
-            for member in guild.members:
-                if role in member.roles and member.id != top_user_id:
-                    await member.remove_roles(role)
-                if member.id == top_user_id and role not in member.roles:
-                    await member.add_roles(role)
-        except Exception as e:
-            print("[ERREUR rôle maître]", e)
-
     @commands.command(
-        name="illustration",
-        aliases=["illu", "i"],
-        help="🔼 Devine une carte Yu-Gi-Oh! à partir de son image croppée.",
-        description="Quiz interactif avec image croppée de carte Yu-Gi-Oh! et réactions."
+        name="infosvaact",
+        help="Affiche des infos VAAct de manière interactive.",
+        description="Affiche les informations d'une base VAAct via un menu interactif."
     )
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def illustration(self, ctx: commands.Context):
+    async def infosvaact(self, ctx: commands.Context):
+        """Commande principale pour interagir avec les infos VAAct."""
         try:
-            all_cards = await self.fetch_all_cards()
-            candidates = [c for c in all_cards if "image_url_cropped" in c.get("card_images", [{}])[0]]
-            true_card = random.choice(candidates)
-            image_url = true_card["card_images"][0]["image_url_cropped"]
-            similar_cards = await self.get_similar_cards(all_cards, true_card)
-
-            if len(similar_cards) < 3:
-                return await ctx.send("❌ Pas assez de cartes similaires pour ce tour.")
-
-            all_choices = [true_card["name"]] + [c["name"] for c in similar_cards]
-            random.shuffle(all_choices)
-            correct_index = all_choices.index(true_card["name"])
-
-            msg = await ctx.send("⏳ Préparation du quiz...")
-            for i in range(10, 0, -1):
-                await msg.edit(content=f"⏳ Début dans {i} seconde{'s' if i > 1 else ''}...")
-                await asyncio.sleep(1)
-
-            embed = discord.Embed(
-                title="🔼 Devine la carte à partir de son illustration !",
-                description="\n".join(f"{REACTIONS[i]} {name}" for i, name in enumerate(all_choices)),
-                color=discord.Color.purple()
-            )
-            embed.set_image(url=image_url)
-            embed.set_footer(text=f"🔹 Archétype : ||{true_card.get('archetype', 'Aucun')}||")
-            await msg.edit(content=None, embed=embed)
-
-            for emoji in REACTIONS[:len(all_choices)]:
-                await msg.add_reaction(emoji)
-
-            def check(reaction, user):
-                return reaction.message.id == msg.id and str(reaction.emoji) in REACTIONS and not user.bot
-
-            users_answers = {}
-            try:
-                start = asyncio.get_event_loop().time()
-                while True:
-                    timeout = 10 - (asyncio.get_event_loop().time() - start)
-                    if timeout <= 0:
-                        break
-                    reaction, user = await self.bot.wait_for("reaction_add", timeout=timeout, check=check)
-                    if user.id not in users_answers:
-                        users_answers[user.id] = REACTIONS.index(str(reaction.emoji))
-            except asyncio.TimeoutError:
-                pass
-
-            await ctx.send(f"⏳ Temps écoulé ! La bonne réponse était **{true_card['name']}**.")
-
-            winners = []
-            for user_id, idx in users_answers.items():
-                correct = (idx == correct_index)
-                response = supabase.table("ygo_streaks").select("illu_streak, best_illustreak").eq("user_id", user_id).execute()
-                data = response.data
-                current = data[0]["illu_streak"] if data else 0
-                best = data[0]["best_illustreak"] if data else 0
-
-                if correct:
-                    current += 1
-                    best = max(best, current)
-                    winners.append(user_id)
-                else:
-                    current = 0
-
-                supabase.table("ygo_streaks").upsert({
-                    "user_id": user_id,
-                    "illu_streak": current,
-                    "best_illustreak": best
-                }).execute()
-
-            await self.update_maitre_role(ctx.guild)
-
-            if winners:
-                mentions = ", ".join(self.bot.get_user(uid).mention for uid in winners if self.bot.get_user(uid))
-                await ctx.send(f"🎉 Bravo à {mentions} !")
-            else:
-                await ctx.send("😞 Personne n'a trouvé la bonne réponse.")
-
-            # Afficher les scores
-            score_lines = []
-            for user_id in users_answers:
-                user = self.bot.get_user(user_id)
-                if not user:
-                    continue
-                record = supabase.table("ygo_streaks").select("illu_streak, best_illustreak").eq("user_id", user_id).execute().data
-                if record:
-                    streak = record[0]["illu_streak"]
-                    best = record[0]["best_illustreak"]
-                    score_lines.append(f"🏅 {user.mention} — Série actuelle : {streak} | Meilleure série : {best}")
-            if score_lines:
-                await ctx.send("\n".join(score_lines))
-
+            data = load_data()
+            view = FirstSelectView(self.bot, data)
+            await ctx.send("🔍 Choisis une catégorie :", view=view)
         except Exception as e:
-            print("[ERREUR illustration]", e)
-            await ctx.send("🚨 Une erreur est survenue pendant le quiz.")
+            print(f"[ERREUR infosvaact] {e}")
+            await ctx.send("❌ Une erreur est survenue lors du chargement des données.")
 
+# ────────────────────────────────────────────────────────────────────────────────
 # 🔌 Setup du Cog
+# ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    cog = Illustration(bot)
+    cog = InfosVaact(bot)
     for command in cog.get_commands():
         if not hasattr(command, "category"):
-            command.category = "🃏 Yu-Gi-Oh!"
+            command.category = "VAACT"
     await bot.add_cog(cog)
+
