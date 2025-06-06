@@ -1,7 +1,7 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# 📌 infos_vaact.py — Commande interactive !infosvaact
-# Objectif : Affiche des informations issues d'un fichier JSON structuré (type VAAct)
-# Catégorie : VAACT
+# 📌 illustration.py — Commande interactive !illustration
+# Objectif : Jeu pour deviner une carte Yu-Gi-Oh! à partir de son image croppée.
+# Catégorie : 🃏 Yu-Gi-Oh!
 # Accès : Public
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -10,122 +10,184 @@
 # ────────────────────────────────────────────────────────────────────────────────
 import discord
 from discord.ext import commands
-from discord.ui import View, Select
-import json
+import aiohttp
+import random
+import asyncio
 import os
 
-# ────────────────────────────────────────────────────────────────────────────────
-# 📂 Chargement des données JSON
-# ────────────────────────────────────────────────────────────────────────────────
-DATA_JSON_PATH = os.path.join("data", "vaact_infos.json")
-
-def load_data():
-    """Charge les données depuis le fichier JSON."""
-    with open(DATA_JSON_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+from supabase import create_client, Client
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 🎛️ UI — Menu principal de sélection
+# 🔤 CONSTANTES
 # ────────────────────────────────────────────────────────────────────────────────
-class FirstSelectView(View):
-    """Vue principale pour choisir une catégorie."""
-    def __init__(self, bot, data):
-        super().__init__(timeout=120)
-        self.bot = bot
-        self.data = data
-        self.add_item(FirstSelect(self))
+REACTIONS = ["🇦", "🇧", "🇨", "🇩"]
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-class FirstSelect(Select):
-    """Menu déroulant pour sélectionner une catégorie."""
-    def __init__(self, parent_view: FirstSelectView):
-        self.parent_view = parent_view
-        options = [discord.SelectOption(label=key, value=key) for key in self.parent_view.data.keys()]
-        super().__init__(placeholder="Choisis une catégorie", options=options)
-
-    async def callback(self, interaction: discord.Interaction):
-        selected_key = self.values[0]
-        new_view = SecondSelectView(self.parent_view.bot, self.parent_view.data, selected_key)
-        await interaction.response.edit_message(
-            content=f"Catégorie sélectionnée : **{selected_key}**\nChoisis maintenant un élément :",
-            embed=None,
-            view=new_view
-        )
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 🎛️ UI — Menu secondaire de sélection
+# 🧠 Cog principal — IllustrationCommand
 # ────────────────────────────────────────────────────────────────────────────────
-class SecondSelectView(View):
-    """Vue secondaire pour choisir un élément dans une catégorie."""
-    def __init__(self, bot, data, key):
-        super().__init__(timeout=120)
-        self.bot = bot
-        self.data = data
-        self.key = key
-        self.add_item(SecondSelect(self))
-
-class SecondSelect(Select):
-    """Menu déroulant pour sélectionner un élément."""
-    def __init__(self, parent_view: SecondSelectView):
-        self.parent_view = parent_view
-        sub_options = list(self.parent_view.data[self.parent_view.key].keys())
-        options = [discord.SelectOption(label=sub, value=sub) for sub in sub_options]
-        super().__init__(placeholder="Choisis un élément", options=options)
-
-    async def callback(self, interaction: discord.Interaction):
-        key = self.parent_view.key
-        sub_key = self.values[0]
-        infos = self.parent_view.data[key][sub_key]
-
-        embed = discord.Embed(
-            title=f"{sub_key} ({key})",
-            color=discord.Color.teal()
-        )
-        for field_name, field_value in infos.items():
-            if isinstance(field_value, list):
-                value = "\n".join(f"• {item}" for item in field_value)
-            else:
-                value = str(field_value)
-            embed.add_field(name=field_name.capitalize(), value=value, inline=False)
-
-        await interaction.response.edit_message(
-            content=None,
-            embed=embed,
-            view=None
-        )
-
-# ────────────────────────────────────────────────────────────────────────────────
-# 🧠 Cog principal
-# ────────────────────────────────────────────────────────────────────────────────
-class InfosVaact(commands.Cog):
+class IllustrationCommand(commands.Cog):
     """
-    Commande !infosvaact — Affiche des infos interactives depuis un fichier structuré
+    Commande !illustration — Jeu où tout le monde peut répondre à un quiz d’image Yu-Gi-Oh!
     """
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    async def fetch_all_cards(self):
+        url = "https://db.ygoprodeck.com/api/v7/cardinfo.php?language=fr"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                if resp.status != 200:
+                    return []
+                data = await resp.json()
+        return data.get("data", [])
+
+    async def get_similar_cards(self, all_cards, true_card):
+        archetype = true_card.get("archetype")
+        card_type = true_card.get("type", "")
+
+        if archetype:
+            group = [
+                c for c in all_cards
+                if c.get("archetype") == archetype and c["name"] != true_card["name"]
+            ]
+        else:
+            group = [
+                c for c in all_cards
+                if c.get("type") == card_type and c["name"] != true_card["name"]
+            ]
+
+        return random.sample(group, k=min(3, len(group))) if group else []
+
     @commands.command(
-        name="infosvaact",
-        help="Affiche des infos VAAct de manière interactive.",
-        description="Affiche les informations d'une base VAAct via un menu interactif."
+        name="illustration",
+        aliases=["illu", "i"],
+        help="🖼️ Devine une carte Yu-Gi-Oh! à partir de son image croppée.",
+        description="Affiche une image de carte Yu-Gi-Oh! croppée et propose un quiz interactif avec réactions."
     )
-    async def infosvaact(self, ctx: commands.Context):
-        """Commande principale pour interagir avec les infos VAAct."""
+    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
+    async def illustration(self, ctx: commands.Context):
+        """Commande principale avec quiz d'image et réponses via réactions."""
         try:
-            data = load_data()
-            view = FirstSelectView(self.bot, data)
-            await ctx.send("🔍 Choisis une catégorie :", view=view)
+            all_cards = await self.fetch_all_cards()
+            if not all_cards:
+                await ctx.send("🚨 Impossible de récupérer les cartes depuis l’API.")
+                return
+
+            candidates = [c for c in all_cards if "image_url_cropped" in c.get("card_images", [{}])[0]]
+            if not candidates:
+                await ctx.send("🚫 Pas de cartes avec images croppées.")
+                return
+
+            true_card = random.choice(candidates)
+            image_url = true_card["card_images"][0].get("image_url_cropped")
+            if not image_url:
+                await ctx.send("🚫 Carte sans image croppée.")
+                return
+
+            similar_cards = await self.get_similar_cards(all_cards, true_card)
+            if len(similar_cards) < 3:
+                await ctx.send("❌ Pas assez de cartes similaires.")
+                return
+
+            all_choices = [true_card["name"]] + [c["name"] for c in similar_cards]
+            random.shuffle(all_choices)
+            correct_index = all_choices.index(true_card["name"])
+
+            # Envoi du message de compte à rebours
+            countdown_msg = await ctx.send("⏳ Début dans 10 secondes...")
+
+            # Compte à rebours de 10 secondes, on édite le message chaque seconde
+            for i in range(10, 0, -1):
+                await countdown_msg.edit(content=f"⏳ Début dans {i} seconde{'s' if i > 1 else ''}...")
+                await asyncio.sleep(1)
+
+            # Préparation de l'embed avec l'image et les choix
+            embed_choices = discord.Embed(
+                title="🖼️ Devine la carte à partir de son illustration !",
+                description="\n".join(f"{REACTIONS[i]} {name}" for i, name in enumerate(all_choices)),
+                color=discord.Color.purple()
+            )
+            embed_choices.set_image(url=image_url)
+            embed_choices.set_footer(text=f"🔹 Archétype : ||{true_card.get('archetype', 'Aucun')}||")
+
+            # Edition du message initial pour afficher l'embed + description
+            await countdown_msg.edit(content=None, embed=embed_choices)
+
+            # Ajout des réactions pour les réponses
+            for emoji in REACTIONS[:len(all_choices)]:
+                await countdown_msg.add_reaction(emoji)
+
+            def check(reaction, user):
+                return (
+                    reaction.message.id == countdown_msg.id and
+                    str(reaction.emoji) in REACTIONS and
+                    not user.bot
+                )
+
+            users_answers = {}
+
+            try:
+                start = asyncio.get_event_loop().time()
+                while True:
+                    timeout = 10 - (asyncio.get_event_loop().time() - start)
+                    if timeout <= 0:
+                        break
+                    reaction, user = await self.bot.wait_for("reaction_add", timeout=timeout, check=check)
+                    if user.id not in users_answers:
+                        users_answers[user.id] = REACTIONS.index(str(reaction.emoji))
+            except asyncio.TimeoutError:
+                pass
+
+            await asyncio.sleep(1)
+            await ctx.send(f"⏳ Temps écoulé ! La bonne réponse était **{true_card['name']}**.")
+
+            # Enregistrement des scores dans Supabase
+            for user_id, choice_index in users_answers.items():
+                correct = (choice_index == correct_index)
+                response = supabase.table("ygo_streaks").select("illu_streak,best_illustreak").eq("user_id", user_id).execute()
+                data = response.data
+                if data:
+                    current_streak = data[0].get("illu_streak", 0)
+                    best_streak = data[0].get("best_illustreak", 0)
+                else:
+                    current_streak = 0
+                    best_streak = 0
+
+                if correct:
+                    current_streak += 1
+                    if current_streak > best_streak:
+                        best_streak = current_streak
+                else:
+                    current_streak = 0
+
+                supabase.table("ygo_streaks").upsert({
+                    "user_id": user_id,
+                    "illu_streak": current_streak,
+                    "best_illustreak": best_streak
+                }).execute()
+
+            winners = [self.bot.get_user(uid) for uid, idx in users_answers.items() if idx == correct_index]
+            if winners:
+                winners_mentions = ", ".join(user.mention for user in winners if user)
+                await ctx.send(f"🎉 Bravo à : {winners_mentions} pour leur bonne réponse !")
+            else:
+                await ctx.send("😞 Personne n'a trouvé la bonne réponse cette fois.")
+
         except Exception as e:
-            print(f"[ERREUR infosvaact] {e}")
-            await ctx.send("❌ Une erreur est survenue lors du chargement des données.")
+            print("[ERREUR illustration]", e)
+            await ctx.send("🚨 Une erreur est survenue pendant le quiz.")
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔌 Setup du Cog
 # ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    cog = InfosVaact(bot)
+    cog = IllustrationCommand(bot)
     for command in cog.get_commands():
         if not hasattr(command, "category"):
-            command.category = "VAACT"
+            command.category = "🃏 Yu-Gi-Oh!"
     await bot.add_cog(cog)
-
