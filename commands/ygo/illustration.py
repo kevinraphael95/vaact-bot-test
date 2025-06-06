@@ -10,7 +10,6 @@
 # ────────────────────────────────────────────────────────────────────────────────
 import discord
 from discord.ext import commands
-from discord.ui import View
 import aiohttp
 import random
 import asyncio
@@ -99,35 +98,33 @@ class IllustrationCommand(commands.Cog):
             random.shuffle(all_choices)
             correct_index = all_choices.index(true_card["name"])
 
-            embed_img = discord.Embed(
-                title="🖼️ Voici l'illustration à deviner !",
-                description="Regardez bien l'image, les choix arrivent bientôt...",
-                color=discord.Color.purple()
-            )
-            embed_img.set_image(url=image_url)
-            await ctx.send(embed=embed_img)
-
+            # Envoi du message de compte à rebours
             countdown_msg = await ctx.send("⏳ Début dans 10 secondes...")
+
+            # Compte à rebours de 10 secondes, on édite le message chaque seconde
             for i in range(10, 0, -1):
                 await countdown_msg.edit(content=f"⏳ Début dans {i} seconde{'s' if i > 1 else ''}...")
                 await asyncio.sleep(1)
-            await countdown_msg.edit(content="✅ C'est parti !")
 
+            # Préparation de l'embed avec l'image et les choix
             embed_choices = discord.Embed(
                 title="🖼️ Devine la carte à partir de son illustration !",
                 description="\n".join(f"{REACTIONS[i]} {name}" for i, name in enumerate(all_choices)),
                 color=discord.Color.purple()
             )
+            embed_choices.set_image(url=image_url)
             embed_choices.set_footer(text=f"🔹 Archétype : ||{true_card.get('archetype', 'Aucun')}||")
 
-            msg = await ctx.send(embed=embed_choices)
+            # Edition du message initial pour afficher l'embed + description
+            await countdown_msg.edit(content=None, embed=embed_choices)
 
+            # Ajout des réactions pour les réponses
             for emoji in REACTIONS[:len(all_choices)]:
-                await msg.add_reaction(emoji)
+                await countdown_msg.add_reaction(emoji)
 
             def check(reaction, user):
                 return (
-                    reaction.message.id == msg.id and
+                    reaction.message.id == countdown_msg.id and
                     str(reaction.emoji) in REACTIONS and
                     not user.bot
                 )
