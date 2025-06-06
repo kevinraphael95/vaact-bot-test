@@ -14,17 +14,14 @@ import aiohttp
 import random
 import asyncio
 import os
+from supabase_client import supabase
 
-from supabase import create_client, Client
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔤 CONSTANTES
 # ────────────────────────────────────────────────────────────────────────────────
 REACTIONS = ["🇦", "🇧", "🇨", "🇩"]
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🧠 Cog principal — IllustrationCommand
@@ -66,7 +63,7 @@ class IllustrationCommand(commands.Cog):
     @commands.command(
         name="illustration",
         aliases=["illu", "i"],
-        help="🖼️ Devine une carte Yu-Gi-Oh! à partir de son image croppée.",
+        help="🖼️ Devine une carte Yu-Gi-Oh! à partir de son illustration.",
         description="Affiche une image de carte Yu-Gi-Oh! croppée et propose un quiz interactif avec réactions."
     )
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
