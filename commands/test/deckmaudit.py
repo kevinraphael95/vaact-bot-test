@@ -1,6 +1,6 @@
 # ────────────────────────────────────────────────────────────────────────────────
 # 📌 deckmaudit.py — Commande interactive !deckmaudit
-# Objectif : Générer un deck maudit absurde avec des cartes anciennes et inutiles
+# Objectif : Générer un deck absurde et injouable avec des cartes anciennes et étranges
 # Catégorie : Yu-Gi-Oh
 # Accès : Public
 # ────────────────────────────────────────────────────────────────────────────────
@@ -31,12 +31,12 @@ class DeckMaudit(commands.Cog):
         absurdité = any(m in desc for m in [
             "lancez un dé", "pile ou face", "perdez", "infligez", "sacrifiez", "détruisez", "piochez"
         ])
-        drôle = any(m in nom for m in [
+        drole = any(m in nom for m in [
             "crapaud", "bataille", "magicien fou", "panda", "boulet", "peste", "poubelle", "chat", "bacon", "grenouille"
         ])
-        ancien = carte["id"] < 10000000
+        ancien = carte.get("id", 99999999) < 10000000
         commun = all(set_code.get("rarity", "") in ["Common", ""] for set_code in carte.get("card_sets", []) or [])
-        return (absurdité or drôle) and ancien and commun
+        return (absurdité or drole) and ancien and commun
 
     @commands.command(
         name="deckmaudit",
@@ -50,7 +50,8 @@ class DeckMaudit(commands.Cog):
 
         try:
             response = requests.get("https://db.ygoprodeck.com/api/v7/cardinfo.php?format=tcg&language=fr")
-            cartes = response.json()["data"]
+            response.raise_for_status()
+            cartes = response.json().get("data", [])
 
             main_deck = []
             extra_deck = []
@@ -58,15 +59,18 @@ class DeckMaudit(commands.Cog):
             for carte in cartes:
                 if not self.est_maudite(carte):
                     continue
-                if carte["type"] in ["Fusion Monster", "Synchro Monster", "Xyz Monster", "Link Monster"]:
+                if carte.get("type") in ["Fusion Monster", "Synchro Monster", "Xyz Monster", "Link Monster"]:
                     extra_deck.append(carte)
                 else:
                     main_deck.append(carte)
 
-            deck_final = random.sample(main_deck, min(40, len(main_deck)))
-            extra_final = random.sample(extra_deck, min(10, len(extra_deck)))
+            if not main_deck and not extra_deck:
+                await ctx.send("❌ Aucune carte maudite trouvée avec les critères définis.")
+                return
 
-            # Création de l'embed
+            deck_final = random.sample(main_deck, min(40, len(main_deck))) if main_deck else []
+            extra_final = random.sample(extra_deck, min(10, len(extra_deck))) if extra_deck else []
+
             embed = discord.Embed(
                 title="☠️ Deck Maudit Aléatoire",
                 description="Voici un deck complètement injouable composé de cartes étranges, absurdes, et très vieilles !",
@@ -74,12 +78,12 @@ class DeckMaudit(commands.Cog):
             )
             embed.add_field(
                 name=f"🃏 Main Deck ({len(deck_final)} cartes)",
-                value="\n".join(f"• {c['name']}" for c in deck_final),
+                value="\n".join(f"• {c['name']}" for c in deck_final) if deck_final else "Aucune carte absurde trouvée pour le Main Deck.",
                 inline=False
             )
             embed.add_field(
                 name=f"💀 Extra Deck ({len(extra_final)} cartes)",
-                value="\n".join(f"• {c['name']}" for c in extra_final) if extra_final else "Aucune carte absurde trouvée !",
+                value="\n".join(f"• {c['name']}" for c in extra_final) if extra_final else "Aucune carte absurde trouvée pour l'Extra Deck.",
                 inline=False
             )
             embed.set_footer(text="Deck totalement injouable. À ne pas utiliser sérieusement 😈")
@@ -97,5 +101,5 @@ async def setup(bot: commands.Bot):
     cog = DeckMaudit(bot)
     for command in cog.get_commands():
         if not hasattr(command, "category"):
-            command.category = "Test"
+            command.category = "Yu-Gi-Oh"
     await bot.add_cog(cog)
