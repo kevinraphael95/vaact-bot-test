@@ -99,15 +99,33 @@ class IllustrationCommand(commands.Cog):
             random.shuffle(all_choices)
             correct_index = all_choices.index(true_card["name"])
 
-            embed = discord.Embed(
+            # Étape 1 : afficher seulement l'image (embed)
+            embed_img = discord.Embed(
+                title="🖼️ Voici l'illustration à deviner !",
+                description="Regardez bien l'image, les choix arrivent bientôt...",
+                color=discord.Color.purple()
+            )
+            embed_img.set_image(url=image_url)
+            msg_img = await ctx.send(embed=embed_img)
+
+            # Étape 2 : message de compte à rebours
+            countdown_msg = await ctx.send("⏳ Début dans 10 secondes...")
+
+            for i in range(10, 0, -1):
+                await countdown_msg.edit(content=f"⏳ Début dans {i} seconde{'s' if i > 1 else ''}...")
+                await asyncio.sleep(1)
+
+            await countdown_msg.edit(content="✅ C'est parti !")
+
+            # Étape 3 : afficher l'embed avec les choix
+            embed_choices = discord.Embed(
                 title="🖼️ Devine la carte à partir de son illustration !",
                 description="\n".join(f"{REACTIONS[i]} {name}" for i, name in enumerate(all_choices)),
                 color=discord.Color.purple()
             )
-            embed.set_image(url=image_url)
-            embed.set_footer(text=f"🔹 Archétype : ||{true_card.get('archetype', 'Aucun')}||")
+            embed_choices.set_footer(text=f"🔹 Archétype : ||{true_card.get('archetype', 'Aucun')}||")
 
-            msg = await ctx.send(embed=embed)
+            msg = await ctx.send(embed=embed_choices)
 
             for emoji in REACTIONS[:len(all_choices)]:
                 await msg.add_reaction(emoji)
@@ -120,33 +138,29 @@ class IllustrationCommand(commands.Cog):
                     not user.bot
                 )
 
-            # Dictionnaire utilisateur -> choix
             users_answers = {}
 
             try:
-                # On attend 10 secondes en récoltant les réactions
                 start = asyncio.get_event_loop().time()
                 while True:
                     timeout = 10 - (asyncio.get_event_loop().time() - start)
                     if timeout <= 0:
                         break
                     reaction, user = await self.bot.wait_for("reaction_add", timeout=timeout, check=check)
-                    # Enregistre la réponse uniquement la première fois
                     if user.id not in users_answers:
                         users_answers[user.id] = REACTIONS.index(str(reaction.emoji))
             except asyncio.TimeoutError:
-                pass  # fin du temps
+                pass
 
-            # Attend 1 seconde (pour fluidité)
+            # Petit délai pour la fluidité
             await asyncio.sleep(1)
 
-            # Message avec le bon choix
+            # Message avec la bonne réponse
             await ctx.send(f"⏳ Temps écoulé ! La bonne réponse était **{true_card['name']}**.")
 
             # Enregistre dans Supabase
             for user_id, choice_index in users_answers.items():
                 correct = (choice_index == correct_index)
-                # Récupère l'ancienne série et meilleure série
                 response = supabase.table("ygo_streaks").select("illu_streak,best_illustreak").eq("user_id", user_id).execute()
                 data = response.data
                 if data:
@@ -163,14 +177,13 @@ class IllustrationCommand(commands.Cog):
                 else:
                     current_streak = 0
 
-                # Upsert dans la table
                 supabase.table("ygo_streaks").upsert({
                     "user_id": user_id,
                     "illu_streak": current_streak,
                     "best_illustreak": best_streak
                 }).execute()
 
-            # Résumé des scores
+            # Résumé des gagnants
             winners = [self.bot.get_user(uid) for uid, idx in users_answers.items() if idx == correct_index]
             if winners:
                 winners_mentions = ", ".join(user.mention for user in winners if user)
