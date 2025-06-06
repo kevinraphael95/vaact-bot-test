@@ -129,7 +129,7 @@ async def on_message(message):
             description= 
             (
                 f"Je suis **Atem**, l’esprit du Pharaon, gardien des **Duels des Ténèbres** et protecteur du **Royaume des Ombres**.\n"
-                "Tu m’as appelé, duelliste ?\n"
+                "Tu m’as appelé, duelliste ?\n\n"
                 f"Utilise `{prefix}help` et je te guiderai sur ce que je peux faire."
             ),
             color=discord.Color.red()
