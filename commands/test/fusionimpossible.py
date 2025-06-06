@@ -1,6 +1,6 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# 📌 fusionimpossible.py — Fusion réelle de deux cartes Yu-Gi-Oh!
-# Objectif : Fusionne nom, type et effets de deux vraies cartes
+# 📌 fusionimpossible.py — Commande interactive !fusionimpossible
+# Objectif : Fusionne nom, type et effets de deux vraies cartes Yu-Gi-Oh!
 # Catégorie : Yu-Gi-Oh
 # Accès : Public
 # ────────────────────────────────────────────────────────────────────────────────
@@ -77,7 +77,6 @@ class FusionImpossible(commands.Cog):
         except Exception as e:
             print(f"[ERREUR fusionimpossible] {e}")
             await ctx.send("❌ Une erreur est survenue lors de la fusion des cartes.")
-
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔌 Setup du Cog
