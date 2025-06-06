@@ -1,5 +1,5 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# 📌 deckmaudit.py — Commande interactive !deckmaudit
+# 📌 DeckMaudit.py — Commande interactive !DeckMaudit
 # Objectif : Générer un deck absurde et injouable avec des cartes anciennes et étranges
 # Catégorie : Yu-Gi-Oh
 # Accès : Public
@@ -18,7 +18,7 @@ import random
 # ────────────────────────────────────────────────────────────────────────────────
 class DeckMaudit(commands.Cog):
     """
-    Commande !deckmaudit — Génère un deck absurde et injouable.
+    Commande !DeckMaudit — Génère un deck absurde et injouable.
     """
 
     def __init__(self, bot: commands.Bot):
@@ -39,12 +39,12 @@ class DeckMaudit(commands.Cog):
         return (absurdité or drole) and ancien and commun
 
     @commands.command(
-        name="deckmaudit",
+        name="DeckMaudit",
         help="Génère un deck absurde et injouable (Main + Extra Deck).",
         description="Génère un deck absurde et injouable à base de cartes anciennes et étranges."
     )
-    async def deckmaudit(self, ctx: commands.Context):
-        """Commande principale !deckmaudit"""
+    async def DeckMaudit(self, ctx: commands.Context):
+        """Commande principale !DeckMaudit"""
 
         await ctx.typing()
 
@@ -91,7 +91,7 @@ class DeckMaudit(commands.Cog):
             await ctx.send(embed=embed)
 
         except Exception as e:
-            print(f"[ERREUR deckmaudit] {e}")
+            print(f"[ERREUR DeckMaudit] {e}")
             await ctx.send("❌ Une erreur est survenue lors de la génération du deck maudit.")
 
 # ────────────────────────────────────────────────────────────────────────────────
