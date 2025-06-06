@@ -1,181 +1,193 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# 📁 illustration.py — Commande !illustration
-# ────────────────────────────────────────────────────────────────────────────────
-# Ce module permet aux utilisateurs de deviner une carte Yu-Gi-Oh! à partir
-# de son image croppée, avec un quiz interactif basé sur les réactions.
+# 📌 illustration.py — Commande interactive !illustration
+# Objectif : Jeu pour deviner une carte Yu-Gi-Oh! à partir de son image croppée.
+# Catégorie : 🃏 Yu-Gi-Oh!
+# Accès : Public
 # ────────────────────────────────────────────────────────────────────────────────
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 📦 IMPORTS
+# 📦 Imports nécessaires
 # ────────────────────────────────────────────────────────────────────────────────
-import discord                            # Pour créer des embeds
-from discord.ext import commands          # Pour les commandes et les cogs
-import aiohttp                            # Pour envoyer des requêtes HTTP asynchrones
-import random                             # Pour choisir des cartes et mélanger les choix
-import asyncio                            # Pour gérer le temps d’attente des réponses
+import discord
+from discord.ext import commands
+import aiohttp
+import random
+import asyncio
+import os
+
+# Import Supabase client (à adapter selon ta config)
+from supabase import create_client, Client
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔤 CONSTANTES
 # ────────────────────────────────────────────────────────────────────────────────
-REACTIONS = ["🇦", "🇧", "🇨", "🇩"]         # Réactions possibles pour le quiz
+REACTIONS = ["🇦", "🇧", "🇨", "🇩"]
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+# Initialisation Supabase
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 🧠 COG : IllustrationCommand
+# 🧠 Cog principal — IllustrationCommand
 # ────────────────────────────────────────────────────────────────────────────────
 class IllustrationCommand(commands.Cog):
     """
-    🎮 Ce cog contient un jeu où les utilisateurs doivent deviner une carte
-    Yu-Gi-Oh! à partir de son image partielle (croppée).
+    Commande !illustration — Jeu où tout le monde peut répondre à un quiz d’image Yu-Gi-Oh!
     """
 
     def __init__(self, bot: commands.Bot):
-        self.bot = bot  # 🔌 On stocke l'instance du bot
+        self.bot = bot
 
-    # ────────────────────────────────────────────────────────────────────────────
-    # 🔄 FONCTION : fetch_all_cards
-    # ────────────────────────────────────────────────────────────────────────────
     async def fetch_all_cards(self):
-        """📥 Récupère toutes les cartes Yu-Gi-Oh! en langue française."""
         url = "https://db.ygoprodeck.com/api/v7/cardinfo.php?language=fr"
-
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
                 if resp.status != 200:
-                    return []  # 🚫 Erreur lors de la récupération
+                    return []
                 data = await resp.json()
+        return data.get("data", [])
 
-        return data.get("data", [])  # ✅ Retourne la liste de cartes
-
-    # ────────────────────────────────────────────────────────────────────────────
-    # 🧩 FONCTION : get_similar_cards
-    # ────────────────────────────────────────────────────────────────────────────
     async def get_similar_cards(self, all_cards, true_card):
-        """
-        🔄 Trouve jusqu’à 3 cartes similaires à celle à deviner :
-        - Par archétype (priorité)
-        - Sinon, par type
-        """
         archetype = true_card.get("archetype")
         card_type = true_card.get("type", "")
 
-        # 🎯 Filtrage par archétype si disponible
         if archetype:
             group = [
-                card for card in all_cards
-                if card.get("archetype") == archetype and card["name"] != true_card["name"]
+                c for c in all_cards
+                if c.get("archetype") == archetype and c["name"] != true_card["name"]
             ]
         else:
-            # 🪪 Sinon, filtrage par type général
             group = [
-                card for card in all_cards
-                if card.get("type") == card_type and card["name"] != true_card["name"]
+                c for c in all_cards
+                if c.get("type") == card_type and c["name"] != true_card["name"]
             ]
 
-        # 🎲 Sélection aléatoire de 3 cartes au maximum
         return random.sample(group, k=min(3, len(group))) if group else []
 
-    # ────────────────────────────────────────────────────────────────────────────
-    # 🔹 COMMANDE : !illustration
-    # ────────────────────────────────────────────────────────────────────────────
     @commands.command(
         name="illustration",
         aliases=["illu", "i"],
-        help="🖼️ Devine une carte Yu-Gi-Oh à partir de son image croppée."
+        help="🖼️ Devine une carte Yu-Gi-Oh! à partir de son image croppée."
     )
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
     async def illustration(self, ctx: commands.Context):
-        """
-        🎮 Lance un mini-jeu où l’utilisateur doit reconnaître une carte à partir
-        d’une image croppée. Il a 4 propositions.
-        """
-
         try:
-            # 📥 Récupération des cartes depuis l’API
             all_cards = await self.fetch_all_cards()
             if not all_cards:
                 await ctx.send("🚨 Impossible de récupérer les cartes depuis l’API.")
                 return
 
-            # 🃏 Sélection d’une carte avec une image croppée
-            true_card = random.choice([
-                card for card in all_cards
-                if "image_url_cropped" in card.get("card_images", [{}])[0]
-            ])
+            # Choix d’une carte avec image croppée
+            candidates = [c for c in all_cards if "image_url_cropped" in c.get("card_images", [{}])[0]]
+            if not candidates:
+                await ctx.send("🚫 Pas de cartes avec images croppées.")
+                return
+
+            true_card = random.choice(candidates)
             image_url = true_card["card_images"][0].get("image_url_cropped")
-
             if not image_url:
-                await ctx.send("🚫 Cette carte ne possède pas d’image croppée.")
+                await ctx.send("🚫 Carte sans image croppée.")
                 return
 
-            # 🧩 Récupération de cartes similaires
             similar_cards = await self.get_similar_cards(all_cards, true_card)
-
             if len(similar_cards) < 3:
-                await ctx.send("❌ Pas assez de cartes similaires pour générer des choix.")
+                await ctx.send("❌ Pas assez de cartes similaires.")
                 return
 
-            # 🪄 Création des propositions aléatoires
-            all_choices = [true_card["name"]] + [card["name"] for card in similar_cards]
+            all_choices = [true_card["name"]] + [c["name"] for c in similar_cards]
             random.shuffle(all_choices)
             correct_index = all_choices.index(true_card["name"])
 
-            # 🖼️ Construction de l’embed du quiz
             embed = discord.Embed(
                 title="🖼️ Devine la carte à partir de son illustration !",
-                description="\n".join(
-                    f"{REACTIONS[i]} {name}" for i, name in enumerate(all_choices)
-                ),
+                description="\n".join(f"{REACTIONS[i]} {name}" for i, name in enumerate(all_choices)),
                 color=discord.Color.purple()
             )
-            embed.set_image(url=image_url)  # 🖼️ Ajoute l’image croppée
+            embed.set_image(url=image_url)
             embed.set_footer(text=f"🔹 Archétype : ||{true_card.get('archetype', 'Aucun')}||")
 
-            # 📤 Envoi de l'embed
             msg = await ctx.send(embed=embed)
 
-            # 🟡 Ajout des réactions pour les choix
             for emoji in REACTIONS[:len(all_choices)]:
                 await msg.add_reaction(emoji)
 
-            # ✅ Vérifie que la réaction vient bien de l’auteur du message
+            # Maintenant, on accepte les réponses de TOUT LE MONDE pendant 10 secondes
             def check(reaction, user):
                 return (
-                    user == ctx.author and
                     reaction.message.id == msg.id and
-                    str(reaction.emoji) in REACTIONS
+                    str(reaction.emoji) in REACTIONS and
+                    not user.bot
                 )
 
+            # Dictionnaire utilisateur -> choix
+            users_answers = {}
+
             try:
-                # ⏳ Attend la réaction de l’utilisateur
-                reaction, _ = await self.bot.wait_for("reaction_add", timeout=600.0, check=check)
+                # On attend 10 secondes en récoltant les réactions
+                start = asyncio.get_event_loop().time()
+                while True:
+                    timeout = 10 - (asyncio.get_event_loop().time() - start)
+                    if timeout <= 0:
+                        break
+                    reaction, user = await self.bot.wait_for("reaction_add", timeout=timeout, check=check)
+                    # Enregistre la réponse uniquement la première fois
+                    if user.id not in users_answers:
+                        users_answers[user.id] = REACTIONS.index(str(reaction.emoji))
             except asyncio.TimeoutError:
-                await ctx.send("⏰ Temps écoulé !")
-                return
+                pass  # fin du temps
 
-            # 🧠 Analyse de la réponse
-            selected_index = REACTIONS.index(str(reaction.emoji))
+            # Attend 1 seconde (pour fluidité)
+            await asyncio.sleep(1)
 
-            if selected_index == correct_index:
-                await ctx.send(f"✅ Bonne réponse ! C’était **{true_card['name']}**.")
+            # Message avec le bon choix
+            await ctx.send(f"⏳ Temps écoulé ! La bonne réponse était **{true_card['name']}**.")
+
+            # Enregistre dans Supabase
+            for user_id, choice_index in users_answers.items():
+                correct = (choice_index == correct_index)
+                # Récupère l'ancienne série et meilleure série
+                response = supabase.table("ygo_streaks").select("illu_streak,best_illustreak").eq("user_id", user_id).execute()
+                data = response.data
+                if data:
+                    current_streak = data[0].get("illu_streak", 0)
+                    best_streak = data[0].get("best_illustreak", 0)
+                else:
+                    current_streak = 0
+                    best_streak = 0
+
+                if correct:
+                    current_streak += 1
+                    if current_streak > best_streak:
+                        best_streak = current_streak
+                else:
+                    current_streak = 0
+
+                # Upsert dans la table
+                supabase.table("ygo_streaks").upsert({
+                    "user_id": user_id,
+                    "illu_streak": current_streak,
+                    "best_illustreak": best_streak
+                }).execute()
+
+            # Résumé des scores
+            winners = [self.bot.get_user(uid) for uid, idx in users_answers.items() if idx == correct_index]
+            if winners:
+                winners_mentions = ", ".join(user.mention for user in winners if user)
+                await ctx.send(f"🎉 Bravo à : {winners_mentions} pour leur bonne réponse !")
             else:
-                await ctx.send(f"❌ Mauvaise réponse ! C’était **{true_card['name']}**.")
+                await ctx.send("😞 Personne n'a trouvé la bonne réponse cette fois.")
 
         except Exception as e:
             print("[ERREUR ILLUSTRATION]", e)
             await ctx.send("🚨 Une erreur est survenue pendant le quiz.")
 
-    # ────────────────────────────────────────────────────────────────────────────
-    # 🏷️ Catégorie personnalisée pour la commande dans !help
-    # ────────────────────────────────────────────────────────────────────────────
-    def cog_load(self):
-        self.illustration.category = "🃏 Yu-Gi-Oh!"
-
 # ────────────────────────────────────────────────────────────────────────────────
-# ⚙️ SETUP DU COG
+# 🔌 Setup du Cog
 # ────────────────────────────────────────────────────────────────────────────────
 async def setup(bot: commands.Bot):
-    """
-    📦 Fonction exécutée au chargement du cog pour l’ajouter au bot.
-    """
-    await bot.add_cog(IllustrationCommand(bot))
-    print("✅ Cog chargé : IllustrationCommand (catégorie = 🃏 Yu-Gi-Oh!)")
+    cog = IllustrationCommand(bot)
+    for command in cog.get_commands():
+        if not hasattr(command, "category"):
+            command.category = "🃏 Yu-Gi-Oh!"
+    await bot.add_cog(cog)
