@@ -10,12 +10,12 @@
 # ────────────────────────────────────────────────────────────────────────────────
 import discord
 from discord.ext import commands
+from discord.ui import View
 import aiohttp
 import random
 import asyncio
 import os
 
-# Import Supabase client (à adapter selon ta config)
 from supabase import create_client, Client
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -25,7 +25,6 @@ REACTIONS = ["🇦", "🇧", "🇨", "🇩"]
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-# Initialisation Supabase
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -68,17 +67,18 @@ class IllustrationCommand(commands.Cog):
     @commands.command(
         name="illustration",
         aliases=["illu", "i"],
-        help="🖼️ Devine une carte Yu-Gi-Oh! à partir de son image croppée."
+        help="🖼️ Devine une carte Yu-Gi-Oh! à partir de son image croppée.",
+        description="Affiche une image de carte Yu-Gi-Oh! croppée et propose un quiz interactif avec réactions."
     )
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
     async def illustration(self, ctx: commands.Context):
+        """Commande principale avec quiz d'image et réponses via réactions."""
         try:
             all_cards = await self.fetch_all_cards()
             if not all_cards:
                 await ctx.send("🚨 Impossible de récupérer les cartes depuis l’API.")
                 return
 
-            # Choix d’une carte avec image croppée
             candidates = [c for c in all_cards if "image_url_cropped" in c.get("card_images", [{}])[0]]
             if not candidates:
                 await ctx.send("🚫 Pas de cartes avec images croppées.")
@@ -99,25 +99,20 @@ class IllustrationCommand(commands.Cog):
             random.shuffle(all_choices)
             correct_index = all_choices.index(true_card["name"])
 
-            # Étape 1 : afficher seulement l'image (embed)
             embed_img = discord.Embed(
                 title="🖼️ Voici l'illustration à deviner !",
                 description="Regardez bien l'image, les choix arrivent bientôt...",
                 color=discord.Color.purple()
             )
             embed_img.set_image(url=image_url)
-            msg_img = await ctx.send(embed=embed_img)
+            await ctx.send(embed=embed_img)
 
-            # Étape 2 : message de compte à rebours
             countdown_msg = await ctx.send("⏳ Début dans 10 secondes...")
-
             for i in range(10, 0, -1):
                 await countdown_msg.edit(content=f"⏳ Début dans {i} seconde{'s' if i > 1 else ''}...")
                 await asyncio.sleep(1)
-
             await countdown_msg.edit(content="✅ C'est parti !")
 
-            # Étape 3 : afficher l'embed avec les choix
             embed_choices = discord.Embed(
                 title="🖼️ Devine la carte à partir de son illustration !",
                 description="\n".join(f"{REACTIONS[i]} {name}" for i, name in enumerate(all_choices)),
@@ -130,7 +125,6 @@ class IllustrationCommand(commands.Cog):
             for emoji in REACTIONS[:len(all_choices)]:
                 await msg.add_reaction(emoji)
 
-            # Maintenant, on accepte les réponses de TOUT LE MONDE pendant 10 secondes
             def check(reaction, user):
                 return (
                     reaction.message.id == msg.id and
@@ -152,13 +146,10 @@ class IllustrationCommand(commands.Cog):
             except asyncio.TimeoutError:
                 pass
 
-            # Petit délai pour la fluidité
             await asyncio.sleep(1)
-
-            # Message avec la bonne réponse
             await ctx.send(f"⏳ Temps écoulé ! La bonne réponse était **{true_card['name']}**.")
 
-            # Enregistre dans Supabase
+            # Enregistrement des scores dans Supabase
             for user_id, choice_index in users_answers.items():
                 correct = (choice_index == correct_index)
                 response = supabase.table("ygo_streaks").select("illu_streak,best_illustreak").eq("user_id", user_id).execute()
@@ -183,7 +174,6 @@ class IllustrationCommand(commands.Cog):
                     "best_illustreak": best_streak
                 }).execute()
 
-            # Résumé des gagnants
             winners = [self.bot.get_user(uid) for uid, idx in users_answers.items() if idx == correct_index]
             if winners:
                 winners_mentions = ", ".join(user.mention for user in winners if user)
@@ -192,7 +182,7 @@ class IllustrationCommand(commands.Cog):
                 await ctx.send("😞 Personne n'a trouvé la bonne réponse cette fois.")
 
         except Exception as e:
-            print("[ERREUR ILLUSTRATION]", e)
+            print("[ERREUR illustration]", e)
             await ctx.send("🚨 Une erreur est survenue pendant le quiz.")
 
 # ────────────────────────────────────────────────────────────────────────────────
