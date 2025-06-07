@@ -147,7 +147,7 @@ class IllustrationCommand(commands.Cog):
             # Enregistrement des scores dans Supabase
             for user_id, choice_index in users_answers.items():
                 correct = (choice_index == correct_index)
-                response = supabase.table("ygo_streaks").select("illu_streak,best_illustreak").eq("user_id", user_id).execute()
+                response = await supabase.table("ygo_streaks").select("illu_streak,best_illustreak").eq("user_id", user_id).execute()
                 data = response.data
                 if data:
                     current_streak = data[0].get("illu_streak", 0)
@@ -174,7 +174,7 @@ class IllustrationCommand(commands.Cog):
             # Récupérer streaks pour tous les joueurs ayant répondu
             user_streaks = []
             for user_id in users_answers.keys():
-                response = supabase.table("ygo_streaks").select("illu_streak,best_illustreak").eq("user_id", user_id).execute()
+                response = await supabase.table("ygo_streaks").select("illu_streak,best_illustreak").eq("user_id", user_id).execute()
                 data = response.data
                 if data:
                     current_streak = data[0].get("illu_streak", 0)
@@ -204,6 +204,9 @@ class IllustrationCommand(commands.Cog):
             if best_user_id:
                 guild = ctx.guild
                 if guild:
+                    if not role:
+                    role = await guild.create_role(name="Maître des cartes", color=discord.Color.gold(), reason="Rôle créé pour le meilleur joueur de !illustration")
+
                     role = discord.utils.get(guild.roles, name="Maître des cartes")
                     if role:
                         # Retirer le rôle à tous les membres qui l'ont
@@ -211,7 +214,8 @@ class IllustrationCommand(commands.Cog):
                             if role in member.roles:
                                 try:
                                     await member.remove_roles(role)
-                                except:
+                                except Exception as e:
+                                    print(f"Erreur en retirant le rôle Maître des cartes : {e}")
                                     pass
 
                         # Ajouter le rôle au meilleur membre
