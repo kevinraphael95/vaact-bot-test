@@ -185,24 +185,25 @@ class MentionButtons(View):
             await interaction.response.send_message("❌ Ce bouton ne t'est pas destiné.", ephemeral=True)
             return
 
-        await interaction.response.defer()
+        await interaction.response.defer()  # Ack l'interaction
 
-        # Créer un contexte à partir de l'interaction
-        ctx = await self.bot.get_context(interaction.message)
-        ctx.interaction = interaction  # Important : pour que la commande sache d'où vient l'interaction
+        # Créer un contexte depuis l'interaction (pas depuis un message)
+        ctx = await self.bot.get_context(interaction, cls=type(self.ctx))
+
+        # Simuler le contenu de la commande
+        prefix = self.bot.command_prefix(self.bot, ctx.message)
+        ctx.message.content = f"{prefix}{command_name}"
+
         ctx.author = interaction.user
+        ctx.interaction = interaction
         ctx.channel = interaction.channel
         ctx.guild = interaction.guild
-        ctx.message = interaction.message
 
-        # Simuler la commande tapée : "!help" ou "!info"
-        # Attention, bot.command_prefix est dynamique, mais ici on utilise directement le préfixe
-        prefix = self.bot.command_prefix(self.bot, ctx.message)
-        fake_message_content = f"{prefix}{command_name}"
-        ctx.message.content = fake_message_content
-
-        # Refaire le contexte depuis ce faux message
-        ctx = await self.bot.get_context(ctx.message, cls=type(ctx))
+        # Trouver la commande
+        cmd = self.bot.get_command(command_name)
+        if cmd is None:
+            await interaction.followup.send("❌ Commande introuvable.", ephemeral=True)
+            return
 
         # Invoker la commande
         await self.bot.invoke(ctx)
