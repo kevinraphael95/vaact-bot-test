@@ -50,11 +50,15 @@ class IllustrationCommand(commands.Cog):
                 c for c in all_cards
                 if c.get("archetype") == archetype and c["name"] != true_card["name"]
             ]
+
         else:
             group = [
                 c for c in all_cards
-                if c.get("type") == card_type and c["name"] != true_card["name"]
+                if c.get("type") == card_type
+                and not c.get("archetype")  # carte sans archétype
+                and c["name"] != true_card["name"]
             ]
+            
 
         return random.sample(group, k=min(3, len(group))) if group else []
 
