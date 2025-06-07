@@ -202,9 +202,9 @@ class IllustrationCommand(commands.Cog):
 
             # Envoi d'un seul message avec tout
             await ctx.send(
-                f"⏳ Temps écoulé ! La bonne réponse était **{true_card['name']}**.\n\n"
+                f"⏳ Temps écoulé ! La bonne réponse était **{true_card['name']}**.\n"
+                f"{result_text}\n\n"
                 f"📊 **Classement des séries actuelles et meilleures :**\n{classement_text}\n\n"
-                f"{result_text}"
             )
 
         except Exception as e:
