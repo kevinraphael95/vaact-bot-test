@@ -13,16 +13,13 @@ from discord.ext import commands
 import aiohttp
 import random
 import asyncio
-import os
 from supabase_client import supabase
 import traceback
-
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔤 CONSTANTES
 # ────────────────────────────────────────────────────────────────────────────────
 REACTIONS = ["🇦", "🇧", "🇨", "🇩"]
-
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🧠 Cog principal — IllustrationCommand
@@ -142,7 +139,6 @@ class IllustrationCommand(commands.Cog):
                 pass
 
             await asyncio.sleep(1)
-            await ctx.send(f"⏳ Temps écoulé ! La bonne réponse était **{true_card['name']}**.")
 
             # Enregistrement des scores dans Supabase
             for user_id, choice_index in users_answers.items():
@@ -169,7 +165,7 @@ class IllustrationCommand(commands.Cog):
                     "best_illustreak": best_streak
                 }).execute()
 
-            # === NOUVEAU : Affichage des séries actuelles et meilleures, + rôle Maître des cartes ===
+            # Préparation du message final combiné
 
             # Récupérer streaks pour tous les joueurs ayant répondu
             user_streaks = []
@@ -184,57 +180,36 @@ class IllustrationCommand(commands.Cog):
                     best_streak = 0
                 user_streaks.append((user_id, current_streak, best_streak))
 
-            # Trouver le meilleur joueur selon la série actuelle
-            if user_streaks:
-                best_user_id, best_current_streak, _ = max(user_streaks, key=lambda x: x[1])
-            else:
-                best_user_id = None
+            # Trier par meilleure série actuelle décroissante
+            user_streaks.sort(key=lambda x: x[1], reverse=True)
 
-            # Afficher les scores
-            score_messages = []
-            for user_id, current_streak, best_streak in user_streaks:
+            # Construction du texte du classement
+            classement_lines = []
+            for rank, (user_id, current_streak, best_streak) in enumerate(user_streaks, start=1):
                 user = self.bot.get_user(user_id)
                 if user:
-                    score_messages.append(f"**{user}** — Série actuelle: `{current_streak}`, meilleure série: `{best_streak}`")
+                    classement_lines.append(f"#{rank} **{user}** — Série actuelle: `{current_streak}`, meilleure série: `{best_streak}`")
 
-            if score_messages:
-                await ctx.send("📊 **Scores actuels:**\n" + "\n".join(score_messages))
+            classement_text = "\n".join(classement_lines) if classement_lines else "Aucun score enregistré."
 
-            # Gérer le rôle Maître des cartes
-            if best_user_id:
-                guild = ctx.guild
-                if guild:
-                    role = discord.utils.get(guild.roles, name="Maître des cartes")
-                    if role:
-                        # Retirer le rôle à tous les membres qui l'ont
-                        for member in guild.members:
-                            if role in member.roles:
-                                try:
-                                    await member.remove_roles(role)
-                                except:
-                                    pass
-
-                        # Ajouter le rôle au meilleur membre
-                        best_member = guild.get_member(best_user_id)
-                        if best_member and role not in best_member.roles:
-                            try:
-                                await best_member.add_roles(role)
-                                await ctx.send(f"👑 {best_member.mention} est maintenant le **Maître des cartes** !")
-                            except Exception as e:
-                                await ctx.send(f"⚠️ Impossible d’attribuer le rôle Maître des cartes : {e}")
-
-            # Message de félicitations aux gagnants (déjà existant)
+            # Liste des gagnants (bonne réponse)
             winners = [self.bot.get_user(uid) for uid, idx in users_answers.items() if idx == correct_index]
             if winners:
                 winners_mentions = ", ".join(user.mention for user in winners if user)
-                await ctx.send(f"🎉 Bravo à : {winners_mentions} pour leur bonne réponse !")
+                result_text = f"🎉 Bravo à : {winners_mentions} pour leur bonne réponse !"
             else:
-                await ctx.send("Personne n’a trouvé la bonne réponse cette fois.")
+                result_text = "Personne n’a trouvé la bonne réponse cette fois."
+
+            # Envoi d'un seul message avec tout
+            await ctx.send(
+                f"⏳ Temps écoulé ! La bonne réponse était **{true_card['name']}**.\n\n"
+                f"📊 **Classement des séries actuelles et meilleures :**\n{classement_text}\n\n"
+                f"{result_text}"
+            )
 
         except Exception as e:
             traceback.print_exc()
             await ctx.send(f"❌ Une erreur est survenue : {e}")
-
 
 
 
