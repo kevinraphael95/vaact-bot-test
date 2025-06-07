@@ -103,7 +103,7 @@ class IllustrationCommand(commands.Cog):
 
             # Préparation de l'embed avec l'image et les choix
             embed_choices = discord.Embed(
-                title="🖼️ Devine la carte à partir de son illustration !",
+                title="🖼️ Devine la carte à partir de son illustration ! Tout le monde peut jouer.",
                 description="\n".join(f"{REACTIONS[i]} {name}" for i, name in enumerate(all_choices)),
                 color=discord.Color.purple()
             )
