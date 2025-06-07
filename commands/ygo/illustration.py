@@ -15,6 +15,7 @@ import random
 import asyncio
 import os
 from supabase_client import supabase
+import traceback
 
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -175,9 +176,13 @@ class IllustrationCommand(commands.Cog):
             else:
                 await ctx.send("😞 Personne n'a trouvé la bonne réponse cette fois.")
 
+
+            
         except Exception as e:
             print("[ERREUR illustration]", e)
-            await ctx.send("🚨 Une erreur est survenue pendant le quiz.")
+            traceback.print_exc()
+            await ctx.send(f"🚨 Une erreur est survenue pendant le quiz : `{type(e).__name__}`")
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 🔌 Setup du Cog
