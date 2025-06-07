@@ -180,33 +180,47 @@ class MentionButtons(View):
         self.ctx = ctx
         self.response_message = None
 
-    @button(label="📖 Help", style=ButtonStyle.primary)
-    async def help_button(self, interaction: Interaction, button):
+    async def invoke_command(self, interaction: Interaction, command_name: str):
         if interaction.user != self.ctx.author:
             await interaction.response.send_message("❌ Ce bouton ne t'est pas destiné.", ephemeral=True)
             return
 
         await interaction.response.defer()
-        command = self.bot.get_command("help")
-        if command:
-            await command.callback(self.ctx)
+
+        # Créer un contexte à partir de l'interaction
+        ctx = await self.bot.get_context(interaction.message)
+        ctx.interaction = interaction  # Important : pour que la commande sache d'où vient l'interaction
+        ctx.author = interaction.user
+        ctx.channel = interaction.channel
+        ctx.guild = interaction.guild
+        ctx.message = interaction.message
+
+        # Simuler la commande tapée : "!help" ou "!info"
+        # Attention, bot.command_prefix est dynamique, mais ici on utilise directement le préfixe
+        prefix = self.bot.command_prefix(self.bot, ctx.message)
+        fake_message_content = f"{prefix}{command_name}"
+        ctx.message.content = fake_message_content
+
+        # Refaire le contexte depuis ce faux message
+        ctx = await self.bot.get_context(ctx.message, cls=type(ctx))
+
+        # Invoker la commande
+        await self.bot.invoke(ctx)
+
+    @button(label="📖 Help", style=ButtonStyle.primary)
+    async def help_button(self, interaction: Interaction, button):
+        await self.invoke_command(interaction, "help")
 
     @button(label="ℹ️ Info", style=ButtonStyle.secondary)
     async def info_button(self, interaction: Interaction, button):
-        if interaction.user != self.ctx.author:
-            await interaction.response.send_message("❌ Ce bouton ne t'est pas destiné.", ephemeral=True)
-            return
-
-        await interaction.response.defer()
-        command = self.bot.get_command("info")
-        if command:
-            await command.callback(self.ctx)
+        await self.invoke_command(interaction, "info")
 
     async def on_timeout(self):
         for child in self.children:
             child.disabled = True
         if self.response_message:
             await self.response_message.edit(view=self)
+
 
 
 
