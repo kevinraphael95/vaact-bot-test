@@ -74,7 +74,7 @@ class Question(commands.Cog):
     @commands.command(
         name="question",
         aliases=["q"],
-        help="🧠 Devine une carte Yu-Gi-Oh à partir de sa description. Essaie de faire la plus grande série de bonnes réponses."
+        help="🧠 Devine une carte Yu-Gi-Oh à partir de sa description. Essaie de faire la plus grande série de bonnes réponses. (jeu solo)"
     )
     @commands.cooldown(rate=1, per=8, type=commands.BucketType.user)
     async def Question(self, ctx):
