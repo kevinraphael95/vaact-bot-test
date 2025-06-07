@@ -130,7 +130,8 @@ async def on_message(message):
             (
                 f"Je suis **Atem**, l’esprit du Pharaon, gardien des **Duels des Ténèbres** et protecteur du **Royaume des Ombres**.\n"
                 "Tu m’as appelé, duelliste ?\n\n"
-                f"Utilise `{prefix}help` et tu verras ce que je peux faire."
+                f"Utilise la commande `{prefix}help` pour voir mes commandes.\n"
+                f"Utilise la commande `{prefix}info` pour voir les derniers ajouts du bot."
             ),
             color=discord.Color.red()
         )
