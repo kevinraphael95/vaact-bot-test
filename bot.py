@@ -20,6 +20,9 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 from dateutil import parser
+from discord.ui import View, button
+from discord import ButtonStyle, Interaction
+from discord.ext.commands import Context
 
 # ──────────────────────────────────────────────────────────────
 # 📦 Modules internes
@@ -121,13 +124,12 @@ async def on_message(message):
     contenu = message.content.lower()
 
     # Réponse en embed si le bot est mentionné seul
-    if bot.user in message.mentions and len(message.mentions) == 1:
+        if bot.user in message.mentions and len(message.mentions) == 1:
         prefix = get_prefix(bot, message)
 
         embed = discord.Embed(
             title="👑 Atem, Roi des Duellistes, s’avance.",
-            description= 
-            (
+            description=(
                 f"Je suis **Atem**, l’esprit du Pharaon, gardien des **Duels des Ténèbres** et protecteur du **Royaume des Ombres**.\n"
                 "Tu m’as appelé, duelliste ?\n\n"
                 f"Utilise la commande `{prefix}help` pour voir mes commandes.\n"
@@ -137,15 +139,16 @@ async def on_message(message):
         )
         embed.set_footer(text="Tu dois croire en l'âme des cartes 🎴")
 
-        if bot.user.avatar:
-            embed.set_thumbnail(url=bot.user.avatar.url)
-        else:
-            embed.set_thumbnail(url=bot.user.default_avatar.url)
+        avatar_url = bot.user.avatar.url if bot.user.avatar else bot.user.default_avatar.url
+        embed.set_thumbnail(url=avatar_url)
 
-        await message.channel.send(embed=embed)
+        ctx = await bot.get_context(message)
+        view = MentionButtons(bot, ctx)
+        msg = await message.channel.send(embed=embed, view=view)
+        view.response_message = msg
         return
 
-    await bot.process_commands(message)
+
 
 
 # ──────────────────────────────────────────────────────────────
@@ -164,6 +167,48 @@ async def on_command_error(ctx, error):
         return
     else:
         raise error
+
+
+# ──────────────────────────────────────────────────────────────
+# 🔘 Boutons
+# ──────────────────────────────────────────────────────────────
+
+class MentionButtons(View):
+    def __init__(self, bot, ctx: Context):
+        super().__init__(timeout=60)
+        self.bot = bot
+        self.ctx = ctx
+        self.response_message = None
+
+    @button(label="📖 Help", style=ButtonStyle.primary)
+    async def help_button(self, interaction: Interaction, button):
+        if interaction.user != self.ctx.author:
+            await interaction.response.send_message("❌ Ce bouton ne t'est pas destiné.", ephemeral=True)
+            return
+
+        await interaction.response.defer()
+        command = self.bot.get_command("help")
+        if command:
+            await command.callback(self.ctx)
+
+    @button(label="ℹ️ Info", style=ButtonStyle.secondary)
+    async def info_button(self, interaction: Interaction, button):
+        if interaction.user != self.ctx.author:
+            await interaction.response.send_message("❌ Ce bouton ne t'est pas destiné.", ephemeral=True)
+            return
+
+        await interaction.response.defer()
+        command = self.bot.get_command("info")
+        if command:
+            await command.callback(self.ctx)
+
+    async def on_timeout(self):
+        for child in self.children:
+            child.disabled = True
+        if self.response_message:
+            await self.response_message.edit(view=self)
+
+
 
 # ──────────────────────────────────────────────────────────────
 # 🚀 Lancement
