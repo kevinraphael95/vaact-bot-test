@@ -169,19 +169,73 @@ class IllustrationCommand(commands.Cog):
                     "best_illustreak": best_streak
                 }).execute()
 
+            # === NOUVEAU : Affichage des séries actuelles et meilleures, + rôle Maître des cartes ===
+
+            # Récupérer streaks pour tous les joueurs ayant répondu
+            user_streaks = []
+            for user_id in users_answers.keys():
+                response = supabase.table("ygo_streaks").select("illu_streak,best_illustreak").eq("user_id", user_id).execute()
+                data = response.data
+                if data:
+                    current_streak = data[0].get("illu_streak", 0)
+                    best_streak = data[0].get("best_illustreak", 0)
+                else:
+                    current_streak = 0
+                    best_streak = 0
+                user_streaks.append((user_id, current_streak, best_streak))
+
+            # Trouver le meilleur joueur selon la série actuelle
+            if user_streaks:
+                best_user_id, best_current_streak, _ = max(user_streaks, key=lambda x: x[1])
+            else:
+                best_user_id = None
+
+            # Afficher les scores
+            score_messages = []
+            for user_id, current_streak, best_streak in user_streaks:
+                user = self.bot.get_user(user_id)
+                if user:
+                    score_messages.append(f"**{user}** — Série actuelle: `{current_streak}`, meilleure série: `{best_streak}`")
+
+            if score_messages:
+                await ctx.send("📊 **Scores actuels:**\n" + "\n".join(score_messages))
+
+            # Gérer le rôle Maître des cartes
+            if best_user_id:
+                guild = ctx.guild
+                if guild:
+                    role = discord.utils.get(guild.roles, name="Maître des cartes")
+                    if role:
+                        # Retirer le rôle à tous les membres qui l'ont
+                        for member in guild.members:
+                            if role in member.roles:
+                                try:
+                                    await member.remove_roles(role)
+                                except:
+                                    pass
+
+                        # Ajouter le rôle au meilleur membre
+                        best_member = guild.get_member(best_user_id)
+                        if best_member and role not in best_member.roles:
+                            try:
+                                await best_member.add_roles(role)
+                                await ctx.send(f"👑 {best_member.mention} est maintenant le **Maître des cartes** !")
+                            except Exception as e:
+                                await ctx.send(f"⚠️ Impossible d’attribuer le rôle Maître des cartes : {e}")
+
+            # Message de félicitations aux gagnants (déjà existant)
             winners = [self.bot.get_user(uid) for uid, idx in users_answers.items() if idx == correct_index]
             if winners:
                 winners_mentions = ", ".join(user.mention for user in winners if user)
                 await ctx.send(f"🎉 Bravo à : {winners_mentions} pour leur bonne réponse !")
             else:
-                await ctx.send("😞 Personne n'a trouvé la bonne réponse cette fois.")
+                await ctx.send("Personne n’a trouvé la bonne réponse cette fois.")
 
-
-            
         except Exception as e:
-            print("[ERREUR illustration]", e)
             traceback.print_exc()
-            await ctx.send(f"🚨 Une erreur est survenue pendant le quiz : `{type(e).__name__}`")
+            await ctx.send(f"❌ Une erreur est survenue : {e}")
+
+
 
 
 # ────────────────────────────────────────────────────────────────────────────────
