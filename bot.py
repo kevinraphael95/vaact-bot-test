@@ -150,7 +150,7 @@ async def on_message(message):
         view.response_message = msg
         return
 
-
+    await bot.process_commands(message)
 
 
 # ──────────────────────────────────────────────────────────────
