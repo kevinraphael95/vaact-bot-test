@@ -124,7 +124,7 @@ async def on_message(message):
     contenu = message.content.lower()
 
     # Réponse en embed si le bot est mentionné seul
-        if bot.user in message.mentions and len(message.mentions) == 1:
+    if bot.user in message.mentions and len(message.mentions) == 1:
         prefix = get_prefix(bot, message)
 
         embed = discord.Embed(
