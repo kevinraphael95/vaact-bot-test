@@ -34,10 +34,10 @@ class InfoCog(commands.Cog):
         )
         # Tu modifies ici les lignes suivantes avec tes propres nouveautés
         changelog_lines = [
-            "• Ajout de la commande !fusionimpossible pour fusionner deux cartes Yu-Gi-Oh!",
-            "• Amélioration des performances du bot",
-            "• Correction de bugs mineurs dans la commande !deck",
-            "• Mise à jour de la base de données cartes"
+            "• La commande {prefix}illustration devient multijoueur, vous pouvez répondre quand les autres font la commande!",
+            "• La commande {prefix}illustration a maintenant aussi un leaderboeard, donné automatiquement quand quelqu'un donne une réponse à la commande.",
+            "• Ajout de la commande {prefix}info",
+            "• La commande {prefix}tournoi permet de voir la date du prochain tournoi VAACT et mettre un rappel en MP trois jours avant."
         ]
         embed.description = "\n".join(changelog_lines)
         embed.set_footer(text="Merci d'utiliser le bot !")
