@@ -146,8 +146,8 @@ class IllustrationCommand(commands.Cog):
                 response = supabase.table("ygo_streaks").select("illu_streak,best_illustreak").eq("user_id", user_id).execute()
                 data = response.data
                 if data:
-                    current_streak = data[0].get("illu_streak", 0)
-                    best_streak = data[0].get("best_illustreak", 0)
+                    current_streak = data[0].get("illu_streak") or 0
+                    best_streak = data[0].get("best_illustreak") or 0
                 else:
                     current_streak = 0
                     best_streak = 0
@@ -173,8 +173,8 @@ class IllustrationCommand(commands.Cog):
                 response = supabase.table("ygo_streaks").select("illu_streak,best_illustreak").eq("user_id", user_id).execute()
                 data = response.data
                 if data:
-                    current_streak = data[0].get("illu_streak", 0)
-                    best_streak = data[0].get("best_illustreak", 0)
+                    current_streak = data[0].get("illu_streak") or 0
+                    best_streak = data[0].get("best_illustreak") or 0
                 else:
                     current_streak = 0
                     best_streak = 0
