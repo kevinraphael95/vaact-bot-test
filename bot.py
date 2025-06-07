@@ -20,11 +20,6 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 from dateutil import parser
-from discord.ui import View, button
-from discord import ButtonStyle, Interaction
-from discord.ext.commands import Context
-from discord import Message, RawMessageUpdateEvent
-from types import SimpleNamespace
 
 # ──────────────────────────────────────────────────────────────
 # 📦 Modules internes
@@ -131,7 +126,8 @@ async def on_message(message):
 
         embed = discord.Embed(
             title="👑 Atem, Roi des Duellistes, s’avance.",
-            description=(
+            description= 
+            (
                 f"Je suis **Atem**, l’esprit du Pharaon, gardien des **Duels des Ténèbres** et protecteur du **Royaume des Ombres**.\n"
                 "Tu m’as appelé, duelliste ?\n\n"
                 f"Utilise la commande `{prefix}help` pour voir mes commandes.\n"
@@ -141,13 +137,12 @@ async def on_message(message):
         )
         embed.set_footer(text="Tu dois croire en l'âme des cartes 🎴")
 
-        avatar_url = bot.user.avatar.url if bot.user.avatar else bot.user.default_avatar.url
-        embed.set_thumbnail(url=avatar_url)
+        if bot.user.avatar:
+            embed.set_thumbnail(url=bot.user.avatar.url)
+        else:
+            embed.set_thumbnail(url=bot.user.default_avatar.url)
 
-        ctx = await bot.get_context(message)
-        view = MentionButtons(bot, ctx)
-        msg = await message.channel.send(embed=embed, view=view)
-        view.response_message = msg
+        await message.channel.send(embed=embed)
         return
 
     await bot.process_commands(message)
@@ -169,77 +164,6 @@ async def on_command_error(ctx, error):
         return
     else:
         raise error
-
-
-# ──────────────────────────────────────────────────────────────
-# 🔘 Boutons
-# ──────────────────────────────────────────────────────────────
-
-class MentionButtons(View):
-    def __init__(self, bot, ctx: Context):
-        super().__init__(timeout=60)
-        self.bot = bot
-        self.ctx = ctx
-        self.response_message = None
-
-    async def invoke_command(self, interaction: Interaction, command_name: str):
-        if interaction.user != self.ctx.author:
-            await interaction.response.send_message("❌ Ce bouton ne t'est pas destiné.", ephemeral=True)
-            return
-
-        await interaction.response.defer()
-
-        # Construire un faux message pour le contexte
-        fake_message = SimpleNamespace()
-        fake_message.author = interaction.user
-        fake_message.channel = interaction.channel
-        fake_message.guild = interaction.guild
-        fake_message.content = f"{self.bot.command_prefix(self.bot, None)}{command_name}"
-        fake_message.clean_content = fake_message.content
-        fake_message.id = interaction.message.id if interaction.message else 0
-        fake_message.created_at = interaction.created_at
-        fake_message.raw_mentions = [interaction.user.id]
-        fake_message.raw_channel_mentions = []
-        fake_message.raw_role_mentions = []
-        fake_message.reference = None
-        fake_message.attachments = []
-        fake_message.embeds = []
-        fake_message.pinned = False
-        fake_message.flags = None
-        fake_message.mention_everyone = False
-        fake_message.mentions = [interaction.user]
-        fake_message.mention_roles = []
-        fake_message.mention_channels = []
-
-        # Créer un contexte à partir de ce faux message
-        ctx = await self.bot.get_context(fake_message, cls=type(self.ctx))
-        ctx.interaction = interaction  # garder l'interaction
-
-        # Récupérer la commande
-        cmd = self.bot.get_command(command_name)
-        if cmd is None:
-            await interaction.followup.send("❌ Commande introuvable.", ephemeral=True)
-            return
-
-        # Invoker la commande
-        await self.bot.invoke(ctx)
-
-    @button(label="📖 Help", style=ButtonStyle.primary)
-    async def help_button(self, interaction: Interaction, button):
-        await self.invoke_command(interaction, "help")
-
-    @button(label="ℹ️ Info", style=ButtonStyle.secondary)
-    async def info_button(self, interaction: Interaction, button):
-        await self.invoke_command(interaction, "info")
-
-    async def on_timeout(self):
-        for child in self.children:
-            child.disabled = True
-        if self.response_message:
-            await self.response_message.edit(view=self)
-
-
-
 
 # ──────────────────────────────────────────────────────────────
 # 🚀 Lancement
