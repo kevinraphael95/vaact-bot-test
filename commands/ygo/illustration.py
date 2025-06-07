@@ -61,7 +61,7 @@ class IllustrationCommand(commands.Cog):
     @commands.command(
         name="illustration",
         aliases=["illu", "i"],
-        help="🖼️ Devine une carte Yu-Gi-Oh! à partir de son illustration.",
+        help="🖼️ Devine une carte Yu-Gi-Oh! à partir de son illustration.  (multijoueur)",
         description="Affiche une image de carte Yu-Gi-Oh! croppée et propose un quiz interactif avec réactions. (multijoueur)"
     )
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
