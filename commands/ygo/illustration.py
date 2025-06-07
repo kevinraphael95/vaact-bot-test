@@ -62,7 +62,7 @@ class IllustrationCommand(commands.Cog):
         name="illustration",
         aliases=["illu", "i"],
         help="🖼️ Devine une carte Yu-Gi-Oh! à partir de son illustration.",
-        description="Affiche une image de carte Yu-Gi-Oh! croppée et propose un quiz interactif avec réactions."
+        description="Affiche une image de carte Yu-Gi-Oh! croppée et propose un quiz interactif avec réactions. (multijoueur)"
     )
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
     async def illustration(self, ctx: commands.Context):
