@@ -23,6 +23,8 @@ from dateutil import parser
 from discord.ui import View, button
 from discord import ButtonStyle, Interaction
 from discord.ext.commands import Context
+from discord import Message, RawMessageUpdateEvent
+from types import SimpleNamespace
 
 # ──────────────────────────────────────────────────────────────
 # 📦 Modules internes
@@ -185,21 +187,35 @@ class MentionButtons(View):
             await interaction.response.send_message("❌ Ce bouton ne t'est pas destiné.", ephemeral=True)
             return
 
-        await interaction.response.defer()  # Ack l'interaction
+        await interaction.response.defer()
 
-        # Créer un contexte depuis l'interaction (pas depuis un message)
-        ctx = await self.bot.get_context(interaction, cls=type(self.ctx))
+        # Construire un faux message pour le contexte
+        fake_message = SimpleNamespace()
+        fake_message.author = interaction.user
+        fake_message.channel = interaction.channel
+        fake_message.guild = interaction.guild
+        fake_message.content = f"{self.bot.command_prefix(self.bot, None)}{command_name}"
+        fake_message.clean_content = fake_message.content
+        fake_message.id = interaction.message.id if interaction.message else 0
+        fake_message.created_at = interaction.created_at
+        fake_message.raw_mentions = [interaction.user.id]
+        fake_message.raw_channel_mentions = []
+        fake_message.raw_role_mentions = []
+        fake_message.reference = None
+        fake_message.attachments = []
+        fake_message.embeds = []
+        fake_message.pinned = False
+        fake_message.flags = None
+        fake_message.mention_everyone = False
+        fake_message.mentions = [interaction.user]
+        fake_message.mention_roles = []
+        fake_message.mention_channels = []
 
-        # Simuler le contenu de la commande
-        prefix = self.bot.command_prefix(self.bot, ctx.message)
-        ctx.message.content = f"{prefix}{command_name}"
+        # Créer un contexte à partir de ce faux message
+        ctx = await self.bot.get_context(fake_message, cls=type(self.ctx))
+        ctx.interaction = interaction  # garder l'interaction
 
-        ctx.author = interaction.user
-        ctx.interaction = interaction
-        ctx.channel = interaction.channel
-        ctx.guild = interaction.guild
-
-        # Trouver la commande
+        # Récupérer la commande
         cmd = self.bot.get_command(command_name)
         if cmd is None:
             await interaction.followup.send("❌ Commande introuvable.", ephemeral=True)
